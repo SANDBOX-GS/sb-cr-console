@@ -4,24 +4,13 @@ import {
     InfoIcon,
     CreditCardIcon,
     FileTextIcon,
-    CheckIcon,
+    Check as CheckIcon,
 } from "lucide-react";
-import { useState, useEffect } from 'react';
-
-// interface Step {
-//   id: string;
-//   label: string;
-//   icon: React.ComponentType<{ className?: string }>;
-//   description: string;
-// }
-
-// interface ProgressTabsProps {
-//   currentStep: string;
-//   onStepChange: (step: string) => void;
-//   completedSteps: string[];
-// }
+import React from 'react';
+import { cn } from "@/lib/utils";
 
 const STEPS = [
+// ... (STEPS array is the same)
     {
         id: "guide",
         label: "안내사항",
@@ -44,7 +33,6 @@ const STEPS = [
 
 function StepItem({
                       step,
-                      index,
                       isActive,
                       isCompleted,
                       onClick,
@@ -56,13 +44,13 @@ function StepItem({
         <div className="flex items-center flex-1">
             {/* Step Container */}
             <motion.button
+                type="button" // ✅ 핵심 수정: type="button"을 추가하여 form 제출을 방지합니다.
                 onClick={onClick}
                 className={`
           relative flex flex-col items-center min-w-0 flex-1 group cursor-pointer
           ${isActive ? "z-10" : "z-0"}
         `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                // ... (rest of the file is the same)
             >
                 {/* Step Circle */}
                 <motion.div
@@ -117,7 +105,7 @@ function StepItem({
                 <div className="text-center min-w-0">
                     <div
                         className={`
-            transition-all duration-300 mb-1
+            transition-all duration-300 mb-1 font-medium
             ${
                             isActive
                                 ? "text-slate-800"
@@ -187,33 +175,32 @@ export default function ProgressTabs({
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full mb-8"
+            className="w-full mb-12"
         >
             {/* Progress Header */}
             <div className="text-center mb-8">
-                <h2 className="text-slate-800 mb-2">
+                <h2 className="text-xl font-semibold text-slate-800 mb-2">
                     수취인 정보 등록 진행 상황
                 </h2>
                 <p className="text-sm text-slate-600">
                     {currentStepIndex + 1}단계 / {STEPS.length}단계 -{" "}
-                    {STEPS[currentStepIndex]?.description}
+                    {STEPS[currentStepIndex]?.label}
                 </p>
             </div>
 
             {/* Progress Container */}
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 shadow-sm">
+            <div className="relative bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 shadow-sm">
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 via-transparent to-slate-100/30 rounded-2xl pointer-events-none" />
 
                 {/* Progress Bar Background */}
                 <div className="relative">
-                    {/* Overall Progress Indicator */}
                     <div className="absolute top-6 left-6 right-6 h-px bg-slate-200 pointer-events-none">
                         <motion.div
                             className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-cyan-500"
                             initial={{ scaleX: 0 }}
                             animate={{
                                 scaleX:
-                                    completedSteps.length / (STEPS.length - 1),
+                                    (currentStepIndex) / (STEPS.length - 1),
                             }}
                             style={{ transformOrigin: "left" }}
                             transition={{ duration: 0.8, ease: "easeInOut" }}
@@ -244,21 +231,23 @@ export default function ProgressTabs({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
             >
-                <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4 text-xs text-slate-500">
+                    <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" />
-                        완료됨 {completedSteps.length}개
+                        완료됨: {completedSteps.length}개
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full" />
-                        진행 중
+                        진행 중: 1개
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 bg-slate-300 rounded-full" />
-                        대기 중 {STEPS.length - completedSteps.length - 1}개
+                        대기 중: {Math.max(0, STEPS.length - completedSteps.length - 1)}개
                     </div>
                 </div>
             </motion.div>
         </motion.div>
     );
 }
+
+

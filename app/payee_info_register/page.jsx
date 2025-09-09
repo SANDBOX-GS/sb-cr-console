@@ -251,8 +251,7 @@ export default function PayeeInfoPage() {
         const newErrors = validateForm();
         setErrors(newErrors);
 
-        if (Object.keys(newErrors).length !== 0) {
-
+        if (Object.keys(newErrors).length === 0) {
             const submissionData = objectToFormData(formData);
 
             try {
@@ -263,16 +262,18 @@ export default function PayeeInfoPage() {
                 });
 
                 if (response.ok) {
-                    // setIsSubmitted(true);
-                    console.log('회원가입 성공!');
+                    console.log('수취인정보 등록 성공!');
+                    navigate('/payee-info/done');
                 } else {
                     const errorData = await response.json();
-                    console.error('회원가입 실패:', errorData);
+                    console.error('수취인정보 등록 실패:', errorData);
                     alert(errorData.message); // 사용자에게 실패 메시지 표시
                 }
             } catch (error) {
                 console.error('API 호출 중 오류 발생:', error);
                 alert('네트워크 오류가 발생했습니다.'); // 네트워크 오류 메시지 표시
+            } finally {
+                setIsLoading(false); // API 호출이 끝나면 항상 로딩 상태 비활성화
             }
 
 
@@ -282,8 +283,11 @@ export default function PayeeInfoPage() {
             // // Navigate to success page
             // navigate('/payee-info/done');
         }
-
-        setIsLoading(false);
+        else {
+            alert('필수 입력 항목을 모두 확인해주세요.');
+            console.log("Validation Errors:", newErrors);
+            handleTabChange('account');
+        }
     };
 
     const formatPhoneNumber = (value) => {
@@ -331,13 +335,14 @@ export default function PayeeInfoPage() {
                     </p>
                 </motion.div>
 
-                <motion.form
+                <motion.div
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    onSubmit={handleSubmit}
+                    // onSubmit={handleSubmit}
                     className="w-full max-w-4xl"
                 >
+                    <form onSubmit={handleSubmit}>
                     <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
 
@@ -1073,7 +1078,8 @@ export default function PayeeInfoPage() {
                             </TabsContent>
                         </Tabs>
                     </div>
-                </motion.form>
+                    </form>
+                </motion.div>
             </div>
     );
 }
