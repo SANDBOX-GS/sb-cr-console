@@ -1,3 +1,5 @@
+import dbConnect from '@/lib/dbConnect';
+import { TABLE_NAMES } from '@/constants/dbConstants';
 import { NextResponse } from 'next/server';
 import { uploadFileToS3 } from '@/lib/s3-client';
 

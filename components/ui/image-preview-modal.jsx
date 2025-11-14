@@ -73,22 +73,22 @@ export default function FilePreviewModal({ isOpen, onClose, file }) {
                     >
                         {isImage && (
                             <>
-                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setScale(s => s * 1.2)}>
+                                <Button type="button" variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setScale(s => s * 1.2)}>
                                     <ZoomIn className="w-5 h-5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setScale(s => s / 1.2)}>
+                                <Button type="button" variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setScale(s => s / 1.2)}>
                                     <ZoomOut className="w-5 h-5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setRotation(r => r + 90)}>
+                                <Button type="button" variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => setRotation(r => r + 90)}>
                                     <RotateCw className="w-5 h-5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => { setScale(1); setRotation(0); }}>
+                                <Button type="button" variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={() => { setScale(1); setRotation(0); }}>
                                     <RefreshCw className="w-5 h-5" />
                                 </Button>
                                 <div className="w-px h-6 bg-white/20 mx-1"></div>
                             </>
                         )}
-                        <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={handleClose}>
+                        <Button type="button" variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full" onClick={handleClose}>
                             <X className="w-5 h-5" />
                         </Button>
                     </motion.div>

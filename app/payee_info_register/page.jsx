@@ -26,7 +26,6 @@ import { motion } from "framer-motion";
 import { useRouter } from "@/hooks/useRouter";
 import ProgressTabs from "@/components/ProgressTabs";
 import FileUpload from "@/components/ui/file-upload"; // 새로 만든 FileUpload 컴포넌트 import
-import { objectToFormData } from '@/lib/utils';
 
 const ID_DOCUMENT_TYPES = [
     { value: 'resident_card', label: '주민등록증' },
@@ -125,20 +124,39 @@ export default function PayeeInfoPage() {
 
     const [formData, setFormData] = useState({
         recipientInfo: {
-            businessType: 'individual',
-            isOverseas: false,
-            isMinor: false,
-            isForeigner: false,
+            biz_type: 'individual', // -> biz_type
+            is_overseas: false,     // -> is_overseas
+            is_minor: false,        // -> is_minor
+            is_foreigner: false,    // -> is_foreigner
+
+            // 개인: user_name, ssn / 사업자/법인: biz_name, biz_reg_no / 법인: corp_name, corp_reg_no
+            // 임시 필드 이름은 기존대로 유지하되, DB에 들어갈 값만 별도로 처리
+            realName: '',
+            idNumber: '', // -> ssn (주민등록번호/외국인등록번호)
+            idDocumentType: '', // -> identification_type
+
+            // 법정대리인
+            guardianName: '', // -> guardian_name
+            guardianPhone: '', // -> guardian_tel
         },
         accountInfo: {
-            bankName: '',
-            accountHolder: '',
-            accountNumber: '',
+            bank_name: '',           // -> bank_name
+            account_holder: '',      // -> account_holder
+            account_number: '',      // -> account_number
+            swift_code: '',          // -> swift_code
+            bank_address: '',        // -> bank_address
         },
         taxInfo: {
-            isSimpleTax: false,
-            issueType: 'individual',
+            is_simple_taxpayer: false, // -> is_simple_taxpayer
+            invoice_type: 'individual',// -> invoice_type
         },
+        // 파일 및 임시 필드는 여기에 두어 finalData에서 정리
+        files: {
+            businessDocument: null,
+            idDocument: null,
+            bankDocument: null,
+            familyRelationCertificate: null
+        }
     });
 
     const [errors, setErrors] = useState({});
@@ -191,9 +209,9 @@ export default function PayeeInfoPage() {
         const newErrors = {};
 
         // Recipient Info Validation
-        if (formData.recipientInfo.businessType === 'individual') {
+        if (formData.recipientInfo.biz_type === 'individual') {
             // 본인 정보는 항상 필요 (외국인/미성년자 상관없이)
-            if (formData.recipientInfo.isForeigner) {
+            if (formData.recipientInfo.is_foreigner) {
                 // 외국인인 경우 외국인등록번호 사용
                 if (!formData.recipientInfo.foreignerName) newErrors.foreignerName = '본명을 입력해 주세요.';
                 if (!formData.recipientInfo.foreignerRegistrationNumber) newErrors.foreignerRegistrationNumber = '외국인등록번호를 입력해 주세요.';
@@ -252,13 +270,77 @@ export default function PayeeInfoPage() {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            const submissionData = objectToFormData(formData);
+            // ⭐ 1. 최종 DB 컬럼명에 매핑되는 객체 생성
+            const finalData = {
+                // member_idx는 백엔드에서 세션/인증 정보로 주입해야 합니다.
+                // payout_ratio_id, active_status, ci_cd 등도 백엔드에서 처리합니다.
+
+                // [recipientInfo -> DB 컬럼 매핑]
+                biz_type: formData.recipientInfo.biz_type,
+                is_overseas: formData.recipientInfo.is_overseas ? 'Y' : 'N',
+                is_minor: formData.recipientInfo.is_minor ? 'Y' : 'N',
+                is_foreigner: formData.recipientInfo.is_foreigner ? 'Y' : 'N',
+
+                // 이름 및 번호 (biz_type에 따라 다르게 매핑)
+                user_name: formData.recipientInfo.biz_type === 'individual' ? formData.recipientInfo.realName : null,
+                ssn: formData.recipientInfo.biz_type === 'individual' ? (formData.recipientInfo.isForeigner ? formData.recipientInfo.foreignerRegistrationNumber : formData.recipientInfo.idNumber) : null,
+
+                // 사업자/법인 정보
+                biz_name: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.businessName : null,
+                biz_reg_no: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.businessNumber : null,
+                corp_name: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.businessName : null,
+                corp_reg_no: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.businessNumber : null,
+
+                // 계정 유형 (필요하다면)
+                // user_type: formData.recipientInfo.biz_type === 'corporate_business' ? '법인' : '개인',
+
+                // 법정대리인
+                guardian_name: formData.recipientInfo.is_minor ? formData.recipientInfo.guardianName : null,
+                guardian_tel: formData.recipientInfo.is_minor ? formData.recipientInfo.guardianPhone : null,
+
+                // 신분증
+                identification_type: formData.recipientInfo.is_minor || formData.recipientInfo.is_foreigner ? null : formData.recipientInfo.idDocumentType,
+
+                // [accountInfo -> DB 컬럼 매핑]
+                bank_name: formData.accountInfo.bank_name,
+                account_holder: formData.accountInfo.account_holder,
+                account_number: formData.accountInfo.account_number,
+                swift_code: formData.recipientInfo.is_overseas ? formData.accountInfo.swift_code : null,
+                bank_address: formData.recipientInfo.is_overseas ? formData.accountInfo.bank_address : null,
+
+                // [taxInfo -> DB 컬럼 매핑]
+                invoice_type: formData.taxInfo.invoice_type,
+                is_simple_taxpayer: formData.taxInfo.is_simple_taxpayer ? 'Y' : 'N',
+
+                // [파일 데이터] objectToFormData는 File 객체를 FormData에 직접 추가합니다.
+                // 파일 데이터는 finalData 객체에 포함시키지 않고, FormData 변환 시 수동으로 추가하는 것이 좋습니다.
+            };
+
+            // 🚩 3. DB 컬럼명에 매핑된 최종 데이터 객체 (finalData) 확인
+            console.log('3. Final Mapped Data (finalData):', finalData);
+            return;
+
+            // ⭐ 2. objectToFormData 대신, 수동으로 FormData를 구성하여 파일도 포함합니다.
+            const submissionFormData = new FormData();
+
+            // 일반 데이터 추가
+            for (const key in finalData) {
+                if (finalData[key] !== null) {
+                    submissionFormData.append(key, finalData[key]);
+                }
+            }
+
+            // 파일 데이터 추가 (FileUpload 컴포넌트가 File 객체를 반환한다고 가정)
+            if (formData.files.businessDocument) submissionFormData.append('business_document', formData.files.businessDocument);
+            if (formData.files.idDocument) submissionFormData.append('id_document', formData.files.idDocument);
+            if (formData.files.bankDocument) submissionFormData.append('bank_document', formData.files.bankDocument);
+            if (formData.files.familyRelationCertificate) submissionFormData.append('family_relation_certificate', formData.files.familyRelationCertificate);
 
             try {
-                const response = await fetch('/api/member/payee_register', {
+                const response = await fetch('/api/member/payee_info_register', {
                     method: 'POST',
                     // headers: { 'Content-Type': 'application/json', },
-                    body: submissionData,
+                    body: submissionFormData,
                 });
 
                 if (response.ok) {
@@ -586,6 +668,54 @@ export default function PayeeInfoPage() {
                                     {/* Business Information (for business types) */}
                                     {(formData.recipientInfo.businessType === 'sole_proprietor' || formData.recipientInfo.businessType === 'corporate_business') && (
                                         <div className="space-y-6">
+                                            <h3 className="font-medium text-slate-800">사업자 정보</h3>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="businessName">
+                                                        {formData.recipientInfo.businessType === 'corporate_business' ? '법인명' : '상호명'} *
+                                                    </Label>
+                                                    <Input
+                                                        id="businessName"
+                                                        type="text"
+                                                        placeholder={formData.recipientInfo.businessType === 'corporate_business' ? '법인명을 입력하세요' : '상호명을 입력하세요'}
+                                                        value={formData.recipientInfo.businessName || ''}
+                                                        onChange={(e) => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                recipientInfo: { ...prev.recipientInfo, businessName: e.target.value }
+                                                            }));
+                                                            if (errors.businessName) setErrors(prev => ({ ...prev, businessName: '' }));
+                                                        }}
+                                                        className={`h-12 bg-white/50 ${errors.businessName ? 'border-red-400' : ''}`}
+                                                    />
+                                                    {errors.businessName && <p className="text-red-500 text-sm">{errors.businessName}</p>}
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="businessNumber">
+                                                        {formData.recipientInfo.businessType === 'corporate_business' ? '법인등록번호' : '사업자등록번호'} *
+                                                    </Label>
+                                                    <Input
+                                                        id="businessNumber"
+                                                        type="text"
+                                                        placeholder="000-00-00000"
+                                                        value={formData.recipientInfo.businessNumber || ''}
+                                                        onChange={(e) => {
+                                                            const formatted = formatBusinessNumber(e.target.value);
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                recipientInfo: { ...prev.recipientInfo, businessNumber: formatted }
+                                                            }));
+                                                            if (errors.businessNumber) setErrors(prev => ({ ...prev, businessNumber: '' }));
+                                                        }}
+                                                        className={`h-12 bg-white/50 ${errors.businessNumber ? 'border-red-400' : ''}`}
+                                                        maxLength={12}
+                                                    />
+                                                    {errors.businessNumber && <p className="text-red-500 text-sm">{errors.businessNumber}</p>}
+                                                </div>
+                                            </div>
+
                                             <FileUpload
                                                 label={formData.recipientInfo.businessType === 'corporate_business' ? '법인등록증' : '사업자등록증'}
                                                 file={formData.recipientInfo.businessDocument}

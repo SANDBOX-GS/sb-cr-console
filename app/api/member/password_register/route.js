@@ -1,4 +1,5 @@
 import dbConnect from '@/lib/dbConnect';
+import { TABLE_NAMES } from '@/constants/dbConstants';
 import bcrypt from 'bcryptjs';
 
 // UUID 생성 함수 (고유 식별자 crip_id를 위해 필요)
@@ -18,7 +19,7 @@ export async function POST(request) {
 
         // 1. 이메일 존재 여부 확인 및 상태 조회
         const [rows] = await connection.execute(
-            `SELECT active_status FROM tbl_member WHERE email = ?`,
+            `SELECT active_status FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
             [email]
         );
 
@@ -47,7 +48,7 @@ export async function POST(request) {
 
         // inactive 계정을 활성화하고 비밀번호, user_id, 동의 정보 업데이트
         await connection.execute(
-            `UPDATE tbl_member SET
+            `UPDATE ${TABLE_NAMES.SBN_MEMBER} SET
                                    user_id = ?,
                                    password = ?,
                                    agreed_to_terms = ?,
