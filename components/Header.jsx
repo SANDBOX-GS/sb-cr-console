@@ -2,12 +2,21 @@
 
 import {motion} from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export function Header () {
     const router = useRouter();
+    const { isLoggedIn, logout, isLoading } = useAuth();
 
-    const handleLoginClick = () => {
-        router.push('/login');
+    const handleAuthClick = () => {
+        if (isLoading) return; // 로딩 중에는 클릭 방지
+
+        if (isLoggedIn) {
+            logout();
+        } else {
+            console.log("Not logged in, navigating to /login");
+            router.push('/login');
+        }
     };
 
     return (
@@ -24,11 +33,13 @@ export function Header () {
                         <div className="box-border content-stretch flex gap-2.5 h-8 items-center justify-center px-3 py-1 relative rounded-lg shrink-0 hover:bg-slate-100/80 transition-all duration-200 cursor-pointer">
                             <div
                                 className="box-border content-stretch flex gap-2.5 h-8 items-center justify-center px-3 py-1 relative rounded-lg shrink-0 hover:bg-slate-100/80 transition-all duration-200 cursor-pointer"
-                                onClick={handleLoginClick}
+                                onClick={handleAuthClick}
                             >
                                 <div className="content-stretch flex gap-1 items-center justify-start relative shrink-0">
                                     <div className="font-['Pretendard:Medium',_sans-serif] leading-[0] not-italic relative shrink-0 text-[13px] text-center text-nowrap text-slate-700">
-                                        <p className="leading-[1.6] whitespace-pre">로그인</p>
+                                        <p className="leading-[1.6] whitespace-pre">
+                                            {isLoading ? '확인 중...' : (isLoggedIn ? '로그아웃' : '로그인')}
+                                        </p>
                                     </div>
                                 </div>
                             </div>

@@ -12,9 +12,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "@/hooks/useRouter";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
     const { navigate } = useRouter();
+    const { login } = useAuth();
+
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -51,10 +54,32 @@ export default function LoginPage() {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            setIsSubmitted(true);
-            console.log("Login successful:", formData);
+            try {
+                const response = await fetch("/api/member/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 200 OK: 로그인 성공
+                    login();
+                    setIsSubmitted(true);
+                    console.log("Login successful:", data);
+                    // 실제 애플리케이션에서는 여기서 토큰/세션 저장 로직이 들어갑니다.
+                } else {
+                    // 401, 403, 500 등 에러 처리
+                    alert(`로그인 실패: ${data.message}`);
+                    console.error("Login failed:", data);
+                }
+            } catch (error) {
+                console.error("API 호출 중 오류 발생:", error);
+                alert("네트워크 오류 또는 서버 접속에 실패했습니다.");
+            }
         }
 
         setIsLoading(false);
@@ -122,7 +147,7 @@ export default function LoginPage() {
                         >
                             <Button
                                 onClick={() =>
-                                    navigate("/payee-info", { tab: "guide" })
+                                    navigate("/payee_info_register", { tab: "guide" })
                                 }
                                 className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                             >

@@ -3,11 +3,10 @@ import { TABLE_NAMES } from '@/constants/dbConstants';
 import { NextResponse } from 'next/server';
 import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3-client';
 import crypto from 'crypto';
+import { cookies } from 'next/headers';
 
 // 임시 상수 (실제 환경에서는 인증 시스템에서 가져와야 함)
-const DUMMY_MEMBER_IDX = 123;
 const DUMMY_PAYOUT_RATIO_ID = 'DEFAULT_RATIO';
-const DUMMY_ACTIVE_STATUS = 'active';
 const FILE_TYPE_TAG = 'PAYEE_DOCUMENT'; // 파일 정보 테이블의 type 필드에 사용될 상수
 
 export async function POST(req) {
@@ -38,13 +37,37 @@ export async function POST(req) {
         }
 
         // *******************************************************************
+        // 🚨 0. 세션(쿠키)에서 실제 member_idx 가져오기
+        // *******************************************************************
+        const cookieStore = cookies();
+        const memberIdxCookie = cookieStore.get('member_idx');
+
+        // 쿠키 값이 없거나 유효하지 않으면 접근 거부
+        if (!memberIdxCookie || !memberIdxCookie.value) {
+            return NextResponse.json(
+                { message: '인증 정보가 없습니다. 다시 로그인해 주세요.' },
+                { status: 401 }
+            );
+        }
+
+        // 쿠키 값은 문자열이므로 정수로 변환 (DB 저장용)
+        const member_idx = parseInt(memberIdxCookie.value, 10);
+        if (isNaN(member_idx) || member_idx <= 0) {
+            return NextResponse.json(
+                { message: '유효하지 않은 사용자 ID입니다.' },
+                { status: 401 }
+            );
+        }
+        // *******************************************************************
+
+        // *******************************************************************
         // 1. Payee Info 테이블에 저장할 최종 페이로드 준비 및 DB 저장
         // *******************************************************************
 
-        // 필수 값 주입 (todo member_idx는 실제 인증 로직에서 가져와야 함)
-        payload.member_idx = DUMMY_MEMBER_IDX;
+        // 필수 값 주입
+        payload.member_idx = member_idx;
         payload.payout_ratio_id = DUMMY_PAYOUT_RATIO_ID;
-        payload.active_status = DUMMY_ACTIVE_STATUS;
+        payload.active_status = 'inactive';
         payload.user_type = payload.biz_type === 'corporate_business' ? '법인' : '개인';
 
         // DB 컬럼에 맞게 재구성 (dbPayload)
