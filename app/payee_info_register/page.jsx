@@ -25,7 +25,7 @@ import {
 import { motion } from "framer-motion";
 import { useRouter } from "@/hooks/useRouter";
 import ProgressTabs from "@/components/ProgressTabs";
-import FileUpload from "@/components/ui/file-upload"; // 새로 만든 FileUpload 컴포넌트 import
+import FileUpload from "@/components/ui/file-upload";
 
 const ID_DOCUMENT_TYPES = [
     { value: 'resident_card', label: '주민등록증' },
@@ -124,38 +124,42 @@ export default function PayeeInfoPage() {
 
     const [formData, setFormData] = useState({
         recipientInfo: {
-            biz_type: 'individual', // -> biz_type
-            is_overseas: false,     // -> is_overseas
-            is_minor: false,        // -> is_minor
-            is_foreigner: false,    // -> is_foreigner
+            biz_type: 'individual',             // 사업자 구분 (individual, sole_proprietor, corporate_business)
+            is_overseas: false,                 // 해외 거주자
+            is_minor: false,                    // 미성년자
+            is_foreigner: false,                // 외국인
 
-            // 개인: user_name, ssn / 사업자/법인: biz_name, biz_reg_no / 법인: corp_name, corp_reg_no
-            // 임시 필드 이름은 기존대로 유지하되, DB에 들어갈 값만 별도로 처리
-            realName: '',
-            idNumber: '', // -> ssn (주민등록번호/외국인등록번호)
-            idDocumentType: '', // -> identification_type
+            // 개인 정보
+            real_name: '',                      // 본명
+            id_number: '',                      // 주민등록번호 (내국인)
+            id_document_type: '',               // 신분증 종류 (내국인)
+            foreigner_name: '',                 // 외국인 본명
+            foreigner_registration_number: '',  // 외국인등록번호
+
+            // 사업자/법인 정보
+            business_name: '',                  // 상호명/법인명
+            business_number: '',                // 사업자등록번호/법인등록번호
 
             // 법정대리인
-            guardianName: '', // -> guardian_name
-            guardianPhone: '', // -> guardian_tel
+            guardian_name: '',                  // 법정대리인 이름
+            guardian_phone: '',                 // 법정대리인 연락처
         },
         accountInfo: {
-            bank_name: '',           // -> bank_name
-            account_holder: '',      // -> account_holder
-            account_number: '',      // -> account_number
-            swift_code: '',          // -> swift_code
-            bank_address: '',        // -> bank_address
+            bank_name: '',
+            account_holder: '',
+            account_number: '',
+            swift_code: '',
+            bank_address: '',
         },
         taxInfo: {
-            is_simple_taxpayer: false, // -> is_simple_taxpayer
-            invoice_type: 'individual',// -> invoice_type
+            is_simple_taxpayer: false, // 간이과세자 여부
+            invoice_type: 'tax_invoice',// 발행 유형 (tax_invoice, electronic_invoice, cash_receipt, individual)
         },
-        // 파일 및 임시 필드는 여기에 두어 finalData에서 정리
         files: {
-            businessDocument: null,
-            idDocument: null,
-            bankDocument: null,
-            familyRelationCertificate: null
+            business_document: null,
+            id_document: null,
+            bank_document: null,
+            family_relation_certificate: null
         }
     });
 
@@ -183,26 +187,27 @@ export default function PayeeInfoPage() {
         const newCompletedSteps = ['guide']; // Guide is always completed
 
         // Check account step - basic validation
-        const hasBasicAccountInfo = formData.accountInfo.bankName && formData.accountInfo.accountHolder && formData.accountInfo.accountNumber;
-        const hasOverseasInfo = !formData.recipientInfo.isOverseas || (formData.accountInfo.swiftCode && formData.accountInfo.bankAddress);
+        const hasBasicAccountInfo = formData.accountInfo.bank_name && formData.accountInfo.account_holder && formData.accountInfo.account_number;
+        const hasOverseasInfo = !formData.recipientInfo.is_overseas || (formData.accountInfo.swift_code && formData.accountInfo.bank_address);
+
         if (hasBasicAccountInfo && hasOverseasInfo) {
             newCompletedSteps.push('account');
         }
 
         // Check tax step
-        if (formData.taxInfo.issueType) {
+        if (formData.taxInfo.invoice_type) {
             newCompletedSteps.push('tax');
         }
 
         setCompletedSteps(newCompletedSteps);
     }, [
-        formData.accountInfo.bankName,
-        formData.accountInfo.accountHolder,
-        formData.accountInfo.accountNumber,
-        formData.accountInfo.swiftCode,
-        formData.accountInfo.bankAddress,
-        formData.recipientInfo.isOverseas,
-        formData.taxInfo.issueType
+        formData.accountInfo.bank_name,
+        formData.accountInfo.account_holder,
+        formData.accountInfo.account_number,
+        formData.accountInfo.swift_code,
+        formData.accountInfo.bank_address,
+        formData.recipientInfo.is_overseas,
+        formData.taxInfo.invoice_type
     ]);
 
     const validateForm = () => {
@@ -213,51 +218,51 @@ export default function PayeeInfoPage() {
             // 본인 정보는 항상 필요 (외국인/미성년자 상관없이)
             if (formData.recipientInfo.is_foreigner) {
                 // 외국인인 경우 외국인등록번호 사용
-                if (!formData.recipientInfo.foreignerName) newErrors.foreignerName = '본명을 입력해 주세요.';
-                if (!formData.recipientInfo.foreignerRegistrationNumber) newErrors.foreignerRegistrationNumber = '외국인등록번호를 입력해 주세요.';
+                if (!formData.recipientInfo.foreigner_name) newErrors.foreigner_name = '본명을 입력해 주세요.';
+                if (!formData.recipientInfo.foreigner_registration_number) newErrors.foreigner_registration_number = '외국인등록번호를 입력해 주세요.';
             } else {
                 // 내국인인 경우 주민등록번호 사용
-                if (!formData.recipientInfo.realName) newErrors.realName = '본명을 입력해 주세요.';
-                if (!formData.recipientInfo.idNumber) newErrors.idNumber = '주민등록번호를 입력해 주세요.';
-                if (!formData.recipientInfo.isMinor && !formData.recipientInfo.idDocumentType) {
-                    newErrors.idDocumentType = '신분증 종류를 선택해 주세요.';
+                if (!formData.recipientInfo.real_name) newErrors.real_name = '본명을 입력해 주세요.';
+                if (!formData.recipientInfo.id_number) newErrors.id_number = '주민등록번호를 입력해 주세요.';
+                if (!formData.recipientInfo.is_minor && !formData.recipientInfo.id_document_type) {
+                    newErrors.id_document_type = '신분증 종류를 선택해 주세요.';
                 }
             }
 
             // 미성년자인 경우 법정대리인 정보 추가 필요
-            if (formData.recipientInfo.isMinor) {
-                if (!formData.recipientInfo.guardianName) newErrors.guardianName = '법정대리인 본명을 입력해 주세요.';
-                if (!formData.recipientInfo.guardianPhone) newErrors.guardianPhone = '법정대리인 연락처를 입력해 주세요.';
+            if (formData.recipientInfo.is_minor) {
+                if (!formData.recipientInfo.guardian_name) newErrors.guardian_name = '법정대리인 본명을 입력해 주세요.';
+                if (!formData.recipientInfo.guardian_phone) newErrors.guardian_phone = '법정대리인 연락처를 입력해 주세요.';
             }
         } else {
-            if (!formData.recipientInfo.businessName) {
-                if (formData.recipientInfo.businessType === 'corporate_business') {
-                    newErrors.businessName = '법인명을 입력해 주세요.';
+            if (!formData.recipientInfo.business_name) {
+                if (formData.recipientInfo.biz_type === 'corporate_business') {
+                    newErrors.business_name = '법인명을 입력해 주세요.';
                 } else {
-                    newErrors.businessName = '상호명을 입력해 주세요.';
+                    newErrors.business_name = '상호명을 입력해 주세요.';
                 }
             }
-            if (!formData.recipientInfo.businessNumber) {
-                if (formData.recipientInfo.businessType === 'corporate_business') {
-                    newErrors.businessNumber = '법인등록번호를 입력해 주세요.';
+            if (!formData.recipientInfo.business_number) {
+                if (formData.recipientInfo.biz_type === 'corporate_business') {
+                    newErrors.business_number = '법인등록번호를 입력해 주세요.';
                 } else {
-                    newErrors.businessNumber = '사업자등록번호를 입력해 주세요.';
+                    newErrors.business_number = '사업자등록번호를 입력해 주세요.';
                 }
             }
         }
 
         // Account Info Validation
-        if (!formData.accountInfo.bankName) newErrors.bankName = '은행명을 입력해 주세요.';
-        if (!formData.accountInfo.accountHolder) newErrors.accountHolder = '예금주를 입력해 주세요.';
-        if (!formData.accountInfo.accountNumber) newErrors.accountNumber = '계좌번호를 입력해 주세요.';
+        if (!formData.accountInfo.bank_name) newErrors.bank_name = '은행명을 입력해 주세요.';
+        if (!formData.accountInfo.account_holder) newErrors.account_holder = '예금주를 입력해 주세요.';
+        if (!formData.accountInfo.account_number) newErrors.account_number = '계좌번호를 입력해 주세요.';
 
-        if (formData.recipientInfo.isOverseas) {
-            if (!formData.accountInfo.swiftCode) newErrors.swiftCode = 'SWIFT CODE를 입력해 주세요.';
-            if (!formData.accountInfo.bankAddress) newErrors.bankAddress = '은행 주소를 입력해 주세요.';
+        if (formData.recipientInfo.is_overseas) {
+            if (!formData.accountInfo.swift_code) newErrors.swift_code = 'SWIFT CODE를 입력해 주세요.';
+            if (!formData.accountInfo.bank_address) newErrors.bank_address = '은행 주소를 입력해 주세요.';
         }
 
         // Tax Info Validation
-        if (!formData.taxInfo.issueType) newErrors.issueType = '발행 유형을 선택해 주세요.';
+        if (!formData.taxInfo.invoice_type) newErrors.invoice_type = '발행 유형을 선택해 주세요.';
 
         return newErrors;
     };
@@ -282,24 +287,23 @@ export default function PayeeInfoPage() {
                 is_foreigner: formData.recipientInfo.is_foreigner ? 'Y' : 'N',
 
                 // 이름 및 번호 (biz_type에 따라 다르게 매핑)
-                user_name: formData.recipientInfo.biz_type === 'individual' ? formData.recipientInfo.realName : null,
-                ssn: formData.recipientInfo.biz_type === 'individual' ? (formData.recipientInfo.isForeigner ? formData.recipientInfo.foreignerRegistrationNumber : formData.recipientInfo.idNumber) : null,
+                user_name: formData.recipientInfo.biz_type === 'individual' ? formData.recipientInfo.real_name : null,
+                ssn: formData.recipientInfo.biz_type === 'individual'
+                    ? (formData.recipientInfo.is_foreigner ? formData.recipientInfo.foreigner_registration_number : formData.recipientInfo.id_number)
+                    : null,
 
                 // 사업자/법인 정보
-                biz_name: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.businessName : null,
-                biz_reg_no: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.businessNumber : null,
-                corp_name: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.businessName : null,
-                corp_reg_no: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.businessNumber : null,
-
-                // 계정 유형 (필요하다면)
-                // user_type: formData.recipientInfo.biz_type === 'corporate_business' ? '법인' : '개인',
+                biz_name: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.business_name : null,
+                biz_reg_no: formData.recipientInfo.biz_type === 'sole_proprietor' ? formData.recipientInfo.business_number : null,
+                corp_name: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.business_name : null,
+                corp_reg_no: formData.recipientInfo.biz_type === 'corporate_business' ? formData.recipientInfo.business_number : null,
 
                 // 법정대리인
-                guardian_name: formData.recipientInfo.is_minor ? formData.recipientInfo.guardianName : null,
-                guardian_tel: formData.recipientInfo.is_minor ? formData.recipientInfo.guardianPhone : null,
+                guardian_name: formData.recipientInfo.is_minor ? formData.recipientInfo.guardian_name : null,
+                guardian_tel: formData.recipientInfo.is_minor ? formData.recipientInfo.guardian_phone : null,
 
                 // 신분증
-                identification_type: formData.recipientInfo.is_minor || formData.recipientInfo.is_foreigner ? null : formData.recipientInfo.idDocumentType,
+                identification_type: formData.recipientInfo.is_minor || formData.recipientInfo.is_foreigner ? null : formData.recipientInfo.id_document_type,
 
                 // [accountInfo -> DB 컬럼 매핑]
                 bank_name: formData.accountInfo.bank_name,
@@ -311,16 +315,12 @@ export default function PayeeInfoPage() {
                 // [taxInfo -> DB 컬럼 매핑]
                 invoice_type: formData.taxInfo.invoice_type,
                 is_simple_taxpayer: formData.taxInfo.is_simple_taxpayer ? 'Y' : 'N',
-
-                // [파일 데이터] objectToFormData는 File 객체를 FormData에 직접 추가합니다.
-                // 파일 데이터는 finalData 객체에 포함시키지 않고, FormData 변환 시 수동으로 추가하는 것이 좋습니다.
             };
 
             // 🚩 3. DB 컬럼명에 매핑된 최종 데이터 객체 (finalData) 확인
             console.log('3. Final Mapped Data (finalData):', finalData);
-            return;
 
-            // ⭐ 2. objectToFormData 대신, 수동으로 FormData를 구성하여 파일도 포함합니다.
+            // ⭐ 2. 수동으로 FormData를 구성하여 파일도 포함합니다.
             const submissionFormData = new FormData();
 
             // 일반 데이터 추가
@@ -331,39 +331,31 @@ export default function PayeeInfoPage() {
             }
 
             // 파일 데이터 추가 (FileUpload 컴포넌트가 File 객체를 반환한다고 가정)
-            if (formData.files.businessDocument) submissionFormData.append('business_document', formData.files.businessDocument);
-            if (formData.files.idDocument) submissionFormData.append('id_document', formData.files.idDocument);
-            if (formData.files.bankDocument) submissionFormData.append('bank_document', formData.files.bankDocument);
-            if (formData.files.familyRelationCertificate) submissionFormData.append('family_relation_certificate', formData.files.familyRelationCertificate);
+            if (formData.files.business_document) submissionFormData.append('business_document', formData.files.business_document);
+            if (formData.files.id_document) submissionFormData.append('id_document', formData.files.id_document);
+            if (formData.files.bank_document) submissionFormData.append('bank_document', formData.files.bank_document);
+            if (formData.files.family_relation_certificate) submissionFormData.append('family_relation_certificate', formData.files.family_relation_certificate);
 
             try {
                 const response = await fetch('/api/member/payee_info_register', {
                     method: 'POST',
-                    // headers: { 'Content-Type': 'application/json', },
                     body: submissionFormData,
                 });
 
                 if (response.ok) {
                     console.log('수취인정보 등록 성공!');
-                    navigate('/payee-info/done');
+                    navigate('/payee_info_done');
                 } else {
                     const errorData = await response.json();
                     console.error('수취인정보 등록 실패:', errorData);
-                    alert(errorData.message); // 사용자에게 실패 메시지 표시
+                    alert(errorData.message);
                 }
             } catch (error) {
                 console.error('API 호출 중 오류 발생:', error);
-                alert('네트워크 오류가 발생했습니다.'); // 네트워크 오류 메시지 표시
+                alert('네트워크 오류가 발생했습니다.');
             } finally {
-                setIsLoading(false); // API 호출이 끝나면 항상 로딩 상태 비활성화
+                setIsLoading(false);
             }
-
-
-            // // Simulate API call
-            // await new Promise(resolve => setTimeout(resolve, 2000));
-            // console.log('Payee info submitted:', formData);
-            // // Navigate to success page
-            // navigate('/payee-info/done');
         }
         else {
             alert('필수 입력 항목을 모두 확인해주세요.');
@@ -388,7 +380,7 @@ export default function PayeeInfoPage() {
     };
 
     const getSelectedIssueType = () => {
-        return ISSUE_TYPES.find(type => type.value === formData.taxInfo.issueType);
+        return ISSUE_TYPES.find(type => type.value === formData.taxInfo.invoice_type);
     };
 
     const handleStartAccountInfo = () => {
@@ -396,35 +388,35 @@ export default function PayeeInfoPage() {
     };
 
     return (
-            <div className="flex-1 flex flex-col items-center justify-start px-4 py-12">
-                <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center mb-12"
-                >
-                    <div className="inline-flex items-center gap-2 mb-4">
-                        <UserIcon className="h-8 w-8 text-indigo-600" />
-                    </div>
+        <div className="flex-1 flex flex-col items-center justify-start px-4 py-12">
+            <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-12"
+            >
+                <div className="inline-flex items-center gap-2 mb-4">
+                    <UserIcon className="h-8 w-8 text-indigo-600" />
+                </div>
 
-                    <h1 className="text-4xl font-bold text-slate-800 mb-4 bg-gradient-to-r from-slate-800 via-slate-700 to-indigo-700 bg-clip-text text-transparent">
-                        수취인 정보 등록
-                    </h1>
+                <h1 className="text-4xl font-bold text-slate-800 mb-4 bg-gradient-to-r from-slate-800 via-slate-700 to-indigo-700 bg-clip-text text-transparent">
+                    수취인 정보 등록
+                </h1>
 
-                    <p className="text-lg text-slate-600 max-w-lg">
-                        정산을 위한 필수 정보를 입력해 주세요.<br />
-                        모든 정보는 안전하게 암호화되어 보관됩니다.
-                    </p>
-                </motion.div>
+                <p className="text-lg text-slate-600 max-w-lg">
+                    정산을 위한 필수 정보를 입력해 주세요.<br />
+                    모든 정보는 안전하게 암호화되어 보관됩니다.
+                </p>
+            </motion.div>
 
-                <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    // onSubmit={handleSubmit}
-                    className="w-full max-w-4xl"
-                >
-                    <form onSubmit={handleSubmit}>
+            <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                // onSubmit={handleSubmit}
+                className="w-full max-w-4xl"
+            >
+                <form onSubmit={handleSubmit}>
                     <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
 
@@ -593,12 +585,12 @@ export default function PayeeInfoPage() {
                                                     onClick={() => {
                                                         setFormData(prev => ({
                                                             ...prev,
-                                                            recipientInfo: { ...prev.recipientInfo, businessType: option.value }
+                                                            recipientInfo: { ...prev.recipientInfo, biz_type: option.value }
                                                         }));
                                                     }}
                                                     className={`
                             flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
-                            ${formData.recipientInfo.businessType === option.value
+                            ${formData.recipientInfo.biz_type === option.value
                                                         ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
                                                         : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800'
                                                     }
@@ -608,7 +600,7 @@ export default function PayeeInfoPage() {
                                                 >
                                                     <Circle
                                                         className={`w-4 h-4 transition-all duration-200 ${
-                                                            formData.recipientInfo.businessType === option.value
+                                                            formData.recipientInfo.biz_type === option.value
                                                                 ? 'fill-indigo-600 text-indigo-600'
                                                                 : 'text-slate-400'
                                                         }`}
@@ -620,14 +612,14 @@ export default function PayeeInfoPage() {
                                     </div>
 
                                     {/* Additional Options for Individual - Chip UI */}
-                                    {formData.recipientInfo.businessType === 'individual' && (
+                                    {formData.recipientInfo.biz_type === 'individual' && (
                                         <div className="space-y-4 p-4 bg-blue-50 rounded-xl">
                                             <Label>추가 옵션</Label>
                                             <div className="flex flex-wrap gap-3">
                                                 {[
-                                                    { key: 'isOverseas', label: '해외 거주자', checked: formData.recipientInfo.isOverseas },
-                                                    { key: 'isMinor', label: '미성년자 (법정대리인 필요)', checked: formData.recipientInfo.isMinor },
-                                                    { key: 'isForeigner', label: '외국인', checked: formData.recipientInfo.isForeigner }
+                                                    { key: 'is_overseas', label: '해외 거주자', checked: formData.recipientInfo.is_overseas },
+                                                    { key: 'is_minor', label: '미성년자 (법정대리인 필요)', checked: formData.recipientInfo.is_minor },
+                                                    { key: 'is_foreigner', label: '외국인', checked: formData.recipientInfo.is_foreigner }
                                                 ].map((option) => (
                                                     <motion.button
                                                         key={option.key}
@@ -666,175 +658,175 @@ export default function PayeeInfoPage() {
                                     )}
 
                                     {/* Business Information (for business types) */}
-                                    {(formData.recipientInfo.businessType === 'sole_proprietor' || formData.recipientInfo.businessType === 'corporate_business') && (
+                                    {(formData.recipientInfo.biz_type === 'sole_proprietor' || formData.recipientInfo.biz_type === 'corporate_business') && (
                                         <div className="space-y-6">
                                             <h3 className="font-medium text-slate-800">사업자 정보</h3>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="businessName">
-                                                        {formData.recipientInfo.businessType === 'corporate_business' ? '법인명' : '상호명'} *
+                                                    <Label htmlFor="business_name">
+                                                        {formData.recipientInfo.biz_type === 'corporate_business' ? '법인명' : '상호명'} *
                                                     </Label>
                                                     <Input
-                                                        id="businessName"
+                                                        id="business_name"
                                                         type="text"
-                                                        placeholder={formData.recipientInfo.businessType === 'corporate_business' ? '법인명을 입력하세요' : '상호명을 입력하세요'}
-                                                        value={formData.recipientInfo.businessName || ''}
+                                                        placeholder={formData.recipientInfo.biz_type === 'corporate_business' ? '법인명을 입력하세요' : '상호명을 입력하세요'}
+                                                        value={formData.recipientInfo.business_name || ''}
                                                         onChange={(e) => {
                                                             setFormData(prev => ({
                                                                 ...prev,
-                                                                recipientInfo: { ...prev.recipientInfo, businessName: e.target.value }
+                                                                recipientInfo: { ...prev.recipientInfo, business_name: e.target.value }
                                                             }));
-                                                            if (errors.businessName) setErrors(prev => ({ ...prev, businessName: '' }));
+                                                            if (errors.business_name) setErrors(prev => ({ ...prev, business_name: '' }));
                                                         }}
-                                                        className={`h-12 bg-white/50 ${errors.businessName ? 'border-red-400' : ''}`}
+                                                        className={`h-12 bg-white/50 ${errors.business_name ? 'border-red-400' : ''}`}
                                                     />
-                                                    {errors.businessName && <p className="text-red-500 text-sm">{errors.businessName}</p>}
+                                                    {errors.business_name && <p className="text-red-500 text-sm">{errors.business_name}</p>}
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="businessNumber">
-                                                        {formData.recipientInfo.businessType === 'corporate_business' ? '법인등록번호' : '사업자등록번호'} *
+                                                    <Label htmlFor="business_number">
+                                                        {formData.recipientInfo.biz_type === 'corporate_business' ? '법인등록번호' : '사업자등록번호'} *
                                                     </Label>
                                                     <Input
-                                                        id="businessNumber"
+                                                        id="business_number"
                                                         type="text"
                                                         placeholder="000-00-00000"
-                                                        value={formData.recipientInfo.businessNumber || ''}
+                                                        value={formData.recipientInfo.business_number || ''}
                                                         onChange={(e) => {
                                                             const formatted = formatBusinessNumber(e.target.value);
                                                             setFormData(prev => ({
                                                                 ...prev,
-                                                                recipientInfo: { ...prev.recipientInfo, businessNumber: formatted }
+                                                                recipientInfo: { ...prev.recipientInfo, business_number: formatted }
                                                             }));
-                                                            if (errors.businessNumber) setErrors(prev => ({ ...prev, businessNumber: '' }));
+                                                            if (errors.business_number) setErrors(prev => ({ ...prev, business_number: '' }));
                                                         }}
-                                                        className={`h-12 bg-white/50 ${errors.businessNumber ? 'border-red-400' : ''}`}
+                                                        className={`h-12 bg-white/50 ${errors.business_number ? 'border-red-400' : ''}`}
                                                         maxLength={12}
                                                     />
-                                                    {errors.businessNumber && <p className="text-red-500 text-sm">{errors.businessNumber}</p>}
+                                                    {errors.business_number && <p className="text-red-500 text-sm">{errors.business_number}</p>}
                                                 </div>
                                             </div>
 
                                             <FileUpload
-                                                label={formData.recipientInfo.businessType === 'corporate_business' ? '법인등록증' : '사업자등록증'}
-                                                file={formData.recipientInfo.businessDocument}
-                                                onFileChange={(file) => setFormData(prev => ({ ...prev, recipientInfo: { ...prev.recipientInfo, businessDocument: file } }))}
+                                                label={formData.recipientInfo.biz_type === 'corporate_business' ? '법인등록증' : '사업자등록증'}
+                                                file={formData.files.business_document}
+                                                onFileChange={(file) => setFormData(prev => ({ ...prev, files: { ...prev.files, business_document: file } }))}
                                                 accept="image/*,.pdf"
                                             />
                                         </div>
                                     )}
 
                                     {/* Individual Information */}
-                                    {formData.recipientInfo.businessType === 'individual' && (
+                                    {formData.recipientInfo.biz_type === 'individual' && (
                                         <div className="space-y-6">
                                             <h3 className="font-medium text-slate-800">개인 정보</h3>
 
                                             {/* 본인 정보 - 외국인/내국인에 따라 다른 입력 필드 */}
                                             <div className="space-y-6">
-                                                {formData.recipientInfo.isForeigner ? (
+                                                {formData.recipientInfo.is_foreigner ? (
                                                     // 외국인인 경우 외국인등록번호 입력
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="foreignerName">본명 *</Label>
+                                                            <Label htmlFor="foreigner_name">본명 *</Label>
                                                             <Input
-                                                                id="foreignerName"
+                                                                id="foreigner_name"
                                                                 type="text"
                                                                 placeholder="본명을 입력하세요"
-                                                                value={formData.recipientInfo.foreignerName || ''}
+                                                                value={formData.recipientInfo.foreigner_name || ''}
                                                                 onChange={(e) => {
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, foreignerName: e.target.value }
+                                                                        recipientInfo: { ...prev.recipientInfo, foreigner_name: e.target.value }
                                                                     }));
-                                                                    if (errors.foreignerName) setErrors(prev => ({ ...prev, foreignerName: '' }));
+                                                                    if (errors.foreigner_name) setErrors(prev => ({ ...prev, foreigner_name: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.foreignerName ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.foreigner_name ? 'border-red-400' : ''}`}
                                                             />
-                                                            {errors.foreignerName && <p className="text-red-500 text-sm">{errors.foreignerName}</p>}
+                                                            {errors.foreigner_name && <p className="text-red-500 text-sm">{errors.foreigner_name}</p>}
                                                         </div>
 
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="foreignerRegistrationNumber">외국인등록번호 *</Label>
+                                                            <Label htmlFor="foreigner_registration_number">외국인등록번호 *</Label>
                                                             <Input
-                                                                id="foreignerRegistrationNumber"
+                                                                id="foreigner_registration_number"
                                                                 type="text"
                                                                 placeholder="000000-0000000"
-                                                                value={formData.recipientInfo.foreignerRegistrationNumber || ''}
+                                                                value={formData.recipientInfo.foreigner_registration_number || ''}
                                                                 onChange={(e) => {
                                                                     const formatted = formatIdNumber(e.target.value);
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, foreignerRegistrationNumber: formatted }
+                                                                        recipientInfo: { ...prev.recipientInfo, foreigner_registration_number: formatted }
                                                                     }));
-                                                                    if (errors.foreignerRegistrationNumber) setErrors(prev => ({ ...prev, foreignerRegistrationNumber: '' }));
+                                                                    if (errors.foreigner_registration_number) setErrors(prev => ({ ...prev, foreigner_registration_number: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.foreignerRegistrationNumber ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.foreigner_registration_number ? 'border-red-400' : ''}`}
                                                                 maxLength={14}
                                                             />
-                                                            {errors.foreignerRegistrationNumber && <p className="text-red-500 text-sm">{errors.foreignerRegistrationNumber}</p>}
+                                                            {errors.foreigner_registration_number && <p className="text-red-500 text-sm">{errors.foreigner_registration_number}</p>}
                                                         </div>
                                                     </div>
                                                 ) : (
                                                     // 내국인인 경우 주민등록번호 입력
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="realName">본명 *</Label>
+                                                            <Label htmlFor="real_name">본명 *</Label>
                                                             <Input
-                                                                id="realName"
+                                                                id="real_name"
                                                                 type="text"
                                                                 placeholder="본명을 입력하세요"
-                                                                value={formData.recipientInfo.realName || ''}
+                                                                value={formData.recipientInfo.real_name || ''}
                                                                 onChange={(e) => {
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, realName: e.target.value }
+                                                                        recipientInfo: { ...prev.recipientInfo, real_name: e.target.value }
                                                                     }));
-                                                                    if (errors.realName) setErrors(prev => ({ ...prev, realName: '' }));
+                                                                    if (errors.real_name) setErrors(prev => ({ ...prev, real_name: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.realName ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.real_name ? 'border-red-400' : ''}`}
                                                             />
-                                                            {errors.realName && <p className="text-red-500 text-sm">{errors.realName}</p>}
+                                                            {errors.real_name && <p className="text-red-500 text-sm">{errors.real_name}</p>}
                                                         </div>
 
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="idNumber">주민등록번호 *</Label>
+                                                            <Label htmlFor="id_number">주민등록번호 *</Label>
                                                             <Input
-                                                                id="idNumber"
+                                                                id="id_number"
                                                                 type="text"
                                                                 placeholder="000000-0000000"
-                                                                value={formData.recipientInfo.idNumber || ''}
+                                                                value={formData.recipientInfo.id_number || ''}
                                                                 onChange={(e) => {
                                                                     const formatted = formatIdNumber(e.target.value);
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, idNumber: formatted }
+                                                                        recipientInfo: { ...prev.recipientInfo, id_number: formatted }
                                                                     }));
-                                                                    if (errors.idNumber) setErrors(prev => ({ ...prev, idNumber: '' }));
+                                                                    if (errors.id_number) setErrors(prev => ({ ...prev, id_number: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.idNumber ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.id_number ? 'border-red-400' : ''}`}
                                                                 maxLength={14}
                                                             />
-                                                            {errors.idNumber && <p className="text-red-500 text-sm">{errors.idNumber}</p>}
+                                                            {errors.id_number && <p className="text-red-500 text-sm">{errors.id_number}</p>}
                                                         </div>
                                                     </div>
                                                 )}
 
                                                 {/* 신분증 종류 선택 (미성년자가 아닌 내국인만) */}
-                                                {!formData.recipientInfo.isForeigner && !formData.recipientInfo.isMinor && (
+                                                {!formData.recipientInfo.is_foreigner && !formData.recipientInfo.is_minor && (
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="idDocumentType">신분증 종류 *</Label>
+                                                        <Label htmlFor="id_document_type">신분증 종류 *</Label>
                                                         <Select
-                                                            value={formData.recipientInfo.idDocumentType}
+                                                            value={formData.recipientInfo.id_document_type}
                                                             onValueChange={(value) => {
                                                                 setFormData(prev => ({
                                                                     ...prev,
-                                                                    recipientInfo: { ...prev.recipientInfo, idDocumentType: value }
+                                                                    recipientInfo: { ...prev.recipientInfo, id_document_type: value }
                                                                 }));
-                                                                if (errors.idDocumentType) setErrors(prev => ({ ...prev, idDocumentType: '' }));
+                                                                if (errors.id_document_type) setErrors(prev => ({ ...prev, id_document_type: '' }));
                                                             }}
                                                         >
-                                                            <SelectTrigger className={`h-12 bg-white/50 ${errors.idDocumentType ? 'border-red-400' : ''}`}>
+                                                            <SelectTrigger className={`h-12 bg-white/50 ${errors.id_document_type ? 'border-red-400' : ''}`}>
                                                                 <SelectValue placeholder="신분증 종류를 선택하세요" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -845,75 +837,73 @@ export default function PayeeInfoPage() {
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
-                                                        {errors.idDocumentType && <p className="text-red-500 text-sm">{errors.idDocumentType}</p>}
+                                                        {errors.id_document_type && <p className="text-red-500 text-sm">{errors.id_document_type}</p>}
                                                     </div>
                                                 )}
 
                                                 {/* 신분증 업로드 */}
                                                 {/* 미성년자가 아닌 경우에만 신분증 업로드 표시 */}
-                                                {!formData.recipientInfo.isMinor && (
+                                                {!formData.recipientInfo.is_minor && (
                                                     <FileUpload
-                                                        label={formData.recipientInfo.isForeigner ? '외국인등록증' : '신분증'}
-                                                        file={formData.recipientInfo.idDocument}
-                                                        onFileChange={(file) => setFormData(prev => ({ ...prev, recipientInfo: { ...prev.recipientInfo, idDocument: file } }))}
+                                                        label={formData.recipientInfo.is_foreigner ? '외국인등록증' : '신분증'}
+                                                        file={formData.files.id_document}
+                                                        onFileChange={(file) => setFormData(prev => ({ ...prev, files: { ...prev.files, id_document: file } }))}
                                                         accept="image/*,.pdf"
                                                     />
                                                 )}
-
-
                                             </div>
 
                                             {/* 미성년자인 경우 법정대리인 정보 */}
-                                            {formData.recipientInfo.isMinor && (
+                                            {formData.recipientInfo.is_minor && (
                                                 <div className="space-y-6">
                                                     <h4 className="font-medium text-slate-800">법정대리인 정보</h4>
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="guardianName">법정대리인 본명 *</Label>
+                                                            <Label htmlFor="guardian_name">법정대리인 본명 *</Label>
                                                             <Input
-                                                                id="guardianName"
+                                                                id="guardian_name"
                                                                 type="text"
                                                                 placeholder="법정대리인 본명을 입력하세요"
-                                                                value={formData.recipientInfo.guardianName || ''}
+                                                                value={formData.recipientInfo.guardian_name || ''}
                                                                 onChange={(e) => {
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, guardianName: e.target.value }
+                                                                        recipientInfo: { ...prev.recipientInfo, guardian_name: e.target.value }
                                                                     }));
-                                                                    if (errors.guardianName) setErrors(prev => ({ ...prev, guardianName: '' }));
+                                                                    if (errors.guardian_name) setErrors(prev => ({ ...prev, guardian_name: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.guardianName ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.guardian_name ? 'border-red-400' : ''}`}
                                                             />
-                                                            {errors.guardianName && <p className="text-red-500 text-sm">{errors.guardianName}</p>}
+                                                            {errors.guardian_name && <p className="text-red-500 text-sm">{errors.guardian_name}</p>}
                                                         </div>
 
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="guardianPhone">법정대리인 연락처 *</Label>
+                                                            <Label htmlFor="guardian_phone">법정대리인 연락처 *</Label>
                                                             <Input
-                                                                id="guardianPhone"
+                                                                id="guardian_phone"
                                                                 type="text"
                                                                 placeholder="010-0000-0000"
-                                                                value={formData.recipientInfo.guardianPhone || ''}
+                                                                value={formData.recipientInfo.guardian_phone || ''}
                                                                 onChange={(e) => {
                                                                     const formatted = formatPhoneNumber(e.target.value);
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        recipientInfo: { ...prev.recipientInfo, guardianPhone: formatted }
+                                                                        recipientInfo: { ...prev.recipientInfo, guardian_phone: formatted }
                                                                     }));
-                                                                    if (errors.guardianPhone) setErrors(prev => ({ ...prev, guardianPhone: '' }));
+                                                                    if (errors.guardian_phone) setErrors(prev => ({ ...prev, guardian_phone: '' }));
                                                                 }}
-                                                                className={`h-12 bg-white/50 ${errors.guardianPhone ? 'border-red-400' : ''}`}
+                                                                className={`h-12 bg-white/50 ${errors.guardian_phone ? 'border-red-400' : ''}`}
                                                                 maxLength={13}
                                                             />
-                                                            {errors.guardianPhone && <p className="text-red-500 text-sm">{errors.guardianPhone}</p>}
+                                                            {errors.guardian_phone && <p className="text-red-500 text-sm">{errors.guardian_phone}</p>}
                                                         </div>
                                                     </div>
 
                                                     <FileUpload
                                                         label="가족관계증명서"
-                                                        file={formData.recipientInfo.familyRelationCertificate}
-                                                        onFileChange={(file) => setFormData(prev => ({ ...prev, recipientInfo: { ...prev.recipientInfo, familyRelationCertificate: file } }))}
+                                                        file={formData.files.family_relation_certificate}
+                                                        onFileChange={(file) => setFormData(prev => ({ ...prev, files: { ...prev.files, family_relation_certificate: file } }))}
                                                         accept="image/*,.pdf"
                                                     />
                                                 </div>
@@ -927,18 +917,18 @@ export default function PayeeInfoPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="space-y-2">
-                                                <Label htmlFor="bankName">은행명 *</Label>
+                                                <Label htmlFor="bank_name">은행명 *</Label>
                                                 <Select
-                                                    value={formData.accountInfo.bankName}
+                                                    value={formData.accountInfo.bank_name}
                                                     onValueChange={(value) => {
                                                         setFormData(prev => ({
                                                             ...prev,
-                                                            accountInfo: { ...prev.accountInfo, bankName: value }
+                                                            accountInfo: { ...prev.accountInfo, bank_name: value }
                                                         }));
-                                                        if (errors.bankName) setErrors(prev => ({ ...prev, bankName: '' }));
+                                                        if (errors.bank_name) setErrors(prev => ({ ...prev, bank_name: '' }));
                                                     }}
                                                 >
-                                                    <SelectTrigger className={`h-12 bg-white/50 ${errors.bankName ? 'border-red-400' : ''}`}>
+                                                    <SelectTrigger className={`h-12 bg-white/50 ${errors.bank_name ? 'border-red-400' : ''}`}>
                                                         <SelectValue placeholder="은행을 선택하세요" />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -949,90 +939,90 @@ export default function PayeeInfoPage() {
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
-                                                {errors.bankName && <p className="text-red-500 text-sm">{errors.bankName}</p>}
+                                                {errors.bank_name && <p className="text-red-500 text-sm">{errors.bank_name}</p>}
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="accountHolder">예금주 *</Label>
+                                                <Label htmlFor="account_holder">예금주 *</Label>
                                                 <Input
-                                                    id="accountHolder"
+                                                    id="account_holder"
                                                     type="text"
                                                     placeholder="예금주를 입력하세요"
-                                                    value={formData.accountInfo.accountHolder}
+                                                    value={formData.accountInfo.account_holder}
                                                     onChange={(e) => {
                                                         setFormData(prev => ({
                                                             ...prev,
-                                                            accountInfo: { ...prev.accountInfo, accountHolder: e.target.value }
+                                                            accountInfo: { ...prev.accountInfo, account_holder: e.target.value }
                                                         }));
-                                                        if (errors.accountHolder) setErrors(prev => ({ ...prev, accountHolder: '' }));
+                                                        if (errors.account_holder) setErrors(prev => ({ ...prev, account_holder: '' }));
                                                     }}
-                                                    className={`h-12 bg-white/50 ${errors.accountHolder ? 'border-red-400' : ''}`}
+                                                    className={`h-12 bg-white/50 ${errors.account_holder ? 'border-red-400' : ''}`}
                                                 />
-                                                {errors.accountHolder && <p className="text-red-500 text-sm">{errors.accountHolder}</p>}
+                                                {errors.account_holder && <p className="text-red-500 text-sm">{errors.account_holder}</p>}
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="accountNumber">계좌번호 *</Label>
+                                                <Label htmlFor="account_number">계좌번호 *</Label>
                                                 <Input
-                                                    id="accountNumber"
+                                                    id="account_number"
                                                     type="text"
                                                     placeholder="계좌번호를 입력하세요"
-                                                    value={formData.accountInfo.accountNumber}
+                                                    value={formData.accountInfo.account_number}
                                                     onChange={(e) => {
                                                         setFormData(prev => ({
                                                             ...prev,
-                                                            accountInfo: { ...prev.accountInfo, accountNumber: e.target.value }
+                                                            accountInfo: { ...prev.accountInfo, account_number: e.target.value }
                                                         }));
-                                                        if (errors.accountNumber) setErrors(prev => ({ ...prev, accountNumber: '' }));
+                                                        if (errors.account_number) setErrors(prev => ({ ...prev, account_number: '' }));
                                                     }}
-                                                    className={`h-12 bg-white/50 ${errors.accountNumber ? 'border-red-400' : ''}`}
+                                                    className={`h-12 bg-white/50 ${errors.account_number ? 'border-red-400' : ''}`}
                                                 />
-                                                {errors.accountNumber && <p className="text-red-500 text-sm">{errors.accountNumber}</p>}
+                                                {errors.account_number && <p className="text-red-500 text-sm">{errors.account_number}</p>}
                                             </div>
                                         </div>
 
                                         {/* 해외 거주자인 경우 추가 정보 */}
-                                        {formData.recipientInfo.isOverseas && (
+                                        {formData.recipientInfo.is_overseas && (
                                             <div className="space-y-6">
                                                 <h4 className="font-medium text-slate-800">해외 계좌 추가 정보</h4>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="swiftCode">SWIFT CODE *</Label>
+                                                        <Label htmlFor="swift_code">SWIFT CODE *</Label>
                                                         <Input
-                                                            id="swiftCode"
+                                                            id="swift_code"
                                                             type="text"
                                                             placeholder="SWIFT CODE를 입력하세요"
-                                                            value={formData.accountInfo.swiftCode || ''}
+                                                            value={formData.accountInfo.swift_code || ''}
                                                             onChange={(e) => {
                                                                 setFormData(prev => ({
                                                                     ...prev,
-                                                                    accountInfo: { ...prev.accountInfo, swiftCode: e.target.value }
+                                                                    accountInfo: { ...prev.accountInfo, swift_code: e.target.value }
                                                                 }));
-                                                                if (errors.swiftCode) setErrors(prev => ({ ...prev, swiftCode: '' }));
+                                                                if (errors.swift_code) setErrors(prev => ({ ...prev, swift_code: '' }));
                                                             }}
-                                                            className={`h-12 bg-white/50 ${errors.swiftCode ? 'border-red-400' : ''}`}
+                                                            className={`h-12 bg-white/50 ${errors.swift_code ? 'border-red-400' : ''}`}
                                                         />
-                                                        {errors.swiftCode && <p className="text-red-500 text-sm">{errors.swiftCode}</p>}
+                                                        {errors.swift_code && <p className="text-red-500 text-sm">{errors.swift_code}</p>}
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="bankAddress">은행 주소 *</Label>
+                                                        <Label htmlFor="bank_address">은행 주소 *</Label>
                                                         <Input
-                                                            id="bankAddress"
+                                                            id="bank_address"
                                                             type="text"
                                                             placeholder="은행 주소를 입력하세요"
-                                                            value={formData.accountInfo.bankAddress || ''}
+                                                            value={formData.accountInfo.bank_address || ''}
                                                             onChange={(e) => {
                                                                 setFormData(prev => ({
                                                                     ...prev,
-                                                                    accountInfo: { ...prev.accountInfo, bankAddress: e.target.value }
+                                                                    accountInfo: { ...prev.accountInfo, bank_address: e.target.value }
                                                                 }));
-                                                                if (errors.bankAddress) setErrors(prev => ({ ...prev, bankAddress: '' }));
+                                                                if (errors.bank_address) setErrors(prev => ({ ...prev, bank_address: '' }));
                                                             }}
-                                                            className={`h-12 bg-white/50 ${errors.bankAddress ? 'border-red-400' : ''}`}
+                                                            className={`h-12 bg-white/50 ${errors.bank_address ? 'border-red-400' : ''}`}
                                                         />
-                                                        {errors.bankAddress && <p className="text-red-500 text-sm">{errors.bankAddress}</p>}
+                                                        {errors.bank_address && <p className="text-red-500 text-sm">{errors.bank_address}</p>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1042,8 +1032,8 @@ export default function PayeeInfoPage() {
                                         <div className="space-y-2">
                                             <FileUpload
                                                 label="통장 사본"
-                                                file={formData.accountInfo.bankDocument}
-                                                onFileChange={(file) => setFormData(prev => ({ ...prev, accountInfo: { ...prev.accountInfo, bankDocument: file } }))}
+                                                file={formData.files.bank_document}
+                                                onFileChange={(file) => setFormData(prev => ({ ...prev, files: { ...prev.files, bank_document: file } }))}
                                                 accept="image/*,.pdf"
                                             />
                                         </div>
@@ -1088,12 +1078,12 @@ export default function PayeeInfoPage() {
                                                 onClick={() => {
                                                     setFormData(prev => ({
                                                         ...prev,
-                                                        taxInfo: { ...prev.taxInfo, isSimpleTax: !prev.taxInfo.isSimpleTax }
+                                                        taxInfo: { ...prev.taxInfo, is_simple_taxpayer: !prev.taxInfo.is_simple_taxpayer }
                                                     }));
                                                 }}
                                                 className={`
                           flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
-                          ${formData.taxInfo.isSimpleTax
+                          ${formData.taxInfo.is_simple_taxpayer
                                                     ? 'border-emerald-500 bg-emerald-100 text-emerald-700 shadow-sm'
                                                     : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800'
                                                 }
@@ -1103,7 +1093,7 @@ export default function PayeeInfoPage() {
                                             >
                                                 <CheckCircle
                                                     className={`w-4 h-4 transition-all duration-200 ${
-                                                        formData.taxInfo.isSimpleTax
+                                                        formData.taxInfo.is_simple_taxpayer
                                                             ? 'text-emerald-600'
                                                             : 'text-slate-400'
                                                     }`}
@@ -1118,13 +1108,13 @@ export default function PayeeInfoPage() {
                                         <Label>발행 유형 선택 *</Label>
 
                                         <RadioGroup
-                                            value={formData.taxInfo.issueType}
+                                            value={formData.taxInfo.invoice_type}
                                             onValueChange={(value) => {
                                                 setFormData(prev => ({
                                                     ...prev,
-                                                    taxInfo: { ...prev.taxInfo, issueType: value }
+                                                    taxInfo: { ...prev.taxInfo, invoice_type: value }
                                                 }));
-                                                if (errors.issueType) setErrors(prev => ({ ...prev, issueType: '' }));
+                                                if (errors.invoice_type) setErrors(prev => ({ ...prev, invoice_type: '' }));
                                             }}
                                             className="space-y-3"
                                         >
@@ -1135,8 +1125,8 @@ export default function PayeeInfoPage() {
                                                     animate={{ y: 0, opacity: 1 }}
                                                     className="flex items-start space-x-4 p-4 border-2 rounded-xl transition-all duration-200 hover:shadow-md"
                                                     style={{
-                                                        borderColor: formData.taxInfo.issueType === type.value ? '#6366f1' : '#e2e8f0',
-                                                        backgroundColor: formData.taxInfo.issueType === type.value ? '#eef2ff' : 'white'
+                                                        borderColor: formData.taxInfo.invoice_type === type.value ? '#6366f1' : '#e2e8f0',
+                                                        backgroundColor: formData.taxInfo.invoice_type === type.value ? '#eef2ff' : 'white'
                                                     }}
                                                 >
                                                     <RadioGroupItem value={type.value} id={type.value} className="mt-1" />
@@ -1150,7 +1140,7 @@ export default function PayeeInfoPage() {
                                                 </motion.div>
                                             ))}
                                         </RadioGroup>
-                                        {errors.issueType && <p className="text-red-500 text-sm">{errors.issueType}</p>}
+                                        {errors.invoice_type && <p className="text-red-500 text-sm">{errors.invoice_type}</p>}
                                     </div>
 
                                     {/* Selected Issue Type Summary */}
@@ -1208,8 +1198,8 @@ export default function PayeeInfoPage() {
                             </TabsContent>
                         </Tabs>
                     </div>
-                    </form>
-                </motion.div>
-            </div>
+                </form>
+            </motion.div>
+        </div>
     );
 }
