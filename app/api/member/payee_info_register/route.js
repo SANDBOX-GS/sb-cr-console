@@ -1,79 +1,53 @@
 import dbConnect from '@/lib/dbConnect';
 import { TABLE_NAMES } from '@/constants/dbConstants';
 import { NextResponse } from 'next/server';
-import { uploadFileToS3 } from '@/lib/s3-client';
+import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3-client';
+import crypto from 'crypto';
+
+// 임시 상수 (실제 환경에서는 인증 시스템에서 가져와야 함)
+const DUMMY_MEMBER_IDX = 123;
+const DUMMY_PAYOUT_RATIO_ID = 'DEFAULT_RATIO';
+const DUMMY_ACTIVE_STATUS = 'active';
+const FILE_TYPE_TAG = 'PAYEE_DOCUMENT'; // 파일 정보 테이블의 type 필드에 사용될 상수
 
 export async function POST(req) {
     let connection;
+    // 트랜잭션 실패 시 S3에 업로드된 파일의 키를 저장할 목록
+    const uploadedS3Keys = [];
 
     try {
         const formData = await req.formData();
 
-        const payload = {}; // 최종 DB 저장을 위한 통합 객체
-        const fileUploads = [];
+        const payload = {}; // 텍스트 데이터 (임시 필드 포함)
+        const fileUploads = []; // 파일 데이터 목록
 
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-                // 파일 객체인 경우, 업로드 대상 목록에 추가
                 fileUploads.push({
                     fieldName: key,
                     file: value,
                 });
             } else {
-                // 텍스트 데이터 처리 (문자열로 온 불리언 값 변환 포함)
                 let textValue = value;
-                if (textValue === 'true') textValue = true;
-                else if (textValue === 'false') textValue = false;
+                // 'true'/'false' 문자열을 DB ENUM 타입 'Y'/'N'으로 변환
+                if (textValue === 'true') textValue = 'Y';
+                else if (textValue === 'false') textValue = 'N';
 
                 payload[key] = textValue;
             }
         }
 
-        // 1. 파일들을 S3에 병렬로 업로드하고, 그 결과를 payload에 추가합니다.
-        const fileUploadPromises = fileUploads.map(async ({ fieldName, file }) => {
-            if (file.size === 0) return; // 빈 파일은 업로드 건너뛰기
+        // *******************************************************************
+        // 1. Payee Info 테이블에 저장할 최종 페이로드 준비 및 DB 저장
+        // *******************************************************************
 
-            const buffer = Buffer.from(await file.arrayBuffer());
-
-            // 고유한 파일 이름 생성
-            const originalName = file.name.split('.').slice(0, -1).join('.');
-            const extension = file.name.split('.').pop();
-            // user_id 등을 포함하여 폴더 구조를 만드는 것이 좋습니다. (예: payee_documents/{member_idx}/...)
-            const s3Key = `payee_documents/${fieldName}/${originalName.replace(/\s/g, '_')}-${Date.now()}.${extension}`;
-
-            console.log(`Uploading ${fieldName}: ${s3Key} to S3...`);
-
-            await uploadFileToS3(buffer, s3Key, file.type);
-
-            // DB에 저장할 객체에 S3 파일 키 (DB 컬럼명 규칙에 맞춰 {필드명}_key 추가)
-            const dbKeyName = `${fieldName}_key`;
-            payload[dbKeyName] = s3Key;
-        });
-
-        await Promise.all(fileUploadPromises);
-
-        // 2. TODO: 데이터베이스에 최종 데이터를 저장하는 로직을 구현합니다.
-
-        // 임시 상수 (실제 환경에서는 인증 시스템에서 가져와야 함)
-        const DUMMY_MEMBER_IDX = 123;
-        const DUMMY_PAYOUT_RATIO_ID = 'DEFAULT_RATIO';
-        const DUMMY_ACTIVE_STATUS = 'active';
-
-        // 필수 값 주입 (실제로는 세션/토큰에서 member_idx를 가져와야 합니다.)
+        // 필수 값 주입 (todo member_idx는 실제 인증 로직에서 가져와야 함)
         payload.member_idx = DUMMY_MEMBER_IDX;
         payload.payout_ratio_id = DUMMY_PAYOUT_RATIO_ID;
         payload.active_status = DUMMY_ACTIVE_STATUS;
+        payload.user_type = payload.biz_type === 'corporate_business' ? '법인' : '개인';
 
-        // user_type 설정 (biz_type 기반)
-        if (payload.biz_type === 'corporate_business') {
-            payload.user_type = '법인';
-        } else {
-            payload.user_type = '개인';
-        }
-
-        // 프론트엔드에서 분리된 개인/사업자 정보 정리 및 매핑
-        // DB 스키마에 맞지 않는 임시 필드 제거 및 매핑
-
+        // DB 컬럼에 맞게 재구성 (dbPayload)
         const dbPayload = {
             member_idx: payload.member_idx,
             payout_ratio_id: payload.payout_ratio_id,
@@ -107,43 +81,118 @@ export async function POST(req) {
             guardian_name: payload.is_minor === 'Y' ? payload.guardian_name : null,
             guardian_tel: payload.is_minor === 'Y' ? payload.guardian_phone : null,
 
-            // **********************************************
-            // 파일 관련 필드 키는 S3 업로드 시 여기에 추가되어야 합니다.
-            // 예: business_document_key: "..."
-            // **********************************************
-
-            // ci_cd는 현재 데이터에 없으므로 null 처리
             ci_cd: null,
         };
 
-        console.log("Final Data Payload to be saved in DB:", payload);
+        // 2. S3 업로드 실행 (DB 트랜잭션 외부)
+        const s3UploadResults = await Promise.all(fileUploads.map(async ({ fieldName, file }) => {
+            if (file.size === 0) return null;
 
-        // 3. 데이터베이스 연결 및 저장
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const originalName = file.name.split('.').slice(0, -1).join('.');
+            const extension = file.name.split('.').pop();
+
+            const uniqueId = crypto.randomBytes(16).toString('hex');
+            const s3FileName = `${uniqueId}.${extension}`;
+
+            // S3 키 생성
+            const s3Key = `cr_console/payee_documents/${fieldName}/${s3FileName}`;
+            const fileUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${s3Key}`;
+
+            console.log(`S3: Uploading ${fieldName} to ${s3Key}...`);
+
+            // S3 업로드 실행
+            await uploadFileToS3(buffer, s3Key, file.type);
+
+            // 업로드 성공 시 키 저장 (롤백 시 삭제를 위해)
+            uploadedS3Keys.push(s3Key);
+
+            return {
+                s3Key,
+                fileUrl,
+                file,
+                fieldName,
+                extension,
+                dbFileName: s3FileName
+            };
+        }));
+
+        // 3. 데이터베이스 연결 및 트랜잭션 시작
         connection = await dbConnect();
+        await connection.beginTransaction();
 
-        // MySQL 쿼리 실행
-        const result = await connection.query(
+        // 3-1. Payee Info 테이블에 기본 정보 저장
+        const payeeResult = await connection.query(
             `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?`,
             dbPayload
         );
+        const payee_idx = payeeResult[0].insertId;
 
-        console.log('Database Insert Result:', result);
+        if (!payee_idx || payee_idx <= 0) {
+            throw new Error("수취인 정보 등록 중 참조 ID를 가져올 수 없습니다.");
+        }
+        console.log(`Payee Info saved. IDX: ${payee_idx}`);
 
-        return NextResponse.json({ message: '수취인 정보가 성공적으로 등록되었습니다.' }, { status: 200 });
+        // 3-2. File Info 테이블에 파일 메타데이터 저장 (S3 업로드 결과를 기반으로)
+        const fileInfoInsertPromises = s3UploadResults.filter(r => r !== null).map(async (result) => {
+            const fileInfoPayload = {
+                type: FILE_TYPE_TAG,
+                ref_table_name: TABLE_NAMES.SBN_MEMBER_PAYEE,
+                ref_table_idx: payee_idx,
+                file_url: result.fileUrl,
+                file_name: result.dbFileName,
+                file_realname: result.file.name,
+                file_ext: result.extension,
+                file_size: result.file.size.toString(),
+                seq: 0,
+                tag: result.fieldName,
+                creator_id: payload.member_idx,
+            };
+
+            await connection.query(
+                `INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`,
+                fileInfoPayload
+            );
+        });
+
+        // 모든 파일 메타데이터 DB 저장을 병렬로 실행
+        await Promise.all(fileInfoInsertPromises);
+        console.log('DB: All file info saved.');
+
+        // 4. 모든 DB 작업 성공 시 커밋
+        await connection.commit();
+        console.log('Transaction committed successfully.');
+
+        // 5. 성공 응답
+        return NextResponse.json({ message: '수취인 정보 및 파일이 성공적으로 등록되었습니다.' }, { status: 200 });
 
     } catch (error) {
         console.error('Error processing request:', error);
 
-        // 데이터베이스 쿼리 오류일 경우 메시지 처리
+        // 🚨 DB 트랜잭션 실패 처리 (롤백)
+        if (connection) {
+            await connection.rollback();
+            console.error('Transaction rolled back.');
+        }
+
+        // 🚨 S3 파일 삭제 처리 (선택 사항: 롤백되었으므로 남아있는 S3 파일 삭제 시도)
+        if (uploadedS3Keys.length > 0) {
+            console.warn('Attempting to clean up orphaned S3 files...');
+            await Promise.all(uploadedS3Keys.map(key => deleteFileFromS3(key)));
+        }
+
+        // 사용자에게 반환할 에러 메시지 구성
         let errorMessage = '서버 오류가 발생했습니다.';
         if (error.code) {
-            // MySQL 에러 코드 등 추가 정보 표시
             errorMessage = `데이터베이스 오류가 발생했습니다: ${error.message}`;
+        } else if (error.message.includes("수취인 정보 등록 중")) {
+            errorMessage = error.message; // 사용자 정의 에러 메시지
+        } else {
+            errorMessage = `파일 처리 중 오류가 발생했습니다: ${error.message}`;
         }
 
         return NextResponse.json({ message: errorMessage, error: error.message }, { status: 500 });
     } finally {
-        // 4. 데이터베이스 연결 종료 (만약 dbConnect가 Connection Pool을 사용한다면 release)
         if (connection) {
             connection.release();
         }
