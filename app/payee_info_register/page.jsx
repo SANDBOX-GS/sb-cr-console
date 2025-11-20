@@ -26,47 +26,8 @@ import { motion } from "framer-motion";
 import { useRouter } from "@/hooks/useRouter";
 import ProgressTabs from "@/components/ProgressTabs";
 import FileUpload from "@/components/ui/file-upload";
-
-const ID_DOCUMENT_TYPES = [
-    { value: 'resident_card', label: '주민등록증' },
-    { value: 'drivers_license', label: '운전면허증' },
-    { value: 'passport', label: '여권' },
-    { value: 'resident_register', label: '주민등록등본' },
-];
-
-const ISSUE_TYPES = [
-    {
-        value: 'tax_invoice',
-        label: '세금계산서',
-        description: '공급가액+VAT(10%)',
-        detail: '사업자등록이 있는 개인사업자 또는 법인사업자에 적용됩니다.'
-    },
-    {
-        value: 'electronic_invoice',
-        label: '전자계산서',
-        description: '공급가액',
-        detail: '사업자등록이 없는 프리랜서에게 적용됩니다.'
-    },
-    {
-        value: 'cash_receipt',
-        label: '현금영수증',
-        description: '공급가액',
-        detail: '개인이 소득공제를 받고자 할 때 발행됩니다.'
-    },
-    {
-        value: 'individual',
-        label: '개인',
-        description: '공급가액-사업소득세(3.3%)',
-        detail: '개인 사업소득으로 신고하는 경우에 적용됩니다.'
-    },
-];
-
-const KOREAN_BANKS = [
-    'KB국민은행', '신한은행', '우리은행', '하나은행', 'NH농협은행',
-    'IBK기업은행', '대구은행', '부산은행', '경남은행', '광주은행',
-    '전북은행', '제주은행', 'SC제일은행', '씨티은행', '새마을금고',
-    '신협', '우체국', '카카오뱅크', '케이뱅크', '토스뱅크'
-];
+import { formatPhoneNumber, formatBusinessNumber, formatIdNumber } from "@/utils/formatters";
+import { ID_DOCUMENT_TYPES, ISSUE_TYPES, KOREAN_BANKS } from "@/constants/payee-data";
 
 const GUIDE_ITEMS = [
     {
@@ -362,21 +323,6 @@ export default function PayeeInfoPage() {
             console.log("Validation Errors:", newErrors);
             handleTabChange('account');
         }
-    };
-
-    const formatPhoneNumber = (value) => {
-        const digits = value.replace(/\D/g, '');
-        return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3').substring(0, 13);
-    };
-
-    const formatBusinessNumber = (value) => {
-        const digits = value.replace(/\D/g, '');
-        return digits.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3').substring(0, 12);
-    };
-
-    const formatIdNumber = (value) => {
-        const digits = value.replace(/\D/g, '');
-        return digits.replace(/(\d{6})(\d{7})/, '$1-$2').substring(0, 14);
     };
 
     const getSelectedIssueType = () => {
