@@ -14,7 +14,9 @@ export function AuthProvider({ children }) {
     const checkAuthStatus = async () => {
         try {
             // 이 API는 쿠키를 확인하여 로그인 상태를 반환해야 합니다.
-            const response = await fetch('/api/member/status');
+            const response = await fetch('/api/member/status', {
+                credentials: 'include',
+            });
             if (response.ok) {
                 setIsLoggedIn(true);
             } else {
