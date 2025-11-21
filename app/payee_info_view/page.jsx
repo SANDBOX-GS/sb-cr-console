@@ -135,6 +135,7 @@ export default function PayeeInfoViewPage() {
     const [validityPeriod, setValidityPeriod] = useState({
         end: null,
     });
+    const [createdAt, setCreatedAt] = useState(null);
     const [lastModified, setLastModified] = useState(null); // 🚨 lastModified도 API에서 받아오도록 수정
     const [validityStatus, setValidityStatus] = useState('expired'); // 🚨 API 값으로 대체될 상태
 
@@ -171,6 +172,7 @@ export default function PayeeInfoViewPage() {
             setValidityPeriod({
                 end: data.metadata.validityPeriodEnd || null,
             });
+            setCreatedAt(data.metadata.createdAt ? new Date(data.metadata.createdAt) : null);
             setLastModified(data.metadata.lastModified ? new Date(data.metadata.lastModified) : null);
 
         } catch (error) {
@@ -392,6 +394,11 @@ export default function PayeeInfoViewPage() {
         </div>
     );
 
+    // 🚨 최초 등록일 포매팅 (null 체크 포함)
+    const formattedCreateAt = useMemo(() => {
+        return createdAt ? formatDateTime(createdAt) : '—';
+    }, [createdAt]);
+
     // 🚨 마지막 수정일 포매팅 (null 체크 포함)
     const formattedLastModified = useMemo(() => {
         return lastModified ? formatDateTime(lastModified) : '—';
@@ -537,7 +544,7 @@ export default function PayeeInfoViewPage() {
                 >
                     <div className="flex items-center gap-2 text-sm text-slate-500 justify-center">
                         <InfoIcon className="w-4 h-4"/>
-                        <span>최초 등록: 2024.12.05 14:30</span>
+                        <span>최초 등록: {formattedCreateAt}</span>
                         <span className="mx-2">·</span>
                         <span>
                           최종 수정: {formattedLastModified}

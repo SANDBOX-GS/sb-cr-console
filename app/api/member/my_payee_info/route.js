@@ -171,6 +171,8 @@ export async function GET(req) {
         }
 
         const metadata = {
+            createdAt: new Date(payeeDataRow.created_at).toISOString(),
+
             lastModified: payeeDataRow.updated_at
                 ? new Date(payeeDataRow.updated_at).toISOString()
                 : new Date(payeeDataRow.created_at).toISOString(),
