@@ -89,20 +89,20 @@ export async function POST(req) {
             user_type: payload.user_type,
 
             // 개인, 사업자, 법인 필드 매핑
-            user_name: payload.biz_type === 'individual' ? payload.real_name : null,
+            user_name: payload.biz_type === 'individual' ? payload.user_name : null,
             ssn: payload.biz_type === 'individual'
-                ? (payload.is_foreigner === 'Y' ? payload.foreigner_registration_number : payload.id_number)
+                ? payload.ssn
                 : null,
-            identification_type: payload.biz_type === 'individual' && payload.is_minor === 'N' && payload.is_foreigner === 'N' ? payload.id_document_type : null,
+            identification_type: payload.biz_type === 'individual' && payload.is_minor === 'N' && payload.is_foreigner === 'N' ? payload.identification_type : null,
 
-            biz_name: payload.biz_type === 'sole_proprietor' ? payload.business_name : null,
-            biz_reg_no: payload.biz_type === 'sole_proprietor' ? payload.business_number : null,
+            biz_name: payload.biz_type === 'sole_proprietor' ? payload.biz_name : null,
+            biz_reg_no: payload.biz_type === 'sole_proprietor' ? payload.biz_reg_no : null,
 
-            corp_name: payload.biz_type === 'corporate_business' ? payload.business_name : null,
-            corp_reg_no: payload.biz_type === 'corporate_business' ? payload.business_number : null,
+            corp_name: payload.biz_type === 'corporate_business' ? payload.corp_name : null,
+            corp_reg_no: payload.biz_type === 'corporate_business' ? payload.corp_reg_no : null,
 
             guardian_name: payload.is_minor === 'Y' ? payload.guardian_name : null,
-            guardian_tel: payload.is_minor === 'Y' ? payload.guardian_phone : null,
+            guardian_tel: payload.is_minor === 'Y' ? payload.guardian_tel : null,
 
             ci_cd: null,
         };

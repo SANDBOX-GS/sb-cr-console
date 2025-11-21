@@ -65,7 +65,7 @@ export default function PayeeInfoDonePage() {
                         className="space-y-3"
                     >
                         <Button
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/payee_info_view')}
                             className="w-full bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
                         >
                             <ExternalLink className="w-4 h-4" />
