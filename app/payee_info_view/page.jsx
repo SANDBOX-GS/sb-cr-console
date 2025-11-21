@@ -344,18 +344,120 @@ export default function PayeeInfoViewPage() {
     const handleSave = async () => {
         setIsLoading(true);
 
-        if (!validateRequiredFields()) {
-            setIsLoading(false);
-            return;
-        }
+        const newErrors = validateRequiredFields(); // validateForm 대신 현재 validateRequiredFields 사용
+        setErrors(newErrors);
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        console.log("Data saved:", formData);
-        setOriginalData(formData);
-        setIsEditMode(false);
-        setIsLoading(false);
-        toast.success("수취인 정보가 성공적으로 저장되었습니다.");
+        if (Object.keys(newErrors).length === 0) {
+            // ⭐ 1. 최종 DB 컬럼명에 매핑되는 객체 생성 (등록 페이지와 동일한 매핑 로직 사용)
+            const finalData = {
+                // [recipientInfo -> DB 컬럼 매핑]
+                biz_type: formData.recipientInfo.businessType, // 필드명 수정 (businessType -> biz_type)
+                is_overseas: formData.recipientInfo.isOverseas ? 'Y' : 'N', // 필드명 수정
+                is_minor: formData.recipientInfo.isMinor ? 'Y' : 'N', // 필드명 수정
+                is_foreigner: formData.recipientInfo.isForeigner ? 'Y' : 'N', // 필드명 수정
+
+                // 이름 및 번호 (biz_type에 따라 다르게 매핑)
+                user_name: formData.recipientInfo.businessType === 'individual' ? formData.recipientInfo.realName : null, // 필드명 수정
+                ssn: formData.recipientInfo.businessType === 'individual'
+                    ? (formData.recipientInfo.isForeigner ? formData.recipientInfo.foreignerRegistrationNumber : formData.recipientInfo.idNumber)
+                    : null,
+
+                // 사업자/법인 정보
+                biz_name: formData.recipientInfo.businessType === 'sole_proprietor' ? formData.recipientInfo.businessName : null,
+                biz_reg_no: formData.recipientInfo.businessType === 'sole_proprietor' ? formData.recipientInfo.businessNumber : null,
+                corp_name: formData.recipientInfo.businessType === 'corporate_business' ? formData.recipientInfo.businessName : null,
+                corp_reg_no: formData.recipientInfo.businessType === 'corporate_business' ? formData.recipientInfo.businessNumber : null,
+
+                // 법정대리인
+                guardian_name: formData.recipientInfo.isMinor ? formData.recipientInfo.guardianName : null,
+                guardian_tel: formData.recipientInfo.isMinor ? formData.recipientInfo.guardianPhone : null,
+
+                // 신분증
+                identification_type: formData.recipientInfo.isMinor || formData.recipientInfo.isForeigner ? null : formData.recipientInfo.idDocumentType,
+
+                // [accountInfo -> DB 컬럼 매핑]
+                bank_name: formData.accountInfo.bankName,
+                account_holder: formData.accountInfo.accountHolder,
+                account_number: formData.accountInfo.accountNumber,
+                swift_code: formData.recipientInfo.isOverseas ? formData.accountInfo.swiftCode : null,
+                bank_address: formData.recipientInfo.isOverseas ? formData.accountInfo.bankAddress : null,
+
+                // [taxInfo -> DB 컬럼 매핑]
+                invoice_type: formData.taxInfo.issueType, // 필드명 수정
+                is_simple_taxpayer: formData.taxInfo.isSimpleTax ? 'Y' : 'N', // 필드명 수정
+
+                // 추가: Tax Info의 누락된 필드 (DB 컬럼명 필요)
+                income_type: formData.taxInfo.incomeType || null,
+                issue_tax_invoice: formData.taxInfo.issueTaxInvoice ? 'Y' : 'N',
+                withholding: formData.taxInfo.withholding ? 'Y' : 'N',
+                manager_name: formData.taxInfo.managerName || null,
+                manager_tel: formData.taxInfo.managerPhone || null,
+                manager_email: formData.taxInfo.managerEmail || null,
+
+                // 참고: 동의일(agree_expired_at)은 수정 페이지에서는 업데이트하지 않음 (따로 동의 버튼으로 처리)
+            };
+
+
+            // ⭐ 2. 수동으로 FormData를 구성하여 파일도 포함합니다.
+            const submissionFormData = new FormData();
+
+            // 일반 데이터 추가
+            for (const key in finalData) {
+                if (finalData[key] !== null && finalData[key] !== undefined) {
+                    submissionFormData.append(key, finalData[key]);
+                }
+            }
+
+            // 파일 데이터 추가 (수정 페이지에서는 기존 FileInfo 객체와 새로운 File 객체를 구분해야 함)
+            // 여기서는 File 객체만 추가한다고 가정하고, FileInfo 객체는 제외합니다.
+            // 실제 로직에서는 FileInfo(URL, Name)은 제외하고, File(사용자가 새로 업로드한 파일)만 추가해야 합니다.
+            // FileUpload 컴포넌트가 File 객체를 반환할 때만 추가합니다.
+
+            if (formData.files) {
+                if (formData.files.business_document instanceof File) submissionFormData.append('business_document', formData.files.business_document);
+                if (formData.files.id_document instanceof File) submissionFormData.append('id_document', formData.files.id_document);
+                if (formData.files.bank_document instanceof File) submissionFormData.append('bank_document', formData.files.bank_document);
+                if (formData.files.family_relation_certificate instanceof File) submissionFormData.append('family_relation_certificate', formData.files.family_relation_certificate);
+            }
+
+            // 🚨 DB에 저장된 파일은 제외하고, 새로운 File 객체만 전송해야 합니다.
+            // 만약 기존 파일이 있었다면, 서버는 해당 파일을 삭제 후 새 파일을 저장해야 합니다.
+
+            try {
+                // 🚨 API 엔드포인트 사용 (등록/수정 엔드포인트가 동일하다고 가정)
+                const response = await fetch('/api/member/payee_info_update', {
+                    method: 'POST', // 등록/수정 API 메서드
+                    body: submissionFormData,
+                    // Content-Type: multipart/form-data 헤더는 자동으로 설정됩니다.
+                });
+
+                if (response.ok) {
+                    const updatedData = await response.json();
+
+                    // ⭐ 성공 시 상태 업데이트: originalData를 새로 저장된 데이터로 업데이트
+                    // (서버가 응답으로 PayeeData 구조를 보내주면 좋으나, 여기서는 formData를 그대로 사용)
+                    setOriginalData(formData);
+
+                    setIsEditMode(false);
+                    toast.success("수취인 정보가 성공적으로 저장되었습니다.");
+
+                } else {
+                    const errorData = await response.json();
+                    console.error('수취인정보 수정 실패:', errorData);
+                    alert(errorData.message);
+                }
+            } catch (error) {
+                console.error('API 호출 중 오류 발생:', error);
+                alert('네트워크 오류가 발생했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        else {
+            alert('필수 입력 항목을 모두 확인해주세요.');
+            console.log("Validation Errors:", newErrors);
+            // 필요하다면 에러가 있는 탭으로 이동시키는 로직 추가
+        }
     };
 
     /**

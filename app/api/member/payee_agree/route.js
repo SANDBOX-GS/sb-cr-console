@@ -63,8 +63,11 @@ export async function POST(request) {
             validityStatus = 'expiring_soon'; // 당일 만료로 간주하여 임박 상태 설정
         }
 
-        // DB에 저장할 DATE 형식 (YYYY-MM-DD)
-        const newExpiredAtDBFormat = expiredAtDate.toISOString().split('T')[0];
+        const year = expiredAtDate.getFullYear();
+        const month = String(expiredAtDate.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작
+        const day = String(expiredAtDate.getDate()).padStart(2, '0');
+
+        const newExpiredAtDBFormat = `${year}-${month}-${day}`;
 
         // 클라이언트에 전달할 ISO String 형식 (lastModified 계산을 위해 정확한 시간 사용)
         const newExpiredAtISOString = expiredAtDate.toISOString();
