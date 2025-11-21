@@ -141,50 +141,69 @@ export default function PayeeInfoViewPage() {
     // 아코디언 상태
     const [openSections, setOpenSections] = useState({});
 
-    useEffect(() => {
-        const fetchPayeeData = async () => {
-            try {
-                // 현재 회원의 정보를 가져오는 API 호출
-                const response = await fetch('/api/member/my_payee_info', {
-                    method: 'GET',
-                    headers: {
-                        // 인증 토큰을 포함해야 서버가 현재 사용자를 식별할 수 있습니다.
-                        'Authorization': `Bearer ${localStorage.getItem('userToken')}`,
-                    },
-                });
+    // 데이터를 불러오는 로직을 분리합니다.
+    const fetchPayeeData = async () => {
+        setIsPageLoading(true); // 데이터를 다시 불러올 때 로딩 상태를 설정
+        try {
+            const response = await fetch('/api/member/my_payee_info', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('userToken')}`,
+                },
+            });
 
-                if (!response.ok) {
-                    // HTTP 오류 응답 처리
-                    throw new Error('수취인 정보를 불러오는데 실패했습니다.');
-                }
-                const data = await response.json();
-                const initialData = data.payeeData;
-
-                if (initialData) {
-                    setOriginalData(initialData);
-                    setFormData(initialData);
-                } else {
-                    setOriginalData({});
-                    setFormData({});
-                }
-
-                // 2) 메타데이터 설정
-                setValidityStatus(data.metadata.validityStatus || 'expired');
-                setValidityPeriod({
-                    end: data.metadata.validityPeriodEnd || null,
-                });
-                setLastModified(data.metadata.lastModified ? new Date(data.metadata.lastModified) : null);
-
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                toast.error(`정보 로드 중 오류 발생: ${error.message}`);
-            } finally {
-                setIsPageLoading(false);
+            if (!response.ok) {
+                throw new Error('수취인 정보를 불러오는데 실패했습니다.');
             }
-        };
+            const data = await response.json();
 
-        fetchPayeeData();
+            const initialData = data.payeeData;
+
+            if (initialData) {
+                setOriginalData(initialData);
+                setFormData(initialData);
+            } else {
+                setOriginalData({});
+                setFormData({});
+            }
+
+            setValidityStatus(data.metadata.validityStatus || 'expired');
+            setValidityPeriod({
+                end: data.metadata.validityPeriodEnd || null,
+            });
+            setLastModified(data.metadata.lastModified ? new Date(data.metadata.lastModified) : null);
+
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            toast.error(`정보 로드 중 오류 발생: ${error.message}`);
+            setOriginalData({});
+            setFormData({});
+        } finally {
+            setIsPageLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayeeData(); // 최초 로딩 시 호출
     }, []);
+
+    // 🚨 1. Metadata만 갱신하는 함수 정의
+    const handleMetadataUpdate = async (newMetadata) => {
+        if (!newMetadata) return;
+
+        // isPageLoading을 잠시 true로 설정하는 대신, 로딩 상태는 InfoCallToAction에서 관리하므로
+        // 여기서는 상태만 빠르게 업데이트합니다.
+
+        setValidityStatus(newMetadata.validityStatus || 'expired');
+        setValidityPeriod({
+            end: newMetadata.validityPeriodEnd || null,
+        });
+        // lastModified도 업데이트 (서버 응답에는 updated_at이 포함되어야 함)
+        setLastModified(newMetadata.lastModified ? new Date(newMetadata.lastModified) : new Date());
+
+        // 이 함수는 PayeeData (originalData, formData)를 건드리지 않으므로,
+        // 수정 중인 데이터가 보존됩니다.
+    };
 
     /**
      * @param {'30days' | 'once' | null} type
@@ -409,6 +428,7 @@ export default function PayeeInfoViewPage() {
                     validityStatus={validityStatus}
                     errors={errors}
                     onConsent={handleConsentWithValidation}
+                    onMetadataUpdate={handleMetadataUpdate}
                     validityPeriod={{
                         end: validityPeriod.end,
                     }}

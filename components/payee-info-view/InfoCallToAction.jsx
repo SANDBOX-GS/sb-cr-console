@@ -7,6 +7,7 @@ import {
     AlertTriangleIcon,
 } from "lucide-react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner"; // <--- 이 줄이 필요합니다.
 
 /**
  * @typedef {'valid' | 'expiring_soon' | 'expired'} ValidityStatus
@@ -28,6 +29,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
  * @property {() => void} [onCancelEdit=() => {}] 수정 취소 핸들러
  * @property {() => void} [onSave=() => {}] 저장 핸들러
  * @property {boolean} [isLoading=false] 로딩 상태 여부
+ * @property {(metadata: object) => Promise<void>} onMetadataUpdate 메타데이터 갱신을 위한 콜백 (이름 변경)
  */
 
 
@@ -58,7 +60,8 @@ const formatDateTime = (dateString) => {
 export function InfoCallToAction({
                                      validityStatus,
                                      errors,
-                                     onDataRefresh, // 데이터 갱신을 위한 콜백
+                                     onConsent, // onConsent는 유효성 검사 담당 (page.jsx의 handleConsentWithValidation)
+                                     onMetadataUpdate, // 🚨 이름 변경
                                      validityPeriod = {},
                                      lastModified = "",
                                      isEditMode = false,
@@ -74,15 +77,10 @@ export function InfoCallToAction({
      * @param {ConsentType} type '30days' 또는 'once'
      */
     const handleConsent = async (type) => {
-        // alert() 대신 커스텀 모달이나 토스트를 사용해야 합니다. 여기서는 디버깅을 위해 alert를 임시 사용합니다.
-        // NOTE: Immersive 환경에서는 alert()가 작동하지 않을 수 있습니다.
-        const customAlert = (message) => console.log(`[Alert] ${message}`);
-
         if (isLoading) return;
 
         // 필수 항목 오류가 있을 경우 API 호출을 막습니다.
         if (Object.keys(errors).length > 0) {
-            customAlert("동의하려면 필수 항목을 먼저 채워주세요.");
             return;
         }
 
@@ -109,20 +107,23 @@ export function InfoCallToAction({
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // 성공 시 상위 컴포넌트의 데이터 갱신 함수 호출
-                if (onDataRefresh) {
-                    onDataRefresh(result);
+                const newMetadata = result.metadata; // 🚨 서버가 동의 API 응답에 새로운 metadata를 포함한다고 가정
+
+                // 🚨 성공 시 상위 컴포넌트의 metadata 갱신 함수 호출 (PayeeData는 건드리지 않음)
+                if (onMetadataUpdate) {
+                    // 서버 응답에서 새로운 메타데이터를 추출하여 상위 컴포넌트에 전달
+                    await onMetadataUpdate(newMetadata);
                 }
-                customAlert("정보 수집에 성공적으로 동의했습니다.");
+                toast.success("정보 수집에 성공적으로 동의했습니다.");
             } else {
                 // API에서 에러 메시지를 반환하는 경우
                 const errorMessage = result.message || "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
-                customAlert(errorMessage);
             }
 
         } catch (error) {
             console.error("동의 API 호출 중 오류 발생:", error);
-            customAlert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
+
+            toast.error("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
         } finally {
             setIsLoading(false);
         }
