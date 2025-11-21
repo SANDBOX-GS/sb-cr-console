@@ -13,7 +13,7 @@ export async function GET() {
 
     try {
         // 1. 쿠키에서 member_idx 값 가져오기
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const memberIdxCookie = cookieStore.get('member_idx');
 
         if (!memberIdxCookie || !memberIdxCookie.value) {

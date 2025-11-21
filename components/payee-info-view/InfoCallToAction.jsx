@@ -5,11 +5,8 @@ import {
     CalendarIcon,
     ClockIcon,
     AlertTriangleIcon,
-    EditIcon,
-    XIcon,
-    SaveIcon,
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 
 /**
  * @typedef {'valid' | 'expiring_soon' | 'expired'} ValidityStatus
@@ -77,31 +74,34 @@ export function InfoCallToAction({
      * @param {ConsentType} type '30days' 또는 'once'
      */
     const handleConsent = async (type) => {
+        // alert() 대신 커스텀 모달이나 토스트를 사용해야 합니다. 여기서는 디버깅을 위해 alert를 임시 사용합니다.
+        // NOTE: Immersive 환경에서는 alert()가 작동하지 않을 수 있습니다.
+        const customAlert = (message) => console.log(`[Alert] ${message}`);
+
         if (isLoading) return;
 
         // 필수 항목 오류가 있을 경우 API 호출을 막습니다.
         if (Object.keys(errors).length > 0) {
-            alert("동의하려면 필수 항목을 먼저 채워주세요."); // 사용자에게 알림
+            customAlert("동의하려면 필수 항목을 먼저 채워주세요.");
             return;
         }
 
         setIsLoading(true);
 
-        // 💡 member_idx 대신 토큰을 사용하므로 payload에서 member_idx를 제거합니다.
         const payload = {
-            consent_type: type, // '30days' 또는 'once'
-            // 필요하다면 현재의 다른 수취인 정보 (예: biz_type 등)를 추가로 전송할 수 있습니다.
+            consent_type: type,
         };
 
         // 💡 localStorage에서 토큰을 가져와 Authorization 헤더에 설정합니다.
-        const userToken = localStorage.getItem('userToken');
+        const userToken = typeof localStorage !== 'undefined' ? localStorage.getItem('userToken') : 'mock-token';
 
         try {
+            // API 호출 URL: /api/member/payee_agree
             const response = await fetch('/api/member/payee_agree', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`, // 💡 토큰 기반 인증 헤더 추가
+                    'Authorization': `Bearer ${userToken}`,
                 },
                 body: JSON.stringify(payload),
             });
@@ -110,19 +110,19 @@ export function InfoCallToAction({
 
             if (response.ok && result.success) {
                 // 성공 시 상위 컴포넌트의 데이터 갱신 함수 호출
-                onDataRefresh();
-                // toast.success("정보 수집에 성공적으로 동의했습니다.");
+                if (onDataRefresh) {
+                    onDataRefresh(result);
+                }
+                customAlert("정보 수집에 성공적으로 동의했습니다.");
             } else {
                 // API에서 에러 메시지를 반환하는 경우
                 const errorMessage = result.message || "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
-                alert(errorMessage);
-                // toast.error(errorMessage);
+                customAlert(errorMessage);
             }
 
         } catch (error) {
             console.error("동의 API 호출 중 오류 발생:", error);
-            alert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
-            // toast.error("네트워크 오류 발생");
+            customAlert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
         } finally {
             setIsLoading(false);
         }
@@ -239,7 +239,7 @@ export function InfoCallToAction({
                     {/* 버튼 영역 */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <Button
-                            onClick={() => onConsent("30days")}
+                            onClick={() => handleConsent("30days")}
                             className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
                             disabled={isLoading || Object.keys(errors).length > 0} // 로딩 중이거나 오류가 있을 때 비활성화
                         >
@@ -248,7 +248,7 @@ export function InfoCallToAction({
                         </Button>
 
                         <Button
-                            onClick={() => onConsent("once")}
+                            onClick={() => handleConsent("once")}
                             variant="outline"
                             className="border-blue-300 text-blue-700 hover:bg-blue-50 px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
                             disabled={isLoading || Object.keys(errors).length > 0} // 로딩 중이거나 오류가 있을 때 비활성화

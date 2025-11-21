@@ -1,41 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {useState, useEffect, useMemo} from "react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 import {
-    UserIcon,
     EditIcon,
     SaveIcon,
     XIcon,
-    CreditCardIcon,
-    FileTextIcon,
-    CheckCircleIcon,
-    UploadIcon,
     Circle,
-    CheckCircle,
     InfoIcon,
-    DownloadIcon,
-    FileIcon,
-    EyeIcon,
-    ChevronDownIcon,
-    CalendarIcon,
-    ClockIcon,
-    AlertTriangleIcon,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useRouter } from "@/hooks/useRouter";
-import { toast } from "sonner";
-import { PageTitle } from "@/components/payee-info-view/PageTitle";
-import { InfoCallToAction } from "@/components/payee-info-view/InfoCallToAction";
-import { RecipientInfoSection } from "@/components/payee-info-view/RecipientInfoSection";
-import { AccountInfoSection } from "@/components/payee-info-view/AccountInfoSection";
-import { TaxInfoSection } from "@/components/payee-info-view/TaxInfoSection";
-import { RecipientEditForm } from "@/components/payee-info-view/RecipientEditForm";
-import { AccountEditForm } from "@/components/payee-info-view/AccountEditForm";
-import { TaxEditForm } from "@/components/payee-info-view/TaxEditForm";
-import { EditField } from "@/components/common/EditField";
+import {motion} from "framer-motion";
+import {useRouter} from "@/hooks/useRouter";
+import {toast} from "sonner";
+import {PageTitle} from "@/components/payee-info-view/PageTitle";
+import {InfoCallToAction} from "@/components/payee-info-view/InfoCallToAction";
+import {RecipientInfoSection} from "@/components/payee-info-view/RecipientInfoSection";
+import {AccountInfoSection} from "@/components/payee-info-view/AccountInfoSection";
+import {TaxInfoSection} from "@/components/payee-info-view/TaxInfoSection";
+import {RecipientEditForm} from "@/components/payee-info-view/RecipientEditForm";
+import {AccountEditForm} from "@/components/payee-info-view/AccountEditForm";
+import {TaxEditForm} from "@/components/payee-info-view/TaxEditForm";
+import {EditField} from "@/components/common/EditField";
 
 // 🌟 새로운 파일 정보 타입 정의 🌟
 /**
@@ -46,8 +33,6 @@ import { EditField } from "@/components/common/EditField";
 
 import {
     formatPhoneNumber,
-    formatBusinessNumber,
-    formatIdNumber,
     maskAccountNumber,
     maskIdNumber,
     formatDate,
@@ -139,7 +124,7 @@ import {
 
 
 export default function PayeeInfoViewPage() {
-    const { navigate } = useRouter();
+    const {navigate} = useRouter();
 
     const [originalData, setOriginalData] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
@@ -147,15 +132,11 @@ export default function PayeeInfoViewPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const [consentType, setConsentType] = useState(null);
     const [validityPeriod, setValidityPeriod] = useState({
-        start: new Date(),
         end: null,
     });
-    const [lastModified] = useState(
-        new Date("2024-12-05T14:30:00"),
-    );
-    const [feedbackMessage, setFeedbackMessage] = useState("");
+    const [lastModified, setLastModified] = useState(null); // 🚨 lastModified도 API에서 받아오도록 수정
+    const [validityStatus, setValidityStatus] = useState('expired'); // 🚨 API 값으로 대체될 상태
 
     // 아코디언 상태
     const [openSections, setOpenSections] = useState({});
@@ -177,19 +158,22 @@ export default function PayeeInfoViewPage() {
                     throw new Error('수취인 정보를 불러오는데 실패했습니다.');
                 }
                 const data = await response.json();
-
-                // 데이터 설정
                 const initialData = data.payeeData;
-                setOriginalData(initialData);
-                setFormData(initialData);
 
-                // 메타데이터 설정
-                setConsentType(data.metadata.consentType || null);
+                if (initialData) {
+                    setOriginalData(initialData);
+                    setFormData(initialData);
+                } else {
+                    setOriginalData({});
+                    setFormData({});
+                }
+
+                // 2) 메타데이터 설정
+                setValidityStatus(data.metadata.validityStatus || 'expired');
                 setValidityPeriod({
-                    start: new Date(data.metadata.validityPeriodEnd ? data.metadata.validityPeriodEnd : new Date()),
-                    end: data.metadata.validityPeriodEnd ? new Date(data.metadata.validityPeriodEnd) : null,
+                    end: data.metadata.validityPeriodEnd || null,
                 });
-                // setLastModified(new Date(data.metadata.lastModified));
+                setLastModified(data.metadata.lastModified ? new Date(data.metadata.lastModified) : null);
 
             } catch (error) {
                 console.error("Fetch Error:", error);
@@ -203,48 +187,43 @@ export default function PayeeInfoViewPage() {
     }, []);
 
     /**
-     * @returns {'valid' | 'expiring_soon' | 'expired'}
-     */
-    const getValidityStatus = () => {
-        if (!validityPeriod.end) return "expired";
-
-        const now = new Date();
-        const daysUntilExpiry = Math.ceil(
-            (validityPeriod.end.getTime() - now.getTime()) /
-            (1000 * 60 * 60 * 24),
-        );
-
-        if (validityPeriod.end < now) return "expired";
-        if (daysUntilExpiry <= 7) return "expiring_soon";
-        return "valid";
-    };
-
-    /**
      * @param {'30days' | 'once' | null} type
      */
-    const handleConsent = (type) => {
-        const now = new Date();
-        let endDate = null;
-        let message = "";
+    const handleConsent = async (type) => {
+        if (isLoading) return;
+        setIsLoading(true);
 
-        if (type === "30days") {
-            endDate = new Date(
-                now.getTime() + 30 * 24 * 60 * 60 * 1000,
-            );
-            message = `30일간 동일 정보 이용에 동의했어요. (종료일: ${formatDate(endDate)})`;
-        } else if (type === "once") {
-            endDate = new Date(now);
-            endDate.setHours(23, 59, 59, 999); // 오늘 하루만
-            message = "이번 건에 한해 동의했어요. (오늘만 유효)";
+        // 💡 실제 API 호출: /api/member/payee_agree
+        try {
+            const response = await fetch('/api/member/payee_agree', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('userToken')}`,
+                },
+                body: JSON.stringify({consent_type: type}),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // 성공 시 데이터 재로딩 (or 새로운 메타데이터로 상태 업데이트)
+                toast.success("정보 수집에 성공적으로 동의했습니다.", {duration: 3000});
+                // 🚨 성공 후 새로운 메타데이터로 상태를 직접 업데이트하거나,
+                // 간단하게 전체 데이터를 다시 불러오도록 (fetchPayeeData) 호출할 수 있습니다.
+                // 여기서는 페이지 새로고침 대신 간단히 상태만 업데이트했다고 가정하고,
+                // InfoCallToAction에서 API 호출 후 데이터를 갱신하는 로직이 있다면 그를 따릅니다.
+            } else {
+                const errorMessage = result.message || "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
+                toast.error(errorMessage);
+            }
+
+        } catch (error) {
+            console.error("동의 API 호출 중 오류 발생:", error);
+            toast.error("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
+        } finally {
+            setIsLoading(false);
         }
-
-        setConsentType(type);
-        setValidityPeriod({ start: now, end: endDate });
-
-        // 토스트 메시지로 변경
-        toast.success(message, {
-            duration: 3000,
-        });
     };
 
     // 필수 항목 검증
@@ -352,16 +331,11 @@ export default function PayeeInfoViewPage() {
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1500));
         console.log("Data saved:", formData);
+        setOriginalData(formData);
         setIsEditMode(false);
         setIsLoading(false);
+        toast.success("수취인 정보가 성공적으로 저장되었습니다.");
     };
-
-    // Note: getSelectedIssueType is no longer used in this component's render logic
-    // const getSelectedIssueType = () => {
-    //     return ISSUE_TYPES.find(
-    //         (type) => type.value === formData.taxInfo.issueType,
-    //     );
-    // };
 
     /**
      * @param {string} label
@@ -399,16 +373,20 @@ export default function PayeeInfoViewPage() {
         </div>
     );
 
-    const validityStatus = getValidityStatus();
+    // 🚨 마지막 수정일 포매팅 (null 체크 포함)
+    const formattedLastModified = useMemo(() => {
+        return lastModified ? formatDateTime(lastModified) : '—';
+    }, [lastModified]);
 
+    // 로딩 상태 처리
     if (isPageLoading || originalData === null) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
                 <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    animate={{rotate: 360}}
+                    transition={{duration: 1, repeat: Infinity, ease: "linear"}}
                 >
-                    <Circle className="text-indigo-500 w-8 h-8" />
+                    <Circle className="text-indigo-500 w-8 h-8"/>
                 </motion.div>
                 <span className="ml-3 text-lg text-slate-700">정보를 불러오는 중...</span>
             </div>
@@ -432,11 +410,9 @@ export default function PayeeInfoViewPage() {
                     errors={errors}
                     onConsent={handleConsentWithValidation}
                     validityPeriod={{
-                        end: validityPeriod.end
-                            ? validityPeriod.end.toISOString()
-                            : undefined,
+                        end: validityPeriod.end,
                     }}
-                    lastModified={lastModified.toISOString()}
+                    lastModified={lastModified ? lastModified.toISOString() : ''}
                     isEditMode={isEditMode}
                     onEditMode={handleEditMode}
                     onCancelEdit={handleCancelEdit}
@@ -447,9 +423,9 @@ export default function PayeeInfoViewPage() {
                 {/* 4. 상세 정보 (아코디언) */}
                 {!isEditMode ? (
                     <motion.div
-                        initial={{ y: 30, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
+                        initial={{y: 30, opacity: 0}}
+                        animate={{y: 0, opacity: 1}}
+                        transition={{duration: 0.6, delay: 0.3}}
                         className="w-full max-w-4xl space-y-4"
                     >
                         {/* 4-1. 수취인 정보 (본인정보 + 사업자정보 합침) */}
@@ -501,9 +477,9 @@ export default function PayeeInfoViewPage() {
                 ) : (
                     // 수정 모드 UI
                     <motion.div
-                        initial={{ y: 30, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
+                        initial={{y: 30, opacity: 0}}
+                        animate={{y: 0, opacity: 1}}
+                        transition={{duration: 0.6, delay: 0.3}}
                         className="w-full max-w-4xl space-y-6"
                     >
                         {/* 수취인 정보 편집 */}
@@ -534,18 +510,18 @@ export default function PayeeInfoViewPage() {
 
                 {/* 5. 푸터 메타 */}
                 <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.4 }}
+                    initial={{y: 30, opacity: 0}}
+                    animate={{y: 0, opacity: 1}}
+                    transition={{duration: 0.6, delay: 0.4}}
                     className="w-full max-w-4xl mt-8 pt-6 border-t border-slate-200"
                 >
                     <div className="flex items-center gap-2 text-sm text-slate-500 justify-center">
-                        <InfoIcon className="w-4 h-4" />
+                        <InfoIcon className="w-4 h-4"/>
                         <span>최초 등록: 2024.12.05 14:30</span>
                         <span className="mx-2">·</span>
                         <span>
-              최종 수정: {formatDateTime(lastModified)}
-            </span>
+                          최종 수정: {formattedLastModified}
+                        </span>
                     </div>
                 </motion.div>
             </div>
@@ -557,9 +533,9 @@ export default function PayeeInfoViewPage() {
 
             {/* 플로팅 액션 버튼 */}
             <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.5 }}
+                initial={{y: 100, opacity: 0}}
+                animate={{y: 0, opacity: 1}}
+                transition={{duration: 0.4, delay: 0.5}}
                 className="fixed bottom-[120px] left-1/2 -translate-x-1/2 z-50 flex gap-4"
             >
                 {!isEditMode ? (
@@ -567,7 +543,7 @@ export default function PayeeInfoViewPage() {
                         onClick={handleEditMode}
                         className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white py-7 rounded-2xl shadow-2xl hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105 text-lg w-[320px]"
                     >
-                        <EditIcon className="w-6 h-6 mr-3" />
+                        <EditIcon className="w-6 h-6 mr-3"/>
                         정보 수정
                     </Button>
                 ) : (
@@ -578,7 +554,7 @@ export default function PayeeInfoViewPage() {
                             disabled={isLoading}
                             className="bg-white py-7 rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 text-lg w-[152px]"
                         >
-                            <XIcon className="w-6 h-6 mr-2" />
+                            <XIcon className="w-6 h-6 mr-2"/>
                             취소
                         </Button>
                         <Button
@@ -586,7 +562,7 @@ export default function PayeeInfoViewPage() {
                             disabled={isLoading}
                             className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white py-7 rounded-2xl shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 text-lg w-[152px]"
                         >
-                            <SaveIcon className="w-6 h-6 mr-2" />
+                            <SaveIcon className="w-6 h-6 mr-2"/>
                             {isLoading ? "저장 중..." : "저장"}
                         </Button>
                     </>

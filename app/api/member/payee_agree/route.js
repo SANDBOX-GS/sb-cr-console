@@ -1,7 +1,6 @@
 import dbConnect from '@/lib/dbConnect';
 import { TABLE_NAMES } from '@/constants/dbConstants';
-// 💡 Next.js 서버 환경에서 쿠키를 사용하기 위해 next/server에서 가져옵니다.
-import { NextResponse, cookies } from 'next/server';
+import { cookies } from 'next/headers';
 
 // ==============================================================================
 // 💡 getMemberIdxFromToken 함수는 쿠키 사용으로 대체되어 제거되었습니다.
@@ -15,7 +14,7 @@ export async function POST(request) {
         // 🚨 0. 세션(쿠키)에서 실제 member_idx 가져오기 (사용자 요청 반영)
         // *******************************************************************
         // cookies() 함수는 async/await가 필요하지 않습니다.
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const memberIdxCookie = cookieStore.get('member_idx');
 
         if (!memberIdxCookie || !memberIdxCookie.value) {
@@ -52,8 +51,7 @@ export async function POST(request) {
             // 30일간 동의 유지: 현재 날짜 + 30일
             expiredAtDate.setDate(now.getDate() + 30);
         } else if (consent_type === 'once') {
-            // 이번만 동의하기: 일반적으로 장기간 (예: 1년) 만료일을 설정하여 갱신 효과를 줍니다.
-            expiredAtDate.setFullYear(now.getFullYear() + 1);
+            // 이번만 동의하기: 오늘만 동의
         }
 
         // DATE 형식에 맞게 YYYY-MM-DD 형식으로 포맷

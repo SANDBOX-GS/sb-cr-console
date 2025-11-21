@@ -140,14 +140,44 @@ export async function GET(req) {
         };
 
         // 4-5. 메타데이터 재구성
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 시간 정보를 00:00:00으로 리셋하여 날짜 비교의 정확성 확보
+
+// DB 필드: agree_expired_at (DATE 형식)
+        const expiredAtDateStr = payeeDataRow.agree_expired_at;
+        let validityStatus = 'expired'; // 기본값: 만료/동의 없음
+        let validityPeriodEnd = null;
+
+        if (expiredAtDateStr) {
+            const expiredDate = new Date(expiredAtDateStr);
+            expiredDate.setHours(0, 0, 0, 0); // 만료일도 00:00:00으로 리셋
+
+            // D-day 계산: (만료일 - 오늘) / (1000ms * 60s * 60m * 24h)
+            const diffTime = expiredDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 올림하여 남은 일수 계산
+
+            // 만료일이 오늘 포함 1일 이내라면 '만료 임박'
+            if (diffDays <= 1 && diffDays >= 0) {
+                validityStatus = 'expiring_soon';
+            }
+
+            // 만료일이 오늘보다 2일 이상 남았으면 '유효'
+            else if (diffDays > 1) {
+                validityStatus = 'valid';
+            }
+
+            // validityPeriodEnd 설정
+            validityPeriodEnd = expiredDate.toISOString();
+        }
+
         const metadata = {
             lastModified: payeeDataRow.updated_at
                 ? new Date(payeeDataRow.updated_at).toISOString()
                 : new Date(payeeDataRow.created_at).toISOString(),
 
-            // ⚠️ 동의/만료 필드는 현재 DB 구조에 없으므로 임시 값 사용
-            consentType: '30days', // 예시
-            validityPeriodEnd: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            // ✨ consentType 필드를 제거하고, 상태와 만료일만 제공
+            validityPeriodEnd: validityPeriodEnd,
+            validityStatus: validityStatus,
         };
 
         // 5. 최종 응답 구조 반환
