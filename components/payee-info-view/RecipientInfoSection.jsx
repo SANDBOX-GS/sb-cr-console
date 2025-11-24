@@ -66,10 +66,10 @@ export function RecipientInfoSection({
                                          onOpenChange,
                                          recipientInfo,
                                          maskIdNumber,
-                                         renderEditField,
+                                         // renderEditField, // 🚨 수정 모드에서만 사용되므로 이 컴포넌트에서는 제거 가능 (현재 View 전용)
                                          formatPhoneNumber,
-                                         setFormData,
-                                         errors,
+                                         // setFormData,    // 🚨 수정 모드에서만 사용되므로 제거
+                                         // errors,
                                      }) {
     // 헬퍼 함수: ID Document Type의 label을 찾습니다.
     const getIdDocumentLabel = (value) => {
@@ -217,46 +217,24 @@ export function RecipientInfoSection({
                                 {recipientInfo.isMinor && (
                                     <div className="space-y-6 p-4 bg-red-50 rounded-xl border border-red-100">
                                         <h4 className="font-medium text-slate-800">
-                                            법정대리인 정보 (수정 모드 예시)
+                                            법정대리인 정보
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* 수정 필드 1: 법정대리인 본명 (수정 가능 영역) */}
-                                            {renderEditField(
-                                                "법정대리인 본명",
-                                                recipientInfo.guardianName || "",
-                                                (value) =>
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        recipientInfo: {
-                                                            ...prev.recipientInfo,
-                                                            guardianName: value,
-                                                        },
-                                                    })),
-                                                true,
-                                                "text",
-                                                "법정대리인 본명을 입력하세요",
-                                                errors.guardianName,
-                                            )}
+                                            {/* 🚨 [수정]: 법정대리인 본명 - Read-Only 텍스트로 변경 */}
+                                            <div className="space-y-2">
+                                                <Label className="text-slate-600">법정대리인 본명</Label>
+                                                <p className="text-slate-800 font-medium">
+                                                    {recipientInfo.guardianName || "-"}
+                                                </p>
+                                            </div>
 
-                                            {/* 수정 필드 2: 법정대리인 연락처 (수정 가능 영역) */}
-                                            {renderEditField(
-                                                "법정대리인 연락처",
-                                                recipientInfo.guardianPhone || "",
-                                                (value) => {
-                                                    const formatted = formatPhoneNumber(value);
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        recipientInfo: {
-                                                            ...prev.recipientInfo,
-                                                            guardianPhone: formatted,
-                                                        },
-                                                    }));
-                                                },
-                                                true,
-                                                "text",
-                                                "010-0000-0000",
-                                                errors.guardianPhone,
-                                            )}
+                                            {/* 🚨 [수정]: 법정대리인 연락처 - Read-Only 텍스트로 변경 */}
+                                            <div className="space-y-2">
+                                                <Label className="text-slate-600">법정대리인 연락처</Label>
+                                                <p className="text-slate-800 font-medium">
+                                                    {formatPhoneNumber(recipientInfo.guardianPhone || "") || "-"}
+                                                </p>
+                                            </div>
                                         </div>
                                         <FilePreview
                                             file={recipientInfo.familyRelationCertificate}

@@ -28,6 +28,7 @@ import ProgressTabs from "@/components/ProgressTabs";
 import FileUpload from "@/components/ui/file-upload";
 import { formatPhoneNumber, formatBusinessNumber, formatIdNumber } from "@/utils/formatters";
 import { ID_DOCUMENT_TYPES, ISSUE_TYPES, KOREAN_BANKS } from "@/constants/payee-data";
+import { useAuth } from '@/contexts/AuthContext';
 
 const GUIDE_ITEMS = [
     {
@@ -82,6 +83,7 @@ const PROCESS_STEPS = [
 
 export default function PayeeInfoPage() {
     const { getSearchParam, updateSearchParams, navigate } = useRouter();
+    const { isLoggedIn, isLoading } = useAuth(); // AuthContext 사용
 
     const [formData, setFormData] = useState({
         recipientInfo: {
@@ -123,27 +125,24 @@ export default function PayeeInfoPage() {
             family_relation_certificate: null
         }
     });
-
     const [errors, setErrors] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false); // 폼 제출 로딩 상태
     const [completedSteps, setCompletedSteps] = useState(['guide']);
 
-    // Get current tab from URL parameter, default to 'guide'
     const currentTab = getSearchParam('tab') || 'guide';
 
-    // Set default tab if not present
     useEffect(() => {
-        if (!getSearchParam('tab')) {
-            updateSearchParams({ tab: 'guide' });
+        // 1. 로딩 중이면 아무것도 하지 않음 (깜빡임 방지)
+        if (isLoading) return;
+
+        // 2. 인증되지 않았다면 리디렉션
+        if (!isLoggedIn) {
+            navigate('/login');
         }
-    }, []);
 
-    // Handle tab change
-    const handleTabChange = (tab) => {
-        updateSearchParams({ tab });
-    };
+        // ... (나머지 탭 로직)
+    }, [isLoggedIn, isLoading, navigate]);
 
-    // Auto-update completed steps
     useEffect(() => {
         const newCompletedSteps = ['guide']; // Guide is always completed
 
@@ -170,6 +169,16 @@ export default function PayeeInfoPage() {
         formData.recipientInfo.is_overseas,
         formData.taxInfo.invoice_type
     ]);
+
+    // 로딩 중이거나 인증되지 않았다면 콘텐츠를 보여주지 않음
+    if (isLoading || !isLoggedIn) {
+        return <div>인증 상태 확인 중...</div>;
+    }
+
+    // Handle tab change
+    const handleTabChange = (tab) => {
+        updateSearchParams({ tab });
+    };
 
     const validateForm = () => {
         const newErrors = {};
@@ -230,7 +239,7 @@ export default function PayeeInfoPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
+        setIsSubmitting(true);
 
         const newErrors = validateForm();
         setErrors(newErrors);
@@ -315,7 +324,7 @@ export default function PayeeInfoPage() {
                 console.error('API 호출 중 오류 발생:', error);
                 alert('네트워크 오류가 발생했습니다.');
             } finally {
-                setIsLoading(false);
+                setIsSubmitting(false);
             }
         }
         else {
@@ -1124,10 +1133,10 @@ export default function PayeeInfoPage() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            disabled={isLoading}
+                                            disabled={isSubmitting}
                                             className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600"
                                         >
-                                            {isLoading ? (
+                                            {isSubmitting ? (
                                                 <>
                                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                     처리 중...

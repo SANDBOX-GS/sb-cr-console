@@ -349,18 +349,18 @@ export default function PayeeInfoViewPage() {
 
         if (Object.keys(newErrors).length === 0) {
             // ⭐ 1. 최종 DB 컬럼명에 매핑되는 객체 생성 (등록 페이지와 동일한 매핑 로직 사용)
-            const finalData = {
-                // [recipientInfo -> DB 컬럼 매핑]
-                biz_type: formData.recipientInfo.businessType, // 필드명 수정 (businessType -> biz_type)
-                is_overseas: formData.recipientInfo.isOverseas ? 'Y' : 'N', // 필드명 수정
-                is_minor: formData.recipientInfo.isMinor ? 'Y' : 'N', // 필드명 수정
-                is_foreigner: formData.recipientInfo.isForeigner ? 'Y' : 'N', // 필드명 수정
+            // 🚨🚨🚨 [수정된 부분 시작] 🚨🚨🚨
+            // ⭐ 1. 최종 DB 컬럼명에 매핑되는 객체 생성 (let으로 선언)
+            let finalData = {
+                // [recipientInfo -> DB 컬럼 매핑] (기본 값 할당)
+                biz_type: formData.recipientInfo.businessType,
+                is_overseas: formData.recipientInfo.isOverseas ? 'Y' : 'N',
+                is_minor: formData.recipientInfo.isMinor ? 'Y' : 'N',
+                is_foreigner: formData.recipientInfo.isForeigner ? 'Y' : 'N',
 
-                // 이름 및 번호 (biz_type에 따라 다르게 매핑)
-                user_name: formData.recipientInfo.businessType === 'individual' ? formData.recipientInfo.realName : null, // 필드명 수정
-                ssn: formData.recipientInfo.businessType === 'individual'
-                    ? (formData.recipientInfo.isForeigner ? formData.recipientInfo.foreignerRegistrationNumber : formData.recipientInfo.idNumber)
-                    : null,
+                // 이름 및 번호는 초기값 null로 설정
+                user_name: null,
+                ssn: null,
 
                 // 사업자/법인 정보
                 biz_name: formData.recipientInfo.businessType === 'sole_proprietor' ? formData.recipientInfo.businessName : null,
@@ -382,23 +382,34 @@ export default function PayeeInfoViewPage() {
                 swift_code: formData.recipientInfo.isOverseas ? formData.accountInfo.swiftCode : null,
                 bank_address: formData.recipientInfo.isOverseas ? formData.accountInfo.bankAddress : null,
 
-                // [taxInfo -> DB 컬럼 매핑]
-                invoice_type: formData.taxInfo.issueType, // 필드명 수정
-                is_simple_taxpayer: formData.taxInfo.isSimpleTax ? 'Y' : 'N', // 필드명 수정
-
-                // 추가: Tax Info의 누락된 필드 (DB 컬럼명 필요)
+                // [taxInfo -> DB 컬럼 매핑] (DB에 없는 필드는 백엔드에서 제거했으므로 여기서는 유효한 필드만 남김)
+                invoice_type: formData.taxInfo.issueType,
+                is_simple_taxpayer: formData.taxInfo.isSimpleTax ? 'Y' : 'N',
+                // Tax Info의 DB에 없는 필드들은 서버 에러를 피하기 위해 finalData에서 제거해야 합니다.
+                // (이전 답변에서 백엔드에서 제거했으나, 프론트에서 전송하지 않는 것이 더 안전)
+                // 임시로 남겨두고 백엔드가 제거하는 방식 유지 (DB 마이그레이션을 대비)
                 income_type: formData.taxInfo.incomeType || null,
                 issue_tax_invoice: formData.taxInfo.issueTaxInvoice ? 'Y' : 'N',
                 withholding: formData.taxInfo.withholding ? 'Y' : 'N',
                 manager_name: formData.taxInfo.managerName || null,
                 manager_tel: formData.taxInfo.managerPhone || null,
                 manager_email: formData.taxInfo.managerEmail || null,
-
-                // 참고: 동의일(agree_expired_at)은 수정 페이지에서는 업데이트하지 않음 (따로 동의 버튼으로 처리)
             };
 
+            // 🚨 [핵심 수정]: 이름 및 등록번호 조건부 할당 (user_name, ssn)
+            if (finalData.biz_type === 'individual') {
+                if (finalData.is_foreigner === 'Y') {
+                    // 외국인
+                    finalData.user_name = formData.recipientInfo.foreignerName;
+                    finalData.ssn = formData.recipientInfo.foreignerRegistrationNumber;
+                } else {
+                    // 내국인
+                    finalData.user_name = formData.recipientInfo.realName;
+                    finalData.ssn = formData.recipientInfo.idNumber;
+                }
+            }
 
-            // ⭐ 2. 수동으로 FormData를 구성하여 파일도 포함합니다.
+            // ⭐ 2. 수동으로 FormData를 구성하여 파일/삭제 마커를 포함합니다.
             const submissionFormData = new FormData();
 
             // 일반 데이터 추가
@@ -408,20 +419,39 @@ export default function PayeeInfoViewPage() {
                 }
             }
 
-            // 파일 데이터 추가 (수정 페이지에서는 기존 FileInfo 객체와 새로운 File 객체를 구분해야 함)
-            // 여기서는 File 객체만 추가한다고 가정하고, FileInfo 객체는 제외합니다.
-            // 실제 로직에서는 FileInfo(URL, Name)은 제외하고, File(사용자가 새로 업로드한 파일)만 추가해야 합니다.
-            // FileUpload 컴포넌트가 File 객체를 반환할 때만 추가합니다.
+            // 🚨🚨🚨 [핵심 수정]: 파일 수정, 추가, 삭제 마커 로직 🚨🚨🚨
 
-            if (formData.files) {
-                if (formData.files.business_document instanceof File) submissionFormData.append('business_document', formData.files.business_document);
-                if (formData.files.id_document instanceof File) submissionFormData.append('id_document', formData.files.id_document);
-                if (formData.files.bank_document instanceof File) submissionFormData.append('bank_document', formData.files.bank_document);
-                if (formData.files.family_relation_certificate instanceof File) submissionFormData.append('family_relation_certificate', formData.files.family_relation_certificate);
+            // 파일 필드와 해당 데이터가 위치한 섹션 매핑
+            const fileFieldsMap = {
+                business_document: 'recipientInfo',
+                id_document: 'recipientInfo',
+                bank_document: 'accountInfo',
+                family_relation_certificate: 'recipientInfo',
+                // FOREIGNER_REGISTRATION_CARD는 필드명 불일치 방지를 위해 프론트/백엔드 태그명을 통일해야 함
+            };
+
+            for (const tag in fileFieldsMap) {
+                const section = fileFieldsMap[tag];
+                // 폼 데이터 (현재 상태)
+                const currentFileValue = formData[section][tag];
+                // 원본 데이터 (수정 전 상태, FileInfo 객체였을 가능성 높음)
+                const originalFileValue = originalData[section][tag];
+
+                // 1. [새 파일 업로드/대체]: File 객체가 들어왔다면, 무조건 새 파일로 간주하고 FormData에 추가합니다.
+                if (currentFileValue instanceof File) {
+                    submissionFormData.append(tag, currentFileValue);
+                }
+
+                    // 2. [파일 삭제 요청]: 기존 파일 정보(originalFileValue)가 있었는데,
+                    //    현재 값이 null/undefined이거나 빈 객체인 경우 삭제 요청 마커를 전송합니다.
+                //    (기존 파일은 FileInfo {url, name} 객체였을 것이므로)
+                else if (originalFileValue && !currentFileValue) {
+                    submissionFormData.append(`delete_${tag}`, 'Y'); // 백엔드가 기대하는 삭제 마커
+                }
+
+                // 3. [기존 파일 유지]: FileInfo 객체(수정되지 않음)가 넘어왔다면,
+                //    FormData에 추가하지 않습니다. (텍스트 데이터가 아니므로)
             }
-
-            // 🚨 DB에 저장된 파일은 제외하고, 새로운 File 객체만 전송해야 합니다.
-            // 만약 기존 파일이 있었다면, 서버는 해당 파일을 삭제 후 새 파일을 저장해야 합니다.
 
             try {
                 // 🚨 API 엔드포인트 사용 (등록/수정 엔드포인트가 동일하다고 가정)

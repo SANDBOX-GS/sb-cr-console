@@ -2,7 +2,7 @@
 
 import {motion} from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header () {
     const router = useRouter();

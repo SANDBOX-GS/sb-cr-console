@@ -15,7 +15,11 @@ const FILE_TYPE_TAG = 'PAYEE_DOCUMENT'; // 파일 정보 테이블의 type 필�
  */
 export async function POST(req) {
     let connection;
-    const uploadedS3Keys = [];
+
+    // 새로 업로드된 파일 키 (트랜잭션 실패 시 삭제)
+    const newlyUploadedS3Keys = [];
+    // 기존 파일 키 (트랜잭션 성공 시 삭제)
+    let existingFilesS3KeysToDelete = [];
 
     try {
         const formData = await req.formData();
@@ -26,24 +30,19 @@ export async function POST(req) {
         // 1. FormData 파싱 및 텍스트/파일 분리
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-                fileUploads.push({
-                    fieldName: key,
-                    file: value,
-                });
+                fileUploads.push({ fieldName: key, file: value });
             } else {
                 let textValue = value;
-                // 'true'/'false' 문자열을 DB ENUM 타입 'Y'/'N'으로 변환
                 if (textValue === 'true') textValue = 'Y';
                 else if (textValue === 'false') textValue = 'N';
-
                 payload[key] = textValue;
             }
         }
 
         // *******************************************************************
-        // 2. member_idx 가져오기 및 유효성 검사 🚨 [수정]: cookies() 동기적 접근
+        // 2. member_idx 가져오기 및 유효성 검사
         // *******************************************************************
-        const memberIdxCookie = await cookies().get('member_idx'); // 🚨 한 줄로 동기 접근
+        const memberIdxCookie = await cookies().get('member_idx');
 
         if (!memberIdxCookie || !memberIdxCookie.value) {
             return NextResponse.json(
@@ -62,7 +61,7 @@ export async function POST(req) {
         // *******************************************************************
 
         // *******************************************************************
-        // 3. Payee Info 테이블에 UPDATE할 최종 페이로드 준비 🚨 [수정]: Tax Info 컬럼 제거
+        // 3. Payee Info 테이블에 UPDATE할 최종 페이로드 준비
         // *******************************************************************
         payload.member_idx = member_idx;
         payload.payout_ratio_id = DUMMY_PAYOUT_RATIO_ID;
@@ -85,10 +84,6 @@ export async function POST(req) {
             active_status: payload.active_status,
             user_type: payload.user_type,
 
-            // 🚨🚨🚨 [수정]: DB 스키마에 없는 Tax Info 필드 제거 🚨🚨🚨
-            // income_type, issue_tax_invoice, withholding, manager_name, manager_tel, manager_email
-            // 이 필드들은 현재 스키마에 없으므로 주석 처리 (DB 컬럼 추가 전까지)
-
             // 개인, 사업자, 법인 필드 매핑
             user_name: payload.biz_type === 'individual' ? payload.user_name : null,
             ssn: payload.biz_type === 'individual'
@@ -106,7 +101,6 @@ export async function POST(req) {
             guardian_tel: payload.is_minor === 'Y' ? payload.guardian_tel : null,
         };
 
-
         // 4. S3 업로드 실행 (DB 트랜잭션 외부)
         const s3UploadResults = await Promise.all(fileUploads.map(async ({ fieldName, file }) => {
             // ... (S3 업로드 로직은 동일) ...
@@ -120,7 +114,7 @@ export async function POST(req) {
             const fileUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${s3Key}`;
 
             await uploadFileToS3(buffer, s3Key, file.type);
-            uploadedS3Keys.push(s3Key);
+            newlyUploadedS3Keys.push(s3Key); // 🚨 newlyUploadedS3Keys에만 추가
 
             return { s3Key, fileUrl, file, fieldName, extension, dbFileName: s3FileName };
         }));
@@ -142,10 +136,58 @@ export async function POST(req) {
             throw new Error("수정할 수취인 정보를 찾을 수 없습니다.");
         }
         const payee_idx = payeeRows[0].idx;
-        console.log(`Updating Payee Info for IDX: ${payee_idx}`);
 
+        // 🚨🚨🚨 5-2. 파일 정리 및 삭제 목록 준비 (업데이트 전) 🚨🚨🚨
+        const fileTagsToProcess = []; // 새로 업로드되거나 명시적으로 삭제된 태그 목록
+        const deletedFileTags = [];   // 명시적으로 삭제 요청된 태그 목록
 
-        // 5-2. Payee Info 테이블 업데이트
+        for (const [key, value] of formData.entries()) {
+            // 'delete_' 마커 확인 (삭제 요청)
+            if (key.startsWith('delete_') && value === 'Y') {
+                const tag = key.substring(7); // 'delete_' 문자열 제거
+                deletedFileTags.push(tag);
+                fileTagsToProcess.push(tag);
+            }
+            // 새 파일 업로드 확인 (대체 요청)
+            if (fileUploads.some(f => f.fieldName === key)) {
+                if (!fileTagsToProcess.includes(key)) {
+                    fileTagsToProcess.push(key);
+                }
+            }
+        }
+
+        if (fileTagsToProcess.length > 0) {
+            // 5-2-1. 기존 파일 메타데이터 조회
+            // fileTagsToProcess 목록에 해당하는 기존 파일만 조회 (삭제 및 대체를 위해)
+            const tagsPlaceholder = fileTagsToProcess.map(() => '?').join(', ');
+
+            const [existingFiles] = await connection.query(
+                `SELECT file_url, tag FROM ${TABLE_NAMES.SBN_FILE_INFO} 
+         WHERE ref_table_name = ? AND ref_table_idx = ? AND tag IN (${tagsPlaceholder})`,
+                [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, ...fileTagsToProcess]
+            );
+
+            // 5-2-2. 기존 파일 메타데이터 DB 삭제
+            await connection.execute(
+                `DELETE FROM ${TABLE_NAMES.SBN_FILE_INFO} 
+         WHERE ref_table_name = ? AND ref_table_idx = ? AND tag IN (${tagsPlaceholder})`,
+                [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, ...fileTagsToProcess]
+            );
+            console.log(`DB: Deleted file info for tags: ${fileTagsToProcess.join(', ')}.`);
+
+            // 5-2-3. S3 파일 삭제 목록 준비
+            const s3UrlPrefix = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/`;
+            existingFiles.forEach(file => {
+                if (file.file_url && file.file_url.startsWith(s3UrlPrefix)) {
+                    const s3Key = file.file_url.substring(s3UrlPrefix.length);
+                    // 🚨🚨🚨 existingFilesS3KeysToDelete 목록에 추가 🚨🚨🚨
+                    existingFilesS3KeysToDelete.push(s3Key);
+                }
+            });
+        }
+        // 🚨 파일이 수정되거나 삭제되지 않은 필드는 이 로직을 거치지 않으므로 기존 파일이 유지됩니다.
+
+        // 5-3. Payee Info 테이블 업데이트
         await connection.query(
             `UPDATE ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?, updated_at = NOW() WHERE idx = ?`,
             [dbPayload, payee_idx]
@@ -241,6 +283,12 @@ export async function POST(req) {
     } finally {
         if (connection) {
             connection.release();
+        }
+
+        if (existingFilesS3KeysToDelete.length > 0) {
+            console.warn('Attempting to clean up old S3 files...');
+            // 이 로직은 catch 블록이 실행되지 않고 성공적으로 커밋되었을 때 실행됨
+            await Promise.all(existingFilesS3KeysToDelete.map(key => deleteFileFromS3(key)));
         }
     }
 }
