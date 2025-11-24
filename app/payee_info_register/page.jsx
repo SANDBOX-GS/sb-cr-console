@@ -83,7 +83,7 @@ const PROCESS_STEPS = [
 
 export default function PayeeInfoPage() {
     const { getSearchParam, updateSearchParams, navigate } = useRouter();
-    const { isLoggedIn, isLoading } = useAuth(); // AuthContext 사용
+    const { isLoggedIn, isLoading } = useAuth();
 
     const [formData, setFormData] = useState({
         recipientInfo: {

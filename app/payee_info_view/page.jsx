@@ -23,6 +23,7 @@ import {RecipientEditForm} from "@/components/payee-info-view/RecipientEditForm"
 import {AccountEditForm} from "@/components/payee-info-view/AccountEditForm";
 import {TaxEditForm} from "@/components/payee-info-view/TaxEditForm";
 import {EditField} from "@/components/common/EditField";
+import { useAuth } from '@/contexts/AuthContext';
 
 // 🌟 새로운 파일 정보 타입 정의 🌟
 /**
@@ -131,7 +132,8 @@ export default function PayeeInfoViewPage() {
     const [formData, setFormData] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [errors, setErrors] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
+    const { isLoggedIn, isLoading } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [validityPeriod, setValidityPeriod] = useState({
         end: null,
     });
@@ -186,8 +188,22 @@ export default function PayeeInfoViewPage() {
     };
 
     useEffect(() => {
-        fetchPayeeData(); // 최초 로딩 시 호출
-    }, []);
+        // 1. 로딩 중이면 아무것도 하지 않음 (깜빡임 방지)
+        if (isLoading) return;
+
+        // 2. 인증되지 않았다면 리디렉션
+        if (!isLoggedIn) {
+            navigate('/login');
+        }
+        else {
+            fetchPayeeData();
+        }
+    }, [isLoggedIn, isLoading, navigate]);
+
+    // 로딩 중이거나 인증되지 않았다면 콘텐츠를 보여주지 않음
+    if (isLoading || !isLoggedIn) {
+        return <div>인증 상태 확인 중...</div>;
+    }
 
     // 🚨 1. Metadata만 갱신하는 함수 정의
     const handleMetadataUpdate = async (newMetadata) => {
@@ -211,8 +227,8 @@ export default function PayeeInfoViewPage() {
      * @param {'30days' | 'once' | null} type
      */
     const handleConsent = async (type) => {
-        if (isLoading) return;
-        setIsLoading(true);
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
         // 💡 실제 API 호출: /api/member/payee_agree
         try {
@@ -243,7 +259,7 @@ export default function PayeeInfoViewPage() {
             console.error("동의 API 호출 중 오류 발생:", error);
             toast.error("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -342,7 +358,7 @@ export default function PayeeInfoViewPage() {
     };
 
     const handleSave = async () => {
-        setIsLoading(true);
+        setIsSubmitting(true);
 
         const newErrors = validateRequiredFields(); // validateForm 대신 현재 validateRequiredFields 사용
         setErrors(newErrors);
@@ -480,7 +496,7 @@ export default function PayeeInfoViewPage() {
                 console.error('API 호출 중 오류 발생:', error);
                 alert('네트워크 오류가 발생했습니다.');
             } finally {
-                setIsLoading(false);
+                setIsSubmitting(false);
             }
         }
         else {
@@ -576,7 +592,7 @@ export default function PayeeInfoViewPage() {
                     onEditMode={handleEditMode}
                     onCancelEdit={handleCancelEdit}
                     onSave={handleSave}
-                    isLoading={isLoading}
+                    isSubmitting={isSubmitting}
                 />
 
                 {/* 4. 상세 정보 (아코디언) */}
@@ -710,7 +726,7 @@ export default function PayeeInfoViewPage() {
                         <Button
                             variant="outline"
                             onClick={handleCancelEdit}
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                             className="bg-white py-7 rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 text-lg w-[152px]"
                         >
                             <XIcon className="w-6 h-6 mr-2"/>
@@ -718,11 +734,11 @@ export default function PayeeInfoViewPage() {
                         </Button>
                         <Button
                             onClick={handleSave}
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                             className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white py-7 rounded-2xl shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 text-lg w-[152px]"
                         >
                             <SaveIcon className="w-6 h-6 mr-2"/>
-                            {isLoading ? "저장 중..." : "저장"}
+                            {isSubmitting ? "저장 중..." : "저장"}
                         </Button>
                     </>
                 )}
