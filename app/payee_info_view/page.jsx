@@ -132,17 +132,26 @@ export default function PayeeInfoViewPage() {
     const [formData, setFormData] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [errors, setErrors] = useState({});
-    const { isLoggedIn, isLoading } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [validityPeriod, setValidityPeriod] = useState({
-        end: null,
-    });
+
+    const { isLoggedIn, isLoading } = useAuth();
+
+    const [validityPeriod, setValidityPeriod] = useState({end: null});
     const [createdAt, setCreatedAt] = useState(null);
     const [lastModified, setLastModified] = useState(null); // 🚨 lastModified도 API에서 받아오도록 수정
     const [validityStatus, setValidityStatus] = useState('expired'); // 🚨 API 값으로 대체될 상태
-
-    // 아코디언 상태
     const [openSections, setOpenSections] = useState({});
+
+    // 🚨 최초 등록일 포매팅 (null 체크 포함)
+    const formattedCreateAt = useMemo(() => {
+        return createdAt ? formatDateTime(createdAt) : '—';
+    }, [createdAt]);
+
+    // 🚨 마지막 수정일 포매팅 (null 체크 포함)
+    const formattedLastModified = useMemo(() => {
+        return lastModified ? formatDateTime(lastModified) : '—';
+    }, [lastModified]);
+
 
     // 데이터를 불러오는 로직을 분리합니다.
     const fetchPayeeData = async () => {
@@ -541,16 +550,6 @@ export default function PayeeInfoViewPage() {
             {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
     );
-
-    // 🚨 최초 등록일 포매팅 (null 체크 포함)
-    const formattedCreateAt = useMemo(() => {
-        return createdAt ? formatDateTime(createdAt) : '—';
-    }, [createdAt]);
-
-    // 🚨 마지막 수정일 포매팅 (null 체크 포함)
-    const formattedLastModified = useMemo(() => {
-        return lastModified ? formatDateTime(lastModified) : '—';
-    }, [lastModified]);
 
     // 로딩 상태 처리
     if (isPageLoading || originalData === null) {
