@@ -1,0 +1,23 @@
+# docker-compose.prod.yml
+
+name: cr-console-prod
+version: '3.8' # 도커 컴포즈 버전 명시 (권장)
+services:
+  sb-cr-console-prod:
+    container_name: sb-cr-console-prod
+    image: rkdfydrn1990/sb-cr-console:latest
+
+    build:
+      context: .
+      dockerfile: Dockerfile  # 운영용 Dockerfile 사용
+      args:
+        # .env.prod 파일에 있는 MYSQL_URI 값을 자동으로 가져와서 빌드에 주입합니다.
+        MYSQL_URI: ${MYSQL_URI}
+
+    ports:
+      - "8006:3000" # 호스트(AWS 서버):컨테이너
+    restart: always
+
+    # 이 파일은 AWS 서버의 'docker-compose.prod.yml'과 같은 경로에 있어야 합니다.
+    env_file:
+      - .env.prod
