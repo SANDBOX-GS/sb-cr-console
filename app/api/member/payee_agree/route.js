@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import dbConnect from '@/lib/dbConnect';
 import { TABLE_NAMES } from '@/constants/dbConstants';
 import { cookies } from 'next/headers';
@@ -6,7 +7,6 @@ import { cookies } from 'next/headers';
 // POST /api/member/payee_agree
 // 수취인 정보 동의(agree_expired_at)를 갱신합니다.
 // ==============================================================================
-
 export async function POST(request) {
     let connection;
 

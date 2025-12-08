@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Suspense } from 'react';
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -26,7 +27,9 @@ export default function RootLayout({ children }) {
             <AuthProvider>
                 <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col">
                     <Header />
-                        {children}
+                        <Suspense fallback={<div>Loading Page...</div>}>
+                            {children}
+                        </Suspense>
                     <Footer />
                 </div>
             </AuthProvider>

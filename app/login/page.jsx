@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "@/hooks/useRouter";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function LoginPage() {
+export default function LoginPageContent() {
     const { navigate } = useRouter();
     const { login } = useAuth();
 

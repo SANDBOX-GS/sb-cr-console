@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 /**
@@ -7,6 +8,7 @@ import { NextResponse } from 'next/server';
  *
  * @returns {NextResponse} 로그아웃 성공 메시지 및 만료된 쿠키를 포함하는 응답
  */
+
 export async function POST() {
     // 1. 쿠키 만료를 위한 Set-Cookie 헤더 생성
     // 기존의 member_idx 쿠키를 Max-Age=0 혹은 만료일을 과거로 설정하여 즉시 만료시킵니다.
