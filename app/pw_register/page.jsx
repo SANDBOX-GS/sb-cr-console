@@ -9,8 +9,6 @@ import {TERMS_CONTENT} from "@/constants/terms-content";
 import {useRouter} from "@/hooks/useRouter";
 
 function PasswordStrengthIndicator({password}) {
-    const { navigate } = useRouter();
-
     const getPasswordStrength = (password) => {
         if (!password) return {score: 0, text: '', color: 'bg-gray-200'};
 
@@ -75,6 +73,8 @@ function TermsContent({content}) {
 }
 
 export default function App() {
+    const { navigate } = useRouter();
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
