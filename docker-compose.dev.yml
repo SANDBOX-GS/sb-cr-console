@@ -7,21 +7,22 @@ services:
     container_name: sb-cr-console-dev
     image: rkdfydrn1990/sb-cr-console:dev
 
-    build:
-      context: .
-      dockerfile: Dockerfile.dev  # 개발용 Dockerfile 사용
-      args:
-        # .env.dev 파일에 있는 MYSQL_URI 값을 자동으로 가져와서 빌드에 주입합니다.
-        MYSQL_URI: ${MYSQL_URI}
-
-    # ⭐ 핫 리로드를 위한 볼륨 마운트 설정
-    # 로컬 소스 코드 변경 시 컨테이너에 즉시 반영됩니다.
-    volumes:
-      - .:/app
-      - /app/node_modules # 호스트의 node_modules는 무시
+# 로컬에서 개발 돌릴때 필요
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.dev  # 개발용 Dockerfile 사용
+#      args:
+#        # .env.dev 파일에 있는 MYSQL_URI 값을 자동으로 가져와서 빌드에 주입합니다.
+#        MYSQL_URI: ${MYSQL_URI}
+#
+#    # ⭐ 핫 리로드를 위한 볼륨 마운트 설정
+#    # 로컬 소스 코드 변경 시 컨테이너에 즉시 반영됩니다.
+#    volumes:
+#      - .:/app
+#      - /app/node_modules # 호스트의 node_modules는 무시
 
     ports:
-      - "8005:3000" # 로컬 3000 포트로 접속
+      - "8010:3000" # 로컬 3000 포트로 접속
 
     restart: always
 
