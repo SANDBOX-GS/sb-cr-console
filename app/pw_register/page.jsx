@@ -6,8 +6,11 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {EyeIcon, EyeOffIcon, ChevronDownIcon, CheckCircleIcon, ShieldCheckIcon, SparklesIcon} from "lucide-react";
 import {motion, AnimatePresence} from "framer-motion";
 import {TERMS_CONTENT} from "@/constants/terms-content";
+import {useRouter} from "@/hooks/useRouter";
 
 function PasswordStrengthIndicator({password}) {
+    const { navigate } = useRouter();
+
     const getPasswordStrength = (password) => {
         if (!password) return {score: 0, text: '', color: 'bg-gray-200'};
 
@@ -287,6 +290,9 @@ export default function App() {
                             transition={{delay: 1.1}}
                         >
                             <Button
+                                onClick={() =>
+                                    navigate("/login", {})
+                                }
                                 className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                                 시작하기
                             </Button>
