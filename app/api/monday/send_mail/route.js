@@ -28,9 +28,24 @@ export async function POST(request) {
         // 보통 '아이템 생성' 트리거를 쓰면 item 이름이 pulseName에 들어옵니다.
         const { event } = body;
 
-        // 이메일 추출 (Monday 보드에서 아이템 이름을 이메일로 입력한다고 가정)
-        // 만약 아이템 이름이 아니라 특정 컬럼값이라면 로직이 달라져야 합니다.
-        let email = event && event.pulseName ? event.pulseName : null;
+        let email = null;
+
+        // 1. columnValues가 있는지 확인
+        if (event && event.columnValues) {
+            // 우리가 원하는 컬럼 ID (email_mkxszhjr)
+            const emailData = event.columnValues.email_mkxszhjr;
+
+            if (emailData) {
+                // Case A: 데이터가 객체이고 .email이나 .text 속성이 있는 경우 (가장 흔함)
+                if (typeof emailData === 'object') {
+                    email = emailData.email || emailData.text || null;
+                }
+                // Case B: 데이터가 그냥 문자열인 경우
+                else {
+                    email = emailData;
+                }
+            }
+        }
 
         if (!email) {
             console.log("이메일 정보가 없습니다.", body);
