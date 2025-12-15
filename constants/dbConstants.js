@@ -34,6 +34,7 @@ export const MONDAY_API_CONFIG = {
 export const NHN_CONFIG = {
     EMAIL: {
         URL: `https://email.api.nhncloudservice.com/email/v2.1/appKeys/${process.env.NHN_EMAIL_APP_KEY}/sender/mail`,
+        AD_URL: `https://email.api.nhncloudservice.com/email/v2.1/appKeys/${process.env.NHN_EMAIL_APP_KEY}/sender/ad-mail`,
         SECRET_KEY: process.env.NHN_EMAIL_SECRET_KEY,
         SENDER_EMAIL: 'no-reply@sandbox.co.kr', // 발신자 이메일 (NHN에 등록된 발신자)
         TEMPLATE_ID: 'cr_002',

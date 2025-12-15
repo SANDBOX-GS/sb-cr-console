@@ -76,7 +76,7 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
     };
 
     try {
-        const response = await fetch(NHN_CONFIG.EMAIL.URL, {
+        const response = await fetch(NHN_CONFIG.EMAIL.AD_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -85,6 +85,11 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
             body: JSON.stringify(body)
         });
         const result = await response.json();
+
+        if (!result.header.isSuccessful) {
+            console.error("❌ Email API Error Details:", JSON.stringify(result, null, 2));
+        }
+
         return result.header.isSuccessful;
     } catch (e) {
         console.error("NHN Email Fetch Error:", e);
