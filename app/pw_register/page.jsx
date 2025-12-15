@@ -1,9 +1,10 @@
 "use client";
 import {useState, useEffect} from 'react';
+import { useSearchParams } from 'next/navigation';
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Checkbox} from "@/components/ui/checkbox";
-import {EyeIcon, EyeOffIcon, ChevronDownIcon, CheckCircleIcon, ShieldCheckIcon, SparklesIcon} from "lucide-react";
+import {EyeIcon, EyeOffIcon, ChevronDownIcon, CheckCircleIcon, ShieldCheckIcon, SparklesIcon, AlertCircleIcon} from "lucide-react";
 import {motion, AnimatePresence} from "framer-motion";
 import {TERMS_CONTENT} from "@/constants/terms-content";
 import {useRouter} from "@/hooks/useRouter";
@@ -74,6 +75,7 @@ function TermsContent({content}) {
 
 export default function App() {
     const { navigate } = useRouter();
+    const searchParams = useSearchParams(); // URL 파라미터 가져오기
 
     const [formData, setFormData] = useState({
         email: '',
@@ -94,8 +96,90 @@ export default function App() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // 검증 관련 State 추가
+    const [isVerifying, setIsVerifying] = useState(true); // 검증 로딩 상태
+    const [isAccessDenied, setIsAccessDenied] = useState(false); // 접근 차단 상태
+
     // 약관 토글 상태 관리
     const [expandedTerm, setExpandedTerm] = useState(null);
+
+    // [추가된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
+    useEffect(() => {
+        const verifyToken = async () => {
+            // URL에서 'code' 또는 'id'라는 파라미터를 가져옴 (예: ?code=xxxxx)
+            const token = searchParams.get('code');
+
+            if (!token) {
+                // 토큰이 아예 없으면 접근 차단
+                setIsAccessDenied(true);
+                setIsVerifying(false);
+                return;
+            }
+
+            try {
+                // 백엔드에 토큰 검증 요청 (API 경로는 실제 환경에 맞춰 수정 필요)
+                const response = await fetch('/api/member/check_uuid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // 토큰이 유효하면 이메일을 미리 세팅해줄 수도 있습니다.
+                    if (data.email) {
+                        setFormData(prev => ({ ...prev, email: data.email }));
+                    }
+                    setIsAccessDenied(false);
+                } else {
+                    // DB에 없거나 만료된 경우
+                    setIsAccessDenied(true);
+                }
+            } catch (error) {
+                console.error("Token verification failed:", error);
+                setIsAccessDenied(true);
+            } finally {
+                setIsVerifying(false);
+            }
+        };
+
+        verifyToken();
+    }, [searchParams]);
+
+    // [화면 1] 검증 중일 때 로딩 화면
+    if (isVerifying) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full"
+                />
+            </div>
+        );
+    }
+
+    // [화면 2] 접근 권한이 없을 때 에러 화면
+    if (isAccessDenied) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <div className="text-center max-w-md">
+                    <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">유효하지 않은 접근입니다</h2>
+                    <p className="text-gray-600 mb-6">
+                        잘못된 링크이거나 유효기간이 만료된 주소입니다.<br/>
+                        관리자에게 문의해 주세요.
+                    </p>
+                    <Button
+                        onClick={() => navigate('/login')} // 혹은 메인으로 이동
+                        className="bg-slate-800 text-white"
+                    >
+                        메인으로 돌아가기
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
