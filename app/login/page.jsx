@@ -100,7 +100,7 @@ export default function LoginPageContent() {
                 onSubmit={handleSubmit}
                 className="w-full max-w-md"
             >
-                <Box className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 relative overflow-hidden">
+                <Box className="">
                     {/* Decorative gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
 
@@ -224,7 +224,7 @@ export default function LoginPageContent() {
                                 disabled={isLoading}
                                 variant="primary"
                                 size="lg"
-                                className={`w-full`}
+                                className={"w-full"}
                             >
                                 <AnimatePresence mode="wait">
                                     {isLoading ? (
