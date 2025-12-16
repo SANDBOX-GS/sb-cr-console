@@ -3,16 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import { TABLE_NAMES } from '@/constants/dbConstants';
 import bcrypt from 'bcryptjs';
 
-// UUID 생성 함수 (고유 식별자 crip_id를 위해 필요)
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
 export async function POST(request) {
-    const { email, password, agreed_to_terms, agreed_to_privacy, agreed_to_third_party, agreed_to_marketing } = await request.json();
+    const { code, email, password, agreed_to_terms, agreed_to_privacy, agreed_to_third_party, agreed_to_marketing } = await request.json();
     let connection;
 
     try {
@@ -20,7 +12,7 @@ export async function POST(request) {
 
         // 1. 이메일 존재 여부 확인 및 상태 조회
         const [rows] = await connection.execute(
-            `SELECT active_status FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
+            `SELECT user_id, active_status FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
             [email]
         );
 
@@ -34,6 +26,14 @@ export async function POST(request) {
 
         const member = rows[0];
 
+        // code가 없거나 서로 다르면 유효하지 않은 접근으로 처리
+        if (!code || member.user_id !== code) {
+            return new Response(
+                JSON.stringify({ message: '유효하지 않은 접근입니다. (잘못된 인증 코드)' }),
+                { status: 403, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+
         // 2. active_status 확인
         if (member.active_status === 'active') {
             return new Response(
@@ -45,12 +45,10 @@ export async function POST(request) {
         // 3. 비밀번호 암호화 및 crip_id 업데이트
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const newUserId = generateUUID();
 
         // inactive 계정을 활성화하고 비밀번호, user_id, 동의 정보 업데이트
         await connection.execute(
             `UPDATE ${TABLE_NAMES.SBN_MEMBER} SET
-                                   user_id = ?,
                                    password = ?,
                                    agreed_to_terms = ?,
                                    terms_agreed_at = IF(? = 'Y', NOW(), terms_agreed_at),
@@ -62,15 +60,15 @@ export async function POST(request) {
                                    marketing_agreed_at = IF(? = 'Y', NOW(), marketing_agreed_at),
                                    active_status = 'active',
                                    updated_at = NOW()
-             WHERE email = ?`,
+             WHERE email = ? AND user_id = ?`,
             [
-                newUserId,
                 hashedPassword,
                 agreed_to_terms, agreed_to_terms,
                 agreed_to_privacy, agreed_to_privacy,
                 agreed_to_third_party, agreed_to_third_party,
                 agreed_to_marketing, agreed_to_marketing,
-                email
+                email,
+                code
             ]
         );
 
@@ -88,7 +86,7 @@ export async function POST(request) {
         });
     } finally {
         if (connection) {
-            connection.end();
+            connection.release();
         }
     }
 }
