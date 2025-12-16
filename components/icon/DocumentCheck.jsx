@@ -110,7 +110,7 @@ export const DocumentCheck = ({ className = "" }) => {
                         filterUnits="userSpaceOnUse"
                         colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -161,9 +161,9 @@ export const DocumentCheck = ({ className = "" }) => {
                         width="73.3597"
                         height="73.3592"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -196,9 +196,9 @@ export const DocumentCheck = ({ className = "" }) => {
                         width="46.7397"
                         height="34.3094"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -250,8 +250,8 @@ export const DocumentCheck = ({ className = "" }) => {
                         y2="60.216"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stopColor="#93C5FD" stop-opacity="0" />
-                        <stop offset="1" stopColor="#BFE7FE" stop-opacity="0.5" />
+                        <stop stopColor="#93C5FD" stopOpacity="0" />
+                        <stop offset="1" stopColor="#BFE7FE" stopOpacity="0.5" />
                     </linearGradient>
                     <linearGradient
                         id="paint1_linear_121_206"
