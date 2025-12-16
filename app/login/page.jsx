@@ -63,7 +63,7 @@ export default function LoginPageContent() {
                 if (response.ok) {
                     // 200 OK: 로그인 성공
                     login();
-                    navigate("/payee_info_register", { tab: "guide" });
+                    navigate("/payee-info/register", { tab: "guide" });
                     // 실제 애플리케이션에서는 여기서 토큰/세션 저장 로직이 들어갑니다.
                 } else {
                     // 401, 403, 500 등 에러 처리
