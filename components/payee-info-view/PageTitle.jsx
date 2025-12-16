@@ -20,10 +20,10 @@ export function PageTitle({ title, description }) {
             className="text-center mb-8"
         >
             <div className="inline-flex items-center gap-2 mb-4">
-                <UserIcon className="h-8 w-8 text-indigo-600" />
+                <UserIcon className="h-8 w-8 text-sky-600" />
             </div>
 
-            <h1 className="text-4xl font-bold text-slate-800 mb-4 bg-gradient-to-r from-slate-800 via-slate-700 to-indigo-700 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-slate-800 mb-4 bg-gradient-to-r from-slate-800 via-slate-700 to-sky-700 bg-clip-text text-transparent">
                 {title}
             </h1>
 

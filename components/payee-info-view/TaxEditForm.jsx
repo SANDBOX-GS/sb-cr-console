@@ -54,16 +54,12 @@ export function TaxEditForm({
                 <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                     <FileTextIcon className="w-4 h-4 text-amber-600" />
                 </div>
-                <h4 className="text-lg font-bold text-slate-800">
-                    세무 정보 수정
-                </h4>
+                <h4 className="text-lg font-bold text-slate-800">세무 정보 수정</h4>
             </div>
 
             {/* 간이과세자 여부 */}
             <div className="mb-6">
-                <Label className="text-slate-600 mb-3 block">
-                    간이과세자 여부
-                </Label>
+                <Label className="text-slate-600 mb-3 block">간이과세자 여부</Label>
                 <RadioGroup
                     value={formData.taxInfo.isSimpleTax ? "true" : "false"}
                     onValueChange={(value) =>
@@ -95,8 +91,7 @@ export function TaxEditForm({
             {/* 발행 유형 */}
             <div className="mb-6">
                 <Label className="text-slate-600 mb-3 block">
-                    발행 유형{" "}
-                    <span className="text-red-500">*</span>
+                    발행 유형 <span className="text-red-500">*</span>
                 </Label>
                 <RadioGroup
                     value={formData.taxInfo.issueType}
@@ -116,7 +111,7 @@ export function TaxEditForm({
                             key={type.value}
                             className={`relative border-2 rounded-xl p-4 transition-all ${
                                 formData.taxInfo.issueType === type.value
-                                    ? "border-indigo-500 bg-indigo-50"
+                                    ? "border-sky-500 bg-sky-50"
                                     : "border-slate-200 hover:border-slate-300"
                             }`}
                         >
@@ -135,7 +130,7 @@ export function TaxEditForm({
                                             <div className="font-medium text-slate-800">
                                                 {type.label}
                                             </div>
-                                            <div className="text-sm text-indigo-600 font-medium">
+                                            <div className="text-sm text-sky-600 font-medium">
                                                 {type.description}
                                             </div>
                                         </div>
@@ -149,15 +144,13 @@ export function TaxEditForm({
                     ))}
                 </RadioGroup>
                 {errors.issueType && (
-                    <p className="text-red-500 text-sm mt-2">
-                        {errors.issueType}
-                    </p>
+                    <p className="text-red-500 text-sm mt-2">{errors.issueType}</p>
                 )}
             </div>
 
             {/* 세금계산서 발급시 담당자 정보 */}
             {formData.taxInfo.issueTaxInvoice && (
-                <div className="mt-6 p-6 bg-blue-50 rounded-xl border border-blue-200">
+                <div className="mt-6 p-6 bg-sky-50 rounded-xl border border-sky-200">
                     <h5 className="text-lg font-medium text-slate-800 mb-4">
                         담당자 정보
                     </h5>
@@ -176,7 +169,7 @@ export function TaxEditForm({
                             true,
                             "text",
                             "담당자명을 입력하세요",
-                            errors.managerName,
+                            errors.managerName
                         )}
 
                         {renderEditField(
@@ -193,7 +186,7 @@ export function TaxEditForm({
                             true,
                             "tel",
                             "010-0000-0000",
-                            errors.managerPhone,
+                            errors.managerPhone
                         )}
 
                         <div className="md:col-span-2">
@@ -211,7 +204,7 @@ export function TaxEditForm({
                                 true,
                                 "email",
                                 "example@email.com",
-                                errors.managerEmail,
+                                errors.managerEmail
                             )}
                         </div>
                     </div>

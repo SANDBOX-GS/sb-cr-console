@@ -1,11 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-    CalendarIcon,
-    ClockIcon,
-    AlertTriangleIcon,
-} from "lucide-react";
+import { CalendarIcon, ClockIcon, AlertTriangleIcon } from "lucide-react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner"; // <--- 이 줄이 필요합니다.
 
@@ -31,7 +27,6 @@ import { toast } from "sonner"; // <--- 이 줄이 필요합니다.
  * @property {boolean} [isLoading=false] 로딩 상태 여부
  * @property {(metadata: object) => Promise<void>} onMetadataUpdate 메타데이터 갱신을 위한 콜백 (이름 변경)
  */
-
 
 // Utility functions
 const formatDate = (dateString) => {
@@ -69,7 +64,6 @@ export function InfoCallToAction({
                                      onCancelEdit = () => {},
                                      onSave = () => {},
                                  }) {
-
     const [isLoading, setIsLoading] = useState(false);
 
     /**
@@ -91,15 +85,18 @@ export function InfoCallToAction({
         };
 
         // 💡 localStorage에서 토큰을 가져와 Authorization 헤더에 설정합니다.
-        const userToken = typeof localStorage !== 'undefined' ? localStorage.getItem('userToken') : 'mock-token';
+        const userToken =
+            typeof localStorage !== "undefined"
+                ? localStorage.getItem("userToken")
+                : "mock-token";
 
         try {
             // API 호출 URL: /api/member/payee_agree
-            const response = await fetch('/api/member/payee_agree', {
-                method: 'POST',
+            const response = await fetch("/api/member/payee_agree", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${userToken}`,
                 },
                 body: JSON.stringify(payload),
             });
@@ -117,13 +114,16 @@ export function InfoCallToAction({
                 toast.success("정보 수집에 성공적으로 동의했습니다.");
             } else {
                 // API에서 에러 메시지를 반환하는 경우
-                const errorMessage = result.message || "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
+                const errorMessage =
+                    result.message ||
+                    "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
             }
-
         } catch (error) {
             console.error("동의 API 호출 중 오류 발생:", error);
 
-            toast.error("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요.");
+            toast.error(
+                "서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요."
+            );
         } finally {
             setIsLoading(false);
         }
@@ -142,7 +142,7 @@ export function InfoCallToAction({
                         ? "bg-red-50 border-red-200"
                         : validityStatus === "expiring_soon"
                             ? "bg-amber-50 border-amber-200"
-                            : "bg-blue-50 border-blue-200"
+                            : "bg-sky-50 border-sky-200"
                 } border-2 rounded-2xl p-8 shadow-lg space-y-6`}
             >
                 {/* 메인 콘텐츠 영역 */}
@@ -156,22 +156,14 @@ export function InfoCallToAction({
                     <div className="flex justify-center">
                         <ul className="text-slate-600 space-y-2 text-left inline-block">
                             <li className="flex items-start gap-2">
-                                <span className="text-slate-400 mt-2 text-xs">
-                                    •
-                                </span>
-                                <span>
-                                    정보 수집·갱신에 동의하거나 정보를 수정해
-                                    주세요.
-                                </span>
+                                <span className="text-slate-400 mt-2 text-xs">•</span>
+                                <span>정보 수집·갱신에 동의하거나 정보를 수정해 주세요.</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <span className="text-slate-400 mt-2 text-xs">
-                                    •
-                                </span>
+                                <span className="text-slate-400 mt-2 text-xs">•</span>
                                 <span>
-                                    동의하지 않으면, 정산금 지급 기일이 변동될 수
-                                    있습니다.
-                                </span>
+                  동의하지 않으면, 정산금 지급 기일이 변동될 수 있습니다.
+                </span>
                             </li>
                         </ul>
                     </div>
@@ -179,14 +171,14 @@ export function InfoCallToAction({
                     {/* 상태 라인 */}
                     <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-[rgba(255,255,255,1)] rounded-xl">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-600">
-                                정보 수집일 유효기간:
-                            </span>
+              <span className="text-sm text-slate-600">
+                정보 수집일 유효기간:
+              </span>
                             <span className="text-sm font-medium text-slate-800">
-                                {validityPeriod.end
-                                    ? `${formatDate(validityPeriod.end)} 까지`
-                                    : "동의 필요"}
-                            </span>
+                {validityPeriod.end
+                    ? `${formatDate(validityPeriod.end)} 까지`
+                    : "동의 필요"}
+              </span>
                             <Badge
                                 variant={
                                     validityStatus === "valid"
@@ -212,12 +204,10 @@ export function InfoCallToAction({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-600">
-                                마지막 수정일:
-                            </span>
+                            <span className="text-sm text-slate-600">마지막 수정일:</span>
                             <span className="text-sm text-slate-800">
-                                {formatDateTime(lastModified)}
-                            </span>
+                {formatDateTime(lastModified)}
+              </span>
                         </div>
                     </div>
 
@@ -231,8 +221,8 @@ export function InfoCallToAction({
                             <div className="flex items-center justify-center gap-2">
                                 <AlertTriangleIcon className="h-5 w-5 text-red-600 flex-shrink-0" />
                                 <span className="text-red-800 font-medium text-center">
-                                    동의하려면 필수 항목을 먼저 채워주세요.
-                                </span>
+                  동의하려면 필수 항목을 먼저 채워주세요.
+                </span>
                             </div>
                         </motion.div>
                     )}
@@ -241,7 +231,7 @@ export function InfoCallToAction({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <Button
                             onClick={() => handleConsent("30days")}
-                            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
+                            className="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
                             disabled={isLoading || Object.keys(errors).length > 0} // 로딩 중이거나 오류가 있을 때 비활성화
                         >
                             <CalendarIcon className="w-5 h-5 mr-2" />
@@ -251,7 +241,7 @@ export function InfoCallToAction({
                         <Button
                             onClick={() => handleConsent("once")}
                             variant="outline"
-                            className="border-blue-300 text-blue-700 hover:bg-blue-50 px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
+                            className="border-sky-300 text-sky-700 hover:bg-sky-50 px-8 py-3 rounded-xl min-w-[160px] sm:w-auto"
                             disabled={isLoading || Object.keys(errors).length > 0} // 로딩 중이거나 오류가 있을 때 비활성화
                         >
                             <ClockIcon className="w-5 h-5 mr-2" />

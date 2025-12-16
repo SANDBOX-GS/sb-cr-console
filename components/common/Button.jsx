@@ -31,7 +31,7 @@ export const Button = ({
         <button
             {...props}
             className={cn(
-                "rounded-full font-semibold transition-all duration-150 flex items-center justify-center",
+                "rounded-full font-semibold transition-all duration-150 flex items-center justify-center shadow-sky-900/20 shadow-[0_4px_8px]",
                 variantStyles[variant],
                 sizeStyles[size],
                 className

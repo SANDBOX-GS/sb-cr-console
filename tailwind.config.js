@@ -8,6 +8,10 @@ const config = {
     ],
     theme: {
         extend: {
+            colors: {
+                ring: "#0ea5e9",
+                destructive: "#f87171",
+            },
             backgroundImage: {
                 "primary-gradient": "linear-gradient(90deg, #4EDCF1 0%, #7FB7FB 100%)",
             },

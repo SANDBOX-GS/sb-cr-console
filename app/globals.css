@@ -3,118 +3,123 @@
 @tailwind utilities;
 
 @layer base {
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
-    format("woff2");
-    font-weight: 100;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2") format("woff2");
+        font-weight: 100;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
-    format("woff2");
-    font-weight: 200;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2") format("woff2");
+        font-weight: 200;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
-    format("woff2");
-    font-weight: 300;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2") format("woff2");
+        font-weight: 300;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
-    format("woff2");
-    font-weight: 400;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
-    format("woff2");
-    font-weight: 500;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2") format("woff2");
+        font-weight: 500;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
-    format("woff2");
-    font-weight: 600;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2") format("woff2");
+        font-weight: 600;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
-    format("woff2");
-    font-weight: 700;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
-    format("woff2");
-    font-weight: 800;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2") format("woff2");
+        font-weight: 800;
+        font-display: swap;
+    }
 
-  @font-face {
-    font-family: "Pretendard";
-    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
-    format("woff2");
-    font-weight: 900;
-    font-display: swap;
-  }
+    @font-face {
+        font-family: "Pretendard";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2") format("woff2");
+        font-weight: 900;
+        font-display: swap;
+    }
 }
-@layer base {
-  * {
-    font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
-  }
 
-  html {
-    font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
-  }
-  body {
-    font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
-    background-color: #eff6ff;
-  }
-  h1 {
-    color: #334155;
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 160%;
-  }
-  h2 {
-    color: #334155;
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 160%;
-  }
-  h3 {
-    color: #334155;
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 160%;
-  }
-  h4 {
-    color: #334155;
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 160%;
-  }
-  p {
-    color: #717182;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 160%;
-  }
+@layer base {
+    * {
+        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
+    }
+
+    html {
+        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
+    }
+
+    body {
+        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
+        background-color: #eff6ff;
+    }
+
+    h1 {
+        color: #334155;
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 160%;
+    }
+
+    h2 {
+        color: #334155;
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 160%;
+    }
+
+    h3 {
+        color: #334155;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 160%;
+    }
+
+    h4 {
+        color: #334155;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 160%;
+    }
+
+    h5 {
+        color: #334155;
+        font-size: 1.125rem;
+        font-weight: 700;
+        line-height: 160%;
+    }
+
+    p {
+        color: #717182;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 160%;
+    }
 }

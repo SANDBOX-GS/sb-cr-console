@@ -1,10 +1,20 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { UserIcon } from "lucide-react";
 import { FileUpload } from "./FileUpload";
-import { formatPhoneNumber, formatBusinessNumber, formatIdNumber } from "@/utils/formatters";
+import {
+    formatPhoneNumber,
+    formatBusinessNumber,
+    formatIdNumber,
+} from "@/utils/formatters";
 import { ID_DOCUMENT_TYPES } from "@/constants/payee-data";
 
 /**
@@ -63,7 +73,6 @@ export function RecipientEditForm({
                                       errors,
                                       renderEditField,
                                   }) {
-
     const updateFileState = (fieldName) => (fileOrInfo) => {
         setFormData((prev) => ({
             ...prev,
@@ -77,19 +86,16 @@ export function RecipientEditForm({
     return (
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-indigo-600" />
+                <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-sky-600" />
                 </div>
-                <h4 className="text-lg font-bold text-slate-800">
-                    수취인 정보 수정
-                </h4>
+                <h4 className="text-lg font-bold text-slate-800">수취인 정보 수정</h4>
             </div>
 
             {/* 사업자 구분 */}
             <div className="mb-6">
                 <Label className="text-slate-600 mb-3 block">
-                    사업자 구분{" "}
-                    <span className="text-red-500">*</span>
+                    사업자 구분 <span className="text-red-500">*</span>
                 </Label>
                 <RadioGroup
                     value={formData.recipientInfo.businessType}
@@ -118,7 +124,10 @@ export function RecipientEditForm({
                         </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="corporate_business" id="corporate_business" />
+                        <RadioGroupItem
+                            value="corporate_business"
+                            id="corporate_business"
+                        />
                         <Label htmlFor="corporate_business" className="text-slate-700">
                             법인사업자
                         </Label>
@@ -202,7 +211,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "사업자명을 입력하세요",
-                            errors.businessName,
+                            errors.businessName
                         )}
 
                         {renderEditField(
@@ -219,7 +228,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "000-00-00000",
-                            errors.businessNumber,
+                            errors.businessNumber
                         )}
                     </>
                 )}
@@ -240,7 +249,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "본명을 입력하세요",
-                            errors.foreignerName,
+                            errors.foreignerName
                         )}
 
                         {renderEditField(
@@ -257,7 +266,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "000000-0000000",
-                            errors.foreignerRegistrationNumber,
+                            errors.foreignerRegistrationNumber
                         )}
                     </>
                 ) : (
@@ -276,7 +285,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "본명을 입력하세요",
-                            errors.realName,
+                            errors.realName
                         )}
 
                         {renderEditField(
@@ -293,7 +302,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "000000-0000000",
-                            errors.idNumber,
+                            errors.idNumber
                         )}
                     </>
                 )}
@@ -314,7 +323,7 @@ export function RecipientEditForm({
                             true,
                             "text",
                             "법정대리인 본명을 입력하세요",
-                            errors.guardianName,
+                            errors.guardianName
                         )}
 
                         {renderEditField(
@@ -331,7 +340,7 @@ export function RecipientEditForm({
                             true,
                             "tel",
                             "010-0000-0000",
-                            errors.guardianPhone,
+                            errors.guardianPhone
                         )}
                     </>
                 )}
@@ -341,8 +350,7 @@ export function RecipientEditForm({
             {!formData.recipientInfo.isForeigner && (
                 <div className="mt-6">
                     <Label className="text-slate-600 mb-3 block">
-                        신분증 종류{" "}
-                        <span className="text-red-500">*</span>
+                        신분증 종류 <span className="text-red-500">*</span>
                     </Label>
                     <Select
                         value={formData.recipientInfo.idDocumentType}
@@ -379,7 +387,7 @@ export function RecipientEditForm({
                         // file prop은 File 객체 또는 FileInfo 객체 모두 받을 수 있음
                         file={formData.recipientInfo.businessDocument}
                         // onChange 핸들러는 헬퍼 함수를 통해 상태를 업데이트
-                        onChange={updateFileState('businessDocument')}
+                        onChange={updateFileState("businessDocument")}
                         label="사업자등록증"
                         accept=".pdf,.jpg,.jpeg,.png"
                         required
@@ -390,7 +398,7 @@ export function RecipientEditForm({
                 {formData.recipientInfo.isForeigner ? (
                     <FileUpload
                         file={formData.recipientInfo.foreignerRegistrationCard}
-                        onChange={updateFileState('foreignerRegistrationCard')}
+                        onChange={updateFileState("foreignerRegistrationCard")}
                         label="외국인등록증"
                         accept=".pdf,.jpg,.jpeg,.png"
                         required
@@ -398,7 +406,7 @@ export function RecipientEditForm({
                 ) : (
                     <FileUpload
                         file={formData.recipientInfo.idDocument}
-                        onChange={updateFileState('idDocument')}
+                        onChange={updateFileState("idDocument")}
                         label="신분증 사본"
                         accept=".pdf,.jpg,.jpeg,.png"
                         required
@@ -409,7 +417,7 @@ export function RecipientEditForm({
                 {formData.recipientInfo.isMinor && (
                     <FileUpload
                         file={formData.recipientInfo.familyRelationCertificate}
-                        onChange={updateFileState('familyRelationCertificate')}
+                        onChange={updateFileState("familyRelationCertificate")}
                         label="가족관계증명서"
                         accept=".pdf,.jpg,.jpeg,.png"
                         required

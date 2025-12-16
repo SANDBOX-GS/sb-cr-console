@@ -58,9 +58,9 @@ export function SummaryCard({
     // 헬퍼: 수취인 이름 가져오기
     const getRecipientName = () => {
         if (formData.recipientInfo.isForeigner) {
-            return formData.recipientInfo.foreignerName || '—';
+            return formData.recipientInfo.foreignerName || "—";
         }
-        return formData.recipientInfo.realName || '—';
+        return formData.recipientInfo.realName || "—";
     };
 
     // 헬퍼: 유효기간 종료일 라벨
@@ -79,9 +79,7 @@ export function SummaryCard({
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
                 <div className="mb-6">
                     <div className="w-full flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-                        <h3 className="text-xl font-bold text-slate-800">
-                            수취 정보 관리
-                        </h3>
+                        <h3 className="text-xl font-bold text-slate-800">수취 정보 관리</h3>
 
                         {/* 버튼 영역 - 토글 형태 */}
                         <div className="flex gap-2">
@@ -100,10 +98,10 @@ export function SummaryCard({
                                     <Button
                                         onClick={onSave}
                                         disabled={isLoading}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                        className="bg-sky-600 hover:bg-sky-700 text-white"
                                     >
                                         <SaveIcon className="w-4 h-4 mr-2" />
-                                        {isLoading ? '저장 중...' : '저장'}
+                                        {isLoading ? "저장 중..." : "저장"}
                                     </Button>
                                 </>
                             ) : (
@@ -111,7 +109,7 @@ export function SummaryCard({
                                 <Button
                                     variant="outline"
                                     onClick={onEditMode}
-                                    className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                                    className="text-sky-600 border-sky-300 hover:bg-sky-50"
                                 >
                                     <EditIcon className="w-4 h-4 mr-2" />
                                     정보 수정
@@ -123,7 +121,6 @@ export function SummaryCard({
 
                 {/* 요약 상세 정보 */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-sm pt-4 border-t border-slate-200">
-
                     {/* 1. 유효기간 */}
                     <div className="space-y-1">
                         <Label className="text-slate-600">유효기간</Label>
@@ -132,7 +129,11 @@ export function SummaryCard({
                         </p>
                         <Badge
                             variant={
-                                validityStatus === "valid" ? "default" : validityStatus === "expiring_soon" ? "secondary" : "destructive"
+                                validityStatus === "valid"
+                                    ? "default"
+                                    : validityStatus === "expiring_soon"
+                                        ? "secondary"
+                                        : "destructive"
                             }
                             className={
                                 validityStatus === "valid"
@@ -142,18 +143,24 @@ export function SummaryCard({
                                         : "bg-red-100 text-red-800"
                             }
                         >
-                            {validityStatus === "valid" ? "유효" : validityStatus === "expiring_soon" ? "만료 임박" : "만료"}
+                            {validityStatus === "valid"
+                                ? "유효"
+                                : validityStatus === "expiring_soon"
+                                    ? "만료 임박"
+                                    : "만료"}
                         </Badge>
                     </div>
 
                     {/* 2. 수취인 이름 */}
                     <div className="space-y-1">
                         <Label className="text-slate-600">
-                            {formData.recipientInfo.businessType !== 'individual' ? '사업자명' : '수취인명'}
+                            {formData.recipientInfo.businessType !== "individual"
+                                ? "사업자명"
+                                : "수취인명"}
                         </Label>
                         <p className="font-medium text-slate-800">
-                            {formData.recipientInfo.businessType !== 'individual'
-                                ? formData.recipientInfo.businessName || '—'
+                            {formData.recipientInfo.businessType !== "individual"
+                                ? formData.recipientInfo.businessName || "—"
                                 : getRecipientName()}
                         </p>
                     </div>
@@ -162,10 +169,10 @@ export function SummaryCard({
                     <div className="space-y-1">
                         <Label className="text-slate-600">계좌번호</Label>
                         <p className="font-medium text-slate-800">
-                            {formData.accountInfo.bankName || '—'}
+                            {formData.accountInfo.bankName || "—"}
                         </p>
                         <p className="text-sm text-slate-600">
-                            {maskAccountNumber(formData.accountInfo.accountNumber || '')}
+                            {maskAccountNumber(formData.accountInfo.accountNumber || "")}
                         </p>
                     </div>
 
@@ -173,7 +180,7 @@ export function SummaryCard({
                     <div className="space-y-1">
                         <Label className="text-slate-600">최종 수정</Label>
                         <p className="font-medium text-slate-800">
-                            {lastModified ? formatDateTime(lastModified) : '—'}
+                            {lastModified ? formatDateTime(lastModified) : "—"}
                         </p>
                     </div>
                 </div>

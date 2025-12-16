@@ -26,9 +26,7 @@ export function AccountInfoSection({
                             <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
                                 <CreditCardIcon className="w-4 h-4 text-cyan-600" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800">
-                                계좌 정보
-                            </h4>
+                            <h4 className="text-lg font-bold text-slate-800">계좌 정보</h4>
                         </div>
                         <ChevronDownIcon
                             className={`h-5 w-5 text-slate-500 transition-transform ${
@@ -61,17 +59,12 @@ export function AccountInfoSection({
                         </div>
 
                         {/* 통장 사본 파일 업로드 */}
-                        <FilePreview
-                            file={accountInfo.bankDocument}
-                            label="통장 사본"
-                        />
+                        <FilePreview file={accountInfo.bankDocument} label="통장 사본" />
 
                         {/* 해외 계좌 정보 */}
                         {isOverseas && (
-                            <div className="space-y-6 p-4 bg-blue-50 rounded-xl">
-                                <h4 className="font-medium text-slate-800">
-                                    해외 계좌 정보
-                                </h4>
+                            <div className="space-y-6 p-4 bg-sky-50 rounded-xl">
+                                <h4 className="font-medium text-slate-800">해외 계좌 정보</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {renderEditField(
                                         "SWIFT CODE",
@@ -87,7 +80,7 @@ export function AccountInfoSection({
                                         true,
                                         "text",
                                         "SWIFT CODE를 입력하세요",
-                                        errors.swiftCode,
+                                        errors.swiftCode
                                     )}
                                     {renderEditField(
                                         "은행 주소",
@@ -103,7 +96,7 @@ export function AccountInfoSection({
                                         true,
                                         "text",
                                         "은행 주소를 입력하세요",
-                                        errors.bankAddress,
+                                        errors.bankAddress
                                     )}
                                 </div>
                             </div>

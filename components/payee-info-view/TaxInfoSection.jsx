@@ -30,15 +30,9 @@ import { ISSUE_TYPES } from "@/constants/payee-data";
  * 세무 정보(발행 유형, 소득 종류, 세금계산서 발급 정보)를 요약해서 보여주는 접이식(Collapsible) 섹션입니다.
  * @param {TaxInfoSectionProps} props
  */
-export function TaxInfoSection({
-                                   isOpen,
-                                   onOpenChange,
-                                   taxInfo,
-                               }) {
+export function TaxInfoSection({ isOpen, onOpenChange, taxInfo }) {
     const getSelectedIssueType = () => {
-        return ISSUE_TYPES.find(
-            (type) => type.value === taxInfo.issueType,
-        );
+        return ISSUE_TYPES.find((type) => type.value === taxInfo.issueType);
     };
 
     return (
@@ -50,9 +44,7 @@ export function TaxInfoSection({
                             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <FileTextIcon className="w-4 h-4 text-purple-600" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800">
-                                세무 정보
-                            </h4>
+                            <h4 className="text-lg font-bold text-slate-800">세무 정보</h4>
                         </div>
                         <ChevronDownIcon
                             className={`h-5 w-5 text-slate-500 transition-transform ${
@@ -105,7 +97,7 @@ export function TaxInfoSection({
 
                         {/* 세금계산서 발급 요청시 담당자 정보 */}
                         {taxInfo?.issueTaxInvoice && (
-                            <div className="space-y-4 p-4 bg-blue-50 rounded-xl">
+                            <div className="space-y-4 p-4 bg-sky-50 rounded-xl">
                                 <h4 className="font-medium text-slate-800">
                                     세금계산서 발급 정보
                                 </h4>

@@ -102,7 +102,7 @@ export default function LoginPageContent() {
             >
                 <Box className="">
                     {/* Decorative gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
 
                     <div className="space-y-6 relative">
                         {/* Email Section */}
@@ -131,7 +131,7 @@ export default function LoginPageContent() {
                                                 email: undefined,
                                             }));
                                     }}
-                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 ${
+                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all duration-200 ${
                                         errors.email
                                             ? "border-red-400 focus:border-red-400 focus:ring-red-500/20"
                                             : ""
@@ -180,7 +180,7 @@ export default function LoginPageContent() {
                                                 password: undefined,
                                             }));
                                     }}
-                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 pr-12 ${
+                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all duration-200 pr-12 ${
                                         errors.password
                                             ? "border-red-400 focus:border-red-400 focus:ring-red-500/20"
                                             : ""
@@ -189,7 +189,7 @@ export default function LoginPageContent() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
+                                    className="absolute right-3 top-[50%] transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
                                 >
                                     {showPassword ? (
                                         <EyeIcon className="h-5 w-5" />
@@ -197,20 +197,20 @@ export default function LoginPageContent() {
                                         <EyeOffIcon className="h-5 w-5" />
                                     )}
                                 </button>
-                                <AnimatePresence>
-                                    {errors.password && (
-                                        <motion.p
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="text-red-500 text-sm mt-2 flex items-center gap-1"
-                                        >
-                                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                            {errors.password}
-                                        </motion.p>
-                                    )}
-                                </AnimatePresence>
                             </div>
+                            <AnimatePresence>
+                                {errors.password && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="text-red-500 text-sm mt-2 flex items-center gap-1"
+                                    >
+                                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                        {errors.password}
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
                         </motion.div>
 
                         {/* Submit Button */}

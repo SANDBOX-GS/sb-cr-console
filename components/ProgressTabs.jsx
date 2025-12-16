@@ -6,11 +6,11 @@ import {
     FileTextIcon,
     Check as CheckIcon,
 } from "lucide-react";
-import React from 'react';
+import React from "react";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
-// ... (STEPS array is the same)
+    // ... (STEPS array is the same)
     {
         id: "guide",
         label: "안내사항",
@@ -31,13 +31,7 @@ const STEPS = [
     },
 ];
 
-function StepItem({
-                      step,
-                      isActive,
-                      isCompleted,
-                      onClick,
-                      isLast,
-                  }) {
+function StepItem({ step, isActive, isCompleted, onClick, isLast }) {
     const IconComponent = step.icon;
 
     return (
@@ -60,7 +54,7 @@ function StepItem({
                         isCompleted
                             ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
                             : isActive
-                                ? "bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-500/25"
+                                ? "bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg shadow-sky-500/25"
                                 : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-500"
                     }
           `}
@@ -74,7 +68,7 @@ function StepItem({
                         <motion.div
                             className={`
                 absolute inset-0 rounded-full blur-lg opacity-30
-                ${isCompleted ? "bg-green-500" : "bg-indigo-500"}
+                ${isCompleted ? "bg-green-500" : "bg-sky-500"}
               `}
                             animate={{ opacity: [0.2, 0.4, 0.2] }}
                             transition={{ duration: 2, repeat: Infinity }}
@@ -167,9 +161,7 @@ export default function ProgressTabs({
                                          onStepChange,
                                          completedSteps,
                                      }) {
-    const currentStepIndex = STEPS.findIndex(
-        (step) => step.id === currentStep,
-    );
+    const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
 
     return (
         <motion.div
@@ -196,11 +188,10 @@ export default function ProgressTabs({
                 <div className="relative">
                     <div className="absolute top-6 left-6 right-6 h-px bg-slate-200 pointer-events-none">
                         <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-cyan-500"
+                            className="absolute inset-0 bg-gradient-to-r from-sky-500 to-cyan-500"
                             initial={{ scaleX: 0 }}
                             animate={{
-                                scaleX:
-                                    (currentStepIndex) / (STEPS.length - 1),
+                                scaleX: currentStepIndex / (STEPS.length - 1),
                             }}
                             style={{ transformOrigin: "left" }}
                             transition={{ duration: 0.8, ease: "easeInOut" }}
@@ -237,7 +228,7 @@ export default function ProgressTabs({
                         완료됨: {completedSteps.length}개
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full" />
+                        <div className="w-2 h-2 bg-gradient-to-r from-sky-500 to-cyan-500 rounded-full" />
                         진행 중: 1개
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -249,5 +240,3 @@ export default function ProgressTabs({
         </motion.div>
     );
 }
-
-

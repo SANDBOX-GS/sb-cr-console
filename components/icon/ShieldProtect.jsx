@@ -1,4 +1,4 @@
-export const ShieldProtect = ({ className }) => {
+export const ShieldProtect = ({ className = "" }) => {
     return (
         <div className={className}>
             <svg

@@ -1,8 +1,8 @@
-import { motion } from "framer-motion"
+import { motion } from "framer-motion";
 
 export default function PasswordStrengthIndicator({ password }) {
     const getPasswordStrength = (password) => {
-        if (!password) return { score: 0, text: '', color: 'bg-gray-200' };
+        if (!password) return { score: 0, text: "", color: "bg-gray-200" };
 
         let score = 0;
         const checks = {
@@ -10,15 +10,15 @@ export default function PasswordStrengthIndicator({ password }) {
             lowercase: /[a-z]/.test(password),
             uppercase: /[A-Z]/.test(password),
             number: /\d/.test(password),
-            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
         };
 
         score = Object.values(checks).filter(Boolean).length;
 
-        if (score <= 2) return { score, text: '약함', color: 'bg-red-400' };
-        if (score <= 3) return { score, text: '보통', color: 'bg-yellow-400' };
-        if (score <= 4) return { score, text: '강함', color: 'bg-blue-400' };
-        return { score, text: '매우 강함', color: 'bg-green-400' };
+        if (score <= 2) return { score, text: "약함", color: "bg-red-400" };
+        if (score <= 3) return { score, text: "보통", color: "bg-yellow-400" };
+        if (score <= 4) return { score, text: "강함", color: "bg-sky-400" };
+        return { score, text: "매우 강함", color: "bg-green-400" };
     };
 
     const strength = getPasswordStrength(password);

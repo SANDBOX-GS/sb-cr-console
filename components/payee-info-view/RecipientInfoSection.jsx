@@ -49,7 +49,6 @@ import { FilePreview } from "./FilePreview";
  * @property {{ [key: string]: string }} errors 유효성 검사 오류 객체
  */
 
-
 const ID_DOCUMENT_TYPES = [
     { value: "resident_card", label: "주민등록증" },
     { value: "drivers_license", label: "운전면허증" },
@@ -90,19 +89,16 @@ export function RecipientInfoSection({
         }
     };
 
-
     return (
         <Collapsible open={isOpen} onOpenChange={onOpenChange}>
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
                 <CollapsibleTrigger asChild>
                     <button className="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <UserIcon className="w-4 h-4 text-indigo-600" />
+                            <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                                <UserIcon className="w-4 h-4 text-sky-600" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800">
-                                수취인 정보
-                            </h4>
+                            <h4 className="text-lg font-bold text-slate-800">수취인 정보</h4>
                         </div>
                         <ChevronDownIcon
                             className={`h-5 w-5 text-slate-500 transition-transform ${
@@ -131,7 +127,7 @@ export function RecipientInfoSection({
                                         {recipientInfo.isOverseas && (
                                             <Badge
                                                 variant="secondary"
-                                                className="bg-blue-100 text-blue-700"
+                                                className="bg-sky-100 text-sky-700"
                                             >
                                                 해외 거주자
                                             </Badge>
@@ -204,7 +200,10 @@ export function RecipientInfoSection({
 
                                 {/* 신분증/등록증 파일 업로드 */}
                                 {!recipientInfo.isForeigner && !recipientInfo.isMinor && (
-                                    <FilePreview file={recipientInfo.idDocument} label="신분증 사본" />
+                                    <FilePreview
+                                        file={recipientInfo.idDocument}
+                                        label="신분증 사본"
+                                    />
                                 )}
                                 {recipientInfo.isForeigner && (
                                     <FilePreview
@@ -222,7 +221,9 @@ export function RecipientInfoSection({
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* 🚨 [수정]: 법정대리인 본명 - Read-Only 텍스트로 변경 */}
                                             <div className="space-y-2">
-                                                <Label className="text-slate-600">법정대리인 본명</Label>
+                                                <Label className="text-slate-600">
+                                                    법정대리인 본명
+                                                </Label>
                                                 <p className="text-slate-800 font-medium">
                                                     {recipientInfo.guardianName || "-"}
                                                 </p>
@@ -230,9 +231,13 @@ export function RecipientInfoSection({
 
                                             {/* 🚨 [수정]: 법정대리인 연락처 - Read-Only 텍스트로 변경 */}
                                             <div className="space-y-2">
-                                                <Label className="text-slate-600">법정대리인 연락처</Label>
+                                                <Label className="text-slate-600">
+                                                    법정대리인 연락처
+                                                </Label>
                                                 <p className="text-slate-800 font-medium">
-                                                    {formatPhoneNumber(recipientInfo.guardianPhone || "") || "-"}
+                                                    {formatPhoneNumber(
+                                                        recipientInfo.guardianPhone || ""
+                                                    ) || "-"}
                                                 </p>
                                             </div>
                                         </div>

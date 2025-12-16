@@ -29,7 +29,7 @@ function PasswordStrengthIndicator({ password }) {
 
         if (score <= 2) return { score, text: "약함", color: "bg-red-400" };
         if (score <= 3) return { score, text: "보통", color: "bg-yellow-400" };
-        if (score <= 4) return { score, text: "강함", color: "bg-blue-400" };
+        if (score <= 4) return { score, text: "강함", color: "bg-sky-400" };
         return { score, text: "매우 강함", color: "bg-green-400" };
     };
 
@@ -383,7 +383,7 @@ export default function App() {
                                         if (errors.email)
                                             setErrors((prev) => ({ ...prev, email: undefined }));
                                     }}
-                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 ${
+                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all duration-200 ${
                                         errors.email
                                             ? "border-red-400 focus:border-red-400 focus:ring-red-500/20"
                                             : ""
@@ -431,7 +431,7 @@ export default function App() {
                                             if (errors.password)
                                                 setErrors((prev) => ({ ...prev, password: undefined }));
                                         }}
-                                        className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 pr-12 ${
+                                        className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all duration-200 pr-12 ${
                                             errors.password
                                                 ? "border-red-400 focus:border-red-400 focus:ring-red-500/20"
                                                 : ""
@@ -449,21 +449,21 @@ export default function App() {
                                         )}
                                     </button>
                                     <PasswordStrengthIndicator password={formData.password} />
-                                    <AnimatePresence>
-                                        {errors.password && (
-                                            <motion.p
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                className="text-red-500 text-sm mt-2 flex items-center gap-1"
-                                            >
-                                                <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                                {errors.password}
-                                            </motion.p>
-                                        )}
-                                    </AnimatePresence>
                                 </div>
 
+                                <AnimatePresence>
+                                    {errors.password && (
+                                        <motion.p
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="text-red-500 text-sm mt-2 flex items-center gap-1"
+                                        >
+                                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                            {errors.password}
+                                        </motion.p>
+                                    )}
+                                </AnimatePresence>
                                 {/* Confirm Password Input */}
                                 <div className="relative">
                                     <Input
@@ -481,7 +481,7 @@ export default function App() {
                                                     confirmPassword: undefined,
                                                 }));
                                         }}
-                                        className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 pr-12 ${
+                                        className={`h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all duration-200 pr-12 ${
                                             errors.confirmPassword
                                                 ? "border-red-400 focus:border-red-400 focus:ring-red-500/20"
                                                 : ""
@@ -498,20 +498,20 @@ export default function App() {
                                             <EyeOffIcon className="h-5 w-5" />
                                         )}
                                     </button>
-                                    <AnimatePresence>
-                                        {errors.confirmPassword && (
-                                            <motion.p
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                className="text-red-500 text-sm mt-2 flex items-center gap-1"
-                                            >
-                                                <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                                {errors.confirmPassword}
-                                            </motion.p>
-                                        )}
-                                    </AnimatePresence>
                                 </div>
+                                <AnimatePresence>
+                                    {errors.confirmPassword && (
+                                        <motion.p
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="text-red-500 text-sm mt-2 flex items-center gap-1"
+                                        >
+                                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                            {errors.confirmPassword}
+                                        </motion.p>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
 
@@ -531,7 +531,7 @@ export default function App() {
                                             onCheckedChange={(checked) =>
                                                 handleAgreementChange("all", checked)
                                             }
-                                            className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                            className="data-[state=checked]:bg-sky-600 data-[state=checked]:border-sky-600"
                                         />
                                         <label className="font-medium text-slate-700 cursor-pointer">
                                             전체 동의
@@ -590,7 +590,7 @@ export default function App() {
                                                         onCheckedChange={(checked) =>
                                                             handleAgreementChange(item.key, checked)
                                                         }
-                                                        className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                                        className="data-[state=checked]:bg-sky-600 data-[state=checked]:border-sky-600"
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
                                                     <label className="text-sm text-slate-600 cursor-pointer">

@@ -18,13 +18,13 @@ export const IconCard = ({
                 <Box
                     bg="blue300"
                     className={
-                        "relative w-full md:w-[256px] h-[188px] px-auto overflow-hidden"
+                        "relative w-full min-w-[256px] h-[188px] px-auto overflow-hidden"
                     }
                 >
                     <Icon className="absolute inset-0 flex items-center justify-center translate-x-[-15%] translate-y-5" />
                 </Box>
                 <div className="flex flex-col gap-4">
-                    <h4>{infoTitle}</h4>
+                    <h4>{h}</h4>
                     <Box className="text-slate-700 text-left">
                         <p className="text-slate-700 font-bold">{infoTitle}</p>
                         <ul className="px-4 pt-2">
@@ -35,11 +35,13 @@ export const IconCard = ({
                             ))}
                         </ul>
                     </Box>
-                    {desc.map((d, idx) => (
-                        <p key={idx} className="text-sm text-slate-600">
-                            {d}
-                        </p>
-                    ))}
+                    <div className="mt-1 space-y-0.5">
+                        {desc.map((d, idx) => (
+                            <p key={idx} className="text-sm text-slate-600">
+                                {d}
+                            </p>
+                        ))}
+                    </div>
                 </div>
             </motion.div>
         </>

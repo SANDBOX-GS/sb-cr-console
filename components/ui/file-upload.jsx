@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { UploadIcon, FileIcon, XIcon, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef } from "react";
+import { UploadIcon, FileIcon, XIcon, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import FilePreviewModal from './image-preview-modal';
+import FilePreviewModal from "./image-preview-modal";
 
 /**
  * A reusable file upload component with drag-and-drop support.
@@ -76,8 +76,8 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
         }
     };
 
-    const isImage = file?.type.startsWith('image/');
-    const isPdf = file?.type === 'application/pdf';
+    const isImage = file?.type.startsWith("image/");
+    const isPdf = file?.type === "application/pdf";
     const isPreviewable = isImage || isPdf;
 
     const handlePreviewClick = (e) => {
@@ -85,7 +85,7 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
         if (file && isPreviewable) {
             setIsModalOpen(true);
         }
-    }
+    };
 
     return (
         <>
@@ -101,7 +101,7 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
                         "relative overflow-hidden border-2 border-dashed border-slate-300 rounded-xl p-6 text-center transition-all duration-300 ease-in-out",
                         file ? "" : "cursor-pointer",
                         isDragging
-                            ? "border-transparent bg-indigo-100/80 ring-4 ring-indigo-500/20"
+                            ? "border-transparent bg-sky-100/80 ring-2 ring-sky-500/20"
                             : "hover:border-slate-400 hover:bg-slate-50/50"
                     )}
                 >
@@ -114,7 +114,12 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
                         className="hidden"
                     />
 
-                    <div className={cn("transition-opacity duration-200", isDragging && "opacity-20")}>
+                    <div
+                        className={cn(
+                            "transition-opacity duration-200",
+                            isDragging && "opacity-20"
+                        )}
+                    >
                         {file ? (
                             <div
                                 className={cn(
@@ -124,11 +129,13 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
                                 onClick={handlePreviewClick}
                             >
                                 {isImage ? (
-                                    <ImageIcon className="w-10 h-10 text-indigo-500" />
+                                    <ImageIcon className="w-10 h-10 text-sky-500" />
                                 ) : (
                                     <FileIcon className="w-10 h-10 text-slate-500" />
                                 )}
-                                <span className="text-sm font-medium text-slate-700">{file.name}</span>
+                                <span className="text-sm font-medium text-slate-700">
+                  {file.name}
+                </span>
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -143,16 +150,20 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
                         ) : (
                             <div className="flex flex-col items-center justify-center gap-2 text-slate-500">
                                 <UploadIcon className="w-8 h-8" />
-                                <p className="text-sm font-medium">파일을 드래그하거나 클릭하여 업로드하세요</p>
+                                <p className="text-sm font-medium">
+                                    파일을 드래그하거나 클릭하여 업로드하세요
+                                </p>
                                 <p className="text-xs">PDF, JPG, PNG 파일 (최대 10MB)</p>
                             </div>
                         )}
                     </div>
 
                     {isDragging && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-indigo-500/10 backdrop-blur-sm pointer-events-none">
-                            <UploadIcon className="w-12 h-12 text-indigo-600 animate-bounce" />
-                            <p className="mt-2 text-lg font-semibold text-indigo-700">여기에 파일을 놓으세요</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-sky-500/10 backdrop-blur-sm pointer-events-none">
+                            <UploadIcon className="w-12 h-12 text-sky-600 animate-bounce" />
+                            <p className="mt-2 text-lg font-semibold text-sky-700">
+                                여기에 파일을 놓으세요
+                            </p>
                         </div>
                     )}
                 </div>
@@ -165,4 +176,3 @@ export default function FileUpload({ file, onFileChange, label, accept }) {
         </>
     );
 }
-
