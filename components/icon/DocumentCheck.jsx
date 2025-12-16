@@ -73,7 +73,7 @@ export const DocumentCheck = ({ className = "" }) => {
                         width="131.457"
                         height="137.647"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
