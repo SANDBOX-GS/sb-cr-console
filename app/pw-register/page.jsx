@@ -3,14 +3,14 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/common/Button";
 import { Box } from "@/components/common/Box";
-import { ShieldProtect } from "@/components/icon/ShieldProtect";
-import { Shadow } from "@/components/icon/Shadow";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EyeIcon, EyeOffIcon, ChevronDownIcon, CheckCircleIcon, ShieldCheckIcon, SparklesIcon, AlertCircleIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TERMS_CONTENT } from "@/constants/terms-content";
 import { useRouter } from "@/hooks/useRouter";
+import { IconCard } from "@/components/common/IconCard";
+import { ShieldProtect } from "@/components/icon/ShieldProtect";
 
 function PasswordStrengthIndicator({ password }) {
     const getPasswordStrength = (password) => {
@@ -340,42 +340,18 @@ export default function App() {
                     <br /> 정산 시스템
                 </h1>
             </motion.div>
-            <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
-                className="text-left mb-12 flex flex-col md:flex-row h-full gap-8"
-            >
-                <Box
-                    bg="blue300"
-                    className={
-                        "relative w-full md:w-[256px] h-[188px] px-auto overflow-hidden"
-                    }
-                >
-                    <ShieldProtect className="absolute inset-0 flex items-center justify-center translate-x-[-15%] translate-y-5" />
-                </Box>
-                <div className="flex flex-col gap-4">
-                    <h4>정산 시스템이 처음이신가요?</h4>
-                    <Box className="text-slate-700 text-left">
-                        <p className="text-slate-700 font-bold">
-                            샌드박스와 함께해 주신 협업 파트너 여러분을 환영합니다.
-                        </p>
-                        <ul className="px-4 pt-2">
-                            <li className="list-disc">
-                                안내 이메일을 받으신 이메일 주소로 로그인 계정을 등록할 수
-                                있습니다.
-                            </li>
-                            <li className="list-disc">
-                                로그인 계정 등록 후 수취 정보 등록을 이어서 진행해 주세요.
-                            </li>
-                        </ul>
-                    </Box>
-                    <p className="text-sm">
-                        ※ 수취정보가 기한 내 등록되지 않을 경우 정산금 지급 일정이 변동될 수
-                        있습니다.
-                    </p>
-                </div>
-            </motion.div>
+            <IconCard
+                h="정산 시스템이 처음이신가요?"
+                infoTitle="샌드박스와 함께해 주신 협업 파트너 여러분을 환영합니다."
+                infoLi={[
+                    "안내 이메일을 받으신 이메일 주소로 로그인 계정을 등록할 수 있습니다.",
+                    "로그인 계정 등록 후 수취 정보 등록을 이어서 진행해 주세요.",
+                ]}
+                desc={[
+                    "※ 수취정보가 기한 내 등록되지 않을 경우 정산금 지급 일정이 변동될 수 있습니다.",
+                ]}
+                icon={ShieldProtect}
+            />
             <motion.form
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}

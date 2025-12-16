@@ -1,0 +1,47 @@
+import { motion, AnimatePresence } from "framer-motion";
+import { Box } from "./Box";
+export const IconCard = ({
+                             h = "",
+                             infoTitle = "",
+                             infoLi = [""],
+                             desc = [""],
+                             icon: Icon,
+                         }) => {
+    return (
+        <>
+            <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="text-left mb-12 flex flex-col md:flex-row h-full gap-8"
+            >
+                <Box
+                    bg="blue300"
+                    className={
+                        "relative w-full md:w-[256px] h-[188px] px-auto overflow-hidden"
+                    }
+                >
+                    <Icon className="absolute inset-0 flex items-center justify-center translate-x-[-15%] translate-y-5" />
+                </Box>
+                <div className="flex flex-col gap-4">
+                    <h4>{infoTitle}</h4>
+                    <Box className="text-slate-700 text-left">
+                        <p className="text-slate-700 font-bold">{infoTitle}</p>
+                        <ul className="px-4 pt-2">
+                            {infoLi.map((li, idx) => (
+                                <li key={idx} className="list-disc">
+                                    {li}
+                                </li>
+                            ))}
+                        </ul>
+                    </Box>
+                    {desc.map((d, idx) => (
+                        <p key={idx} className="text-sm text-slate-600">
+                            {d}
+                        </p>
+                    ))}
+                </div>
+            </motion.div>
+        </>
+    );
+};
