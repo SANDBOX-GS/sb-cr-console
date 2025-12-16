@@ -42,9 +42,9 @@ export const ShieldProtect = ({ className = "" }) => {
                         width="140.69"
                         height="148.991"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -77,9 +77,9 @@ export const ShieldProtect = ({ className = "" }) => {
                         width="119.111"
                         height="125.508"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -130,9 +130,9 @@ export const ShieldProtect = ({ className = "" }) => {
                         width="25.539"
                         height="34.7665"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -184,8 +184,8 @@ export const ShieldProtect = ({ className = "" }) => {
                         y2="60.216"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#93C5FD" stop-opacity="0" />
-                        <stop offset="1" stop-color="#BFE7FE" stop-opacity="0.5" />
+                        <stop stopColor="#93C5FD" stopOpacity="0" />
+                        <stop offset="1" stopColor="#BFE7FE" stopOpacity="0.5" />
                     </linearGradient>
                     <linearGradient
                         id="paint1_linear_154_192"
@@ -195,8 +195,8 @@ export const ShieldProtect = ({ className = "" }) => {
                         y2="73.4337"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#22D3EE" />
-                        <stop offset="1" stop-color="#38BDF8" />
+                        <stop stopColor="#22D3EE" />
+                        <stop offset="1" stopColor="#38BDF8" />
                     </linearGradient>
                 </defs>
             </svg>

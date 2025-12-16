@@ -115,9 +115,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="118.301"
                         height="137.647"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -150,9 +150,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="124.918"
                         height="98.0078"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -185,9 +185,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="117.375"
                         height="90.4648"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -238,9 +238,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="108.07"
                         height="49.5791"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -291,9 +291,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="38.4377"
                         height="21.2451"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -344,9 +344,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="27.4899"
                         height="27.4902"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -397,9 +397,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="79.4546"
                         height="79.4541"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -432,9 +432,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="24.7452"
                         height="24.7453"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -485,9 +485,9 @@ export const DocumentAccount = ({ className = "" }) => {
                         width="38.5119"
                         height="19.343"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -539,8 +539,8 @@ export const DocumentAccount = ({ className = "" }) => {
                         y2="59.7551"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#93C5FD" stop-opacity="0" />
-                        <stop offset="1" stop-color="#BFE7FE" stop-opacity="0.5" />
+                        <stop stopColor="#93C5FD" stopOpacity="0" />
+                        <stop offset="1" stopColor="#BFE7FE" stopOpacity="0.5" />
                     </linearGradient>
                     <linearGradient
                         id="paint1_linear_161_220"
@@ -550,8 +550,8 @@ export const DocumentAccount = ({ className = "" }) => {
                         y2="84.4006"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#38BDF8" />
-                        <stop offset="1" stop-color="#60A5FA" />
+                        <stop stopColor="#38BDF8" />
+                        <stop offset="1" stopColor="#60A5FA" />
                     </linearGradient>
                     <linearGradient
                         id="paint2_linear_161_220"
@@ -561,8 +561,8 @@ export const DocumentAccount = ({ className = "" }) => {
                         y2="93.9406"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#22D3EE" />
-                        <stop offset="1" stop-color="#0EA5E9" />
+                        <stop stopColor="#22D3EE" />
+                        <stop offset="1" stopColor="#0EA5E9" />
                     </linearGradient>
                 </defs>
             </svg>

@@ -76,9 +76,9 @@ export const DocumentReplace = ({ className }) => {
                         width="131.456"
                         height="137.647"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -111,9 +111,9 @@ export const DocumentReplace = ({ className }) => {
                         width="112.206"
                         height="131.553"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -164,9 +164,9 @@ export const DocumentReplace = ({ className }) => {
                         width="73.3597"
                         height="73.3592"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -199,9 +199,9 @@ export const DocumentReplace = ({ className }) => {
                         width="53.3208"
                         height="28.2957"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -252,9 +252,9 @@ export const DocumentReplace = ({ className }) => {
                         width="53.3208"
                         height="28.2957"
                         filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
-                        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                        <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
                             in="SourceAlpha"
                             type="matrix"
@@ -306,8 +306,8 @@ export const DocumentReplace = ({ className }) => {
                         y2="60.216"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#93C5FD" stop-opacity="0" />
-                        <stop offset="1" stop-color="#BFE7FE" stop-opacity="0.5" />
+                        <stop stopColor="#93C5FD" stopOpacity="0" />
+                        <stop offset="1" stopColor="#BFE7FE" stopOpacity="0.5" />
                     </linearGradient>
                     <linearGradient
                         id="paint1_linear_121_250"
@@ -317,8 +317,8 @@ export const DocumentReplace = ({ className }) => {
                         y2="94.0744"
                         gradientUnits="userSpaceOnUse"
                     >
-                        <stop stop-color="#22D3EE" />
-                        <stop offset="1" stop-color="#0EA5E9" />
+                        <stop stopColor="#22D3EE" />
+                        <stop offset="1" stopColor="#0EA5E9" />
                     </linearGradient>
                 </defs>
             </svg>
