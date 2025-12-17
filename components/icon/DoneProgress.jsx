@@ -55,13 +55,9 @@ export const DoneProgress = ({ current, items }) => {
                   )}
                 >
                   {/* 아이콘 자체도 breakpoint로 크기 명시 */}
-                  {state === "active" ? (
-                    <CheckIcon className="" />
-                  ) : (
-                    <CircleIcon className={cn("")} />
-                  )}
-                </div>{" "}
-                <div className="mt-2 text-center w-full max-w-[240px]">
+                  {state === "active" ? <CheckIcon /> : <CircleIcon />}
+                </div>
+                <div className="mt-4 text-center w-full max-w-[240px]">
                   <p
                     className={cn(
                       "text-base whitespace-nowrap text-slate-700 font-medium"
