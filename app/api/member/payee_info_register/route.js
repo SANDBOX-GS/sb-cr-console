@@ -40,7 +40,7 @@ export async function POST(req) {
         // *******************************************************************
         // 🚨 0. 세션(쿠키)에서 실제 member_idx 가져오기
         // *******************************************************************
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const memberIdxCookie = cookieStore.get('member_idx');
 
         // 쿠키 값이 없거나 유효하지 않으면 접근 거부

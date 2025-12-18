@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CheckCircle } from "../icon/CheckCircle";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { ID_DOCUMENT_TYPES, KOREAN_BANKS } from "@/constants/payee-data";
 import FileUpload from "@/components/ui/file-upload";
 import {
@@ -19,6 +19,7 @@ export const AccountContainer = ({
                                      setFormData,
                                      formData,
                                      errors,
+                                     setErrors,
                                  }) => {
     console.log("AccountContainer formData:", formData);
 
@@ -378,38 +379,51 @@ export const AccountContainer = ({
                         )}
 
                         {/* 신분증 종류 선택 (미성년자가 아닌 내국인만) */}
-                        {!formData.recipientInfo.is_foreigner &&
-                            !formData.recipientInfo.is_minor && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="id_document_type">신분증 종류 *</Label>
-                                    <Select
-                                        value={formData.recipientInfo.id_document_type}
-                                        options={ID_DOCUMENT_TYPES}
-                                        placeholder="신분증 종류를 선택하세요"
-                                        error={errors.id_document_type}
-                                        onValueChange={(value) => {
-                                            setFormData((prev) => ({
+                        {!formData.recipientInfo.is_foreigner && !formData.recipientInfo.is_minor && (
+                            <div className="space-y-2">
+                                <Label htmlFor="id_document_type">신분증 종류 *</Label>
+
+                                <Select
+                                    value={formData.recipientInfo.id_document_type}
+                                    onValueChange={(value) => {
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            recipientInfo: {
+                                                ...prev.recipientInfo,
+                                                id_document_type: value,
+                                            },
+                                        }));
+                                        if (errors.id_document_type) {
+                                            setErrors((prev) => ({
                                                 ...prev,
-                                                recipientInfo: {
-                                                    ...prev.recipientInfo,
-                                                    id_document_type: value,
-                                                },
+                                                id_document_type: "",
                                             }));
-                                            if (errors.id_document_type) {
-                                                setErrors((prev) => ({
-                                                    ...prev,
-                                                    id_document_type: "",
-                                                }));
-                                            }
-                                        }}
-                                    />
-                                    {errors.id_document_type && (
-                                        <p className="text-red-500 text-sm">
-                                            {errors.id_document_type}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger
+                                        id="id_document_type"
+                                        className={errors.id_document_type ? "border-red-500 focus:ring-red-500" : ""}
+                                    >
+                                        <SelectValue placeholder="신분증 종류를 선택하세요" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        {ID_DOCUMENT_TYPES.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                {errors.id_document_type && (
+                                    <p className="text-red-500 text-sm">
+                                        {errors.id_document_type}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* 신분증 업로드 */}
                         {/* 미성년자가 아닌 경우에만 신분증 업로드 표시 */}
@@ -533,7 +547,6 @@ export const AccountContainer = ({
                         <Label htmlFor="bank_name">은행명 *</Label>
                         <Select
                             value={formData?.accountInfo.bank_name}
-                            options={KOREAN_BANKS}
                             onValueChange={(value) => {
                                 setFormData((prev) => ({
                                     ...prev,
@@ -545,8 +558,20 @@ export const AccountContainer = ({
                                 if (errors?.bank_name)
                                     setErrors((prev) => ({ ...prev, bank_name: "" }));
                             }}
-                            error={errors?.bank_name}
-                        />
+                        >
+                            <SelectTrigger className={`h-12 bg-white/50 ${errors?.bank_name ? "border-red-400" : ""}`}>
+                                <SelectValue placeholder="은행을 선택해주세요" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                {/* 여기서 배열을 map으로 돌려줍니다 */}
+                                {KOREAN_BANKS.map((bank) => (
+                                    <SelectItem key={bank} value={bank}>
+                                        {bank}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {errors?.bank_name && (
                             <p className="text-red-500 text-sm">{errors.bank_name}</p>
                         )}
