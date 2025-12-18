@@ -7,9 +7,10 @@ import { motion } from "framer-motion";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
 import { getIn, setIn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 
 export default function InfoBox({
-  title = "수취 정보",
+  title = "",
   className = "",
   children,
   mode = "edit",
@@ -18,27 +19,41 @@ export default function InfoBox({
   setFormData,
   errors = {},
   setErrors,
+  isToggle = false,
+  isOpen = false,
+  onToggle,
 }) {
-  console.log("카드레벨", Info);
   return (
     <div>
       <Box className={cn("flex flex-col gap-4", className)}>
-        <h4>{title}</h4>
-        <div className="flex flex-col gap-4 md:gap-5 md:grid md:grid-cols-2 md:gap-x-12">
-          {mode === "view" &&
-            Info.map((info, index) => <InfoView key={index} {...info} />)}
-          {mode === "edit" &&
-            Info.map((info, index) => (
-              <InfoEdit
-                key={index}
-                {...info}
-                formData={formData}
-                setFormData={setFormData}
-                errors={errors}
-                setErrors={setErrors}
-              />
-            ))}
+        <div className="flex w-full justify-between items-center">
+          <h4>{title}</h4>
+          {isToggle && (
+            <button
+              onClick={onToggle}
+              className={cn("text-slate-500", isOpen ? "rotate-180" : "")}
+            >
+              <ChevronDown />
+            </button>
+          )}
         </div>
+        {isOpen && (
+          <div className="flex flex-col gap-4 md:gap-5 md:grid md:grid-cols-2 md:gap-x-12">
+            {mode === "view" &&
+              Info.map((info, index) => <InfoView key={index} {...info} />)}
+            {mode === "edit" &&
+              Info.map((info, index) => (
+                <InfoEdit
+                  key={index}
+                  {...info}
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                />
+              ))}
+          </div>
+        )}
 
         {children}
       </Box>

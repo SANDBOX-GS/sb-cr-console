@@ -3,8 +3,22 @@ import { Box } from "@/components/common/Box";
 import { Button } from "@/components/common/Button";
 import InfoCard, { InfoEdit, InfoView } from "@/components/payee-info/InfoCard";
 import { useRouter } from "@/hooks/useRouter";
+import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function PayeeInfoViewPage() {
+  const [openById, setOpenById] = useState(() => ({
+    basic_info: true, // 기본 정보는 항상 열림이면 true 고정해도 됨
+    personal_info: false,
+    account_info: false,
+    tax_info: false,
+  }));
+
+  const toggleById = (id) => {
+    console.log("클릭", id);
+    setOpenById((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const { navigate } = useRouter();
   const EXAMPLE = [
     {
@@ -54,7 +68,7 @@ export default function PayeeInfoViewPage() {
     },
     {
       label: "세무 정보",
-      id: "personal_info",
+      id: "tax_info",
       value: [
         { label: "발행 유형", id: "tax_type", value: "개인(사업 소득세 3.3%)" },
       ],
@@ -100,8 +114,22 @@ export default function PayeeInfoViewPage() {
   return (
     <div className="flex flex-col gap-6 w-full">
       <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h1>내정보 관리</h1>
+
+          <p className="mt-4 text-base text-slate-500 max-w-lg mx-auto">
+            정산을 위해 필요한 기본 정보를 먼저 등록해 주세요.
+            <br />
+            입력하신 정보는 정산 지급 외 다른 용도로는 사용되지 않습니다.
+          </p>
+        </motion.div>
         <InfoCard
-          title=" "
+          title=""
           mode="view"
           Info={[
             {
@@ -142,9 +170,14 @@ export default function PayeeInfoViewPage() {
         ></InfoCard>
         {EXAMPLE?.map((info) => {
           return (
-            <InfoCard title={info.label} mode="view" Info={info.value}>
-              {console.log("페이지레벨", info.value)}
-            </InfoCard>
+            <InfoCard
+              title={info.label}
+              mode="view"
+              Info={info.value}
+              isToggle={info.id !== "basic_info"} // 기본정보는 토글 숨김
+              isOpen={openById[info.id] ?? false} // ✅ 박스별 open
+              onToggle={() => toggleById(info.id)}
+            ></InfoCard>
           );
         })}
         <Button
