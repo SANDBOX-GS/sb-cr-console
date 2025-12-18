@@ -123,9 +123,8 @@ export default function PayeeInfoViewPage() {
           <h1>내정보 관리</h1>
 
           <p className="mt-4 text-base text-slate-500 max-w-lg mx-auto">
-            정산을 위해 필요한 기본 정보를 먼저 등록해 주세요.
-            <br />
-            입력하신 정보는 정산 지급 외 다른 용도로는 사용되지 않습니다.
+            유효기간이 만료된 경우 정산 일정이 변동될 수 있습니다.
+            <br /> 정산 정보는 언제든 변경할 수 있습니다.
           </p>
         </motion.div>
         <InfoCard
