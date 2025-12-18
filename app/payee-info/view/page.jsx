@@ -3,10 +3,22 @@ import { Box } from "@/components/common/Box";
 import { Button } from "@/components/common/Button";
 import InfoCard, { InfoEdit, InfoView } from "@/components/payee-info/InfoCard";
 import { useRouter } from "@/hooks/useRouter";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatPayeeInfoForView } from "@/utils/formatPayeeInfoForView";
+import { toast } from "sonner";
 
 export default function PayeeInfoViewPage() {
+  const { navigate } = useRouter();
+  const [apiData, setApiData] = useState({});
+  const [viewData, setViewData] = useState([]);
+  const [originalData, setOriginalData] = useState(null);
+  const [formData, setFormData] = useState(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const { isLoggedIn, isLoading } = useAuth();
+  // 데이터를 불러오는 로직을 분리합니다.
+
   const [openById, setOpenById] = useState(() => ({
     basic_info: true, // 기본 정보는 항상 열림이면 true 고정해도 됨
     personal_info: false,
@@ -15,65 +27,137 @@ export default function PayeeInfoViewPage() {
   }));
 
   const toggleById = (id) => {
-    console.log("클릭", id);
     setOpenById((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const { navigate } = useRouter();
-  const EXAMPLE = [
-    {
-      label: "기본 정보",
-      id: "basic_info",
-      value: [
-        { label: "사업자구분", id: "biz_type", value: "개인" },
-        { label: "본명", id: "recipient_name", value: "홍길동" },
-        { label: "연락처", id: "phone_number", value: "010-1234-5678" },
-        { label: "이메일", id: "email", value: "홍길동@example.com" },
-      ],
-    },
-    {
-      label: "개인 정보",
-      id: "personal_info",
-      value: [
-        { label: "주민등록번호", id: "birth_date", value: "900101-1234567" },
-        { label: "신분증 종류", id: "id_type", value: "운전면허증" },
-        { label: "신분증", id: "id_file", value: "운전면허증.jpg" },
-      ],
-    },
-    {
-      label: "계좌 정보",
-      id: "account_info",
-      value: [
-        {
-          label: "예금주",
-          id: "account_name",
-          value: "김샌박",
+  const fetchPayeeData = async () => {
+    setIsPageLoading(true); // 데이터를 다시 불러올 때 로딩 상태를 설정
+    try {
+      const response = await fetch("/api/member/my_payee_info", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
-        {
-          label: "계좌 번호",
-          id: "account_number",
-          value: "123-456-789012",
+      });
+
+      if (!response.ok) {
+        throw new Error("수취인 정보를 불러오는데 실패했습니다.");
+      }
+      const data = await response.json();
+
+      const initialData = data.payeeData;
+
+      if (initialData) {
+        setOriginalData(initialData);
+        setFormData(initialData);
+      } else {
+        setOriginalData({});
+        setFormData({});
+      }
+      setApiData(data);
+      const view = formatPayeeInfoForView(apiData);
+      setViewData(view);
+      setValidityStatus(data.metadata.validityStatus || "expired");
+      setValidityPeriod({
+        end: data.metadata.validityPeriodEnd || null,
+      });
+      setCreatedAt(
+        data.metadata.createdAt ? new Date(data.metadata.createdAt) : null
+      );
+      setLastModified(
+        data.metadata.lastModified ? new Date(data.metadata.lastModified) : null
+      );
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      toast.error(`정보 로드 중 오류 발생: ${error.message}`);
+      setOriginalData({});
+      setFormData({});
+    } finally {
+      setIsPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 1. 로딩 중이면 아무것도 하지 않음 (깜빡임 방지)
+    if (isLoading) return;
+
+    // 2. 인증되지 않았다면 리디렉션
+    if (!isLoggedIn) {
+      navigate("/login");
+    } else {
+      fetchPayeeData();
+    }
+  }, [isLoggedIn, isLoading, navigate]);
+
+  // 로딩 중이거나 인증되지 않았다면 콘텐츠를 보여주지 않음
+  if (isLoading || !isLoggedIn) {
+    return <div>인증 상태 확인 중...</div>;
+  }
+
+  // 🚨 1. Metadata만 갱신하는 함수 정의
+  const handleMetadataUpdate = async (newMetadata) => {
+    if (!newMetadata) return;
+
+    // isPageLoading을 잠시 true로 설정하는 대신, 로딩 상태는 InfoCallToAction에서 관리하므로
+    // 여기서는 상태만 빠르게 업데이트합니다.
+
+    setValidityStatus(newMetadata.validityStatus || "expired");
+    setValidityPeriod({
+      end: newMetadata.validityPeriodEnd || null,
+    });
+    // lastModified도 업데이트 (서버 응답에는 updated_at이 포함되어야 함)
+    setLastModified(
+      newMetadata.lastModified ? new Date(newMetadata.lastModified) : new Date()
+    );
+
+    // 이 함수는 PayeeData (originalData, formData)를 건드리지 않으므로,
+    // 수정 중인 데이터가 보존됩니다.
+  };
+
+  /**
+   * @param {'30days' | 'once' | null} type
+   */
+  const handleConsent = async (type) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    // 💡 실제 API 호출: /api/member/payee_agree
+    try {
+      const response = await fetch("/api/member/payee_agree", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
-        {
-          label: "은행명",
-          id: "bank_name",
-          value: "신한은행",
-        },
-        {
-          label: "통장사본",
-          id: "bank_file",
-          value: "통장사본.pdf",
-        },
-      ],
-    },
-    {
-      label: "세무 정보",
-      id: "tax_info",
-      value: [
-        { label: "발행 유형", id: "tax_type", value: "개인(사업 소득세 3.3%)" },
-      ],
-    },
-  ];
+        body: JSON.stringify({ consent_type: type }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // 성공 시 데이터 재로딩 (or 새로운 메타데이터로 상태 업데이트)
+        toast.success("정보 수집에 성공적으로 동의했습니다.", {
+          duration: 3000,
+        });
+        // 🚨 성공 후 새로운 메타데이터로 상태를 직접 업데이트하거나,
+        // 간단하게 전체 데이터를 다시 불러오도록 (fetchPayeeData) 호출할 수 있습니다.
+        // 여기서는 페이지 새로고침 대신 간단히 상태만 업데이트했다고 가정하고,
+        // InfoCallToAction에서 API 호출 후 데이터를 갱신하는 로직이 있다면 그를 따릅니다.
+      } else {
+        const errorMessage =
+          result.message ||
+          "정보 동의 처리에 실패했습니다. 다시 시도해 주세요.";
+        toast.error(errorMessage);
+      }
+    } catch (error) {
+      console.error("동의 API 호출 중 오류 발생:", error);
+      toast.error(
+        "서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해 주세요."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const ExpiryDateForm = () => {
     return (
@@ -167,7 +251,7 @@ export default function PayeeInfoViewPage() {
             </>
           }
         ></InfoCard>
-        {EXAMPLE?.map((info) => {
+        {viewData?.map((info) => {
           return (
             <InfoCard
               title={info.label}
