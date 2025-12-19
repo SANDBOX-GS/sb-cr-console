@@ -7,16 +7,22 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPayeeInfoForView } from "@/utils/formatPayeeInfoForView";
+import { INITIAL_PAYEE_FORM_DATA } from "@/constants/payeeFormSchema";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function PayeeInfoViewPage() {
   const { navigate } = useRouter();
   const [apiData, setApiData] = useState({});
   const [viewData, setViewData] = useState([]);
-  const [originalData, setOriginalData] = useState(null);
-  const [formData, setFormData] = useState(null);
+  const [formData, setFormData] = useState({
+    meta_data: { expired_option: "30days" },
+  });
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isLoggedIn, isLoading } = useAuth();
+  const [metaData, setMetaData] = useState({});
   // 데이터를 불러오는 로직을 분리합니다.
 
   const [openById, setOpenById] = useState(() => ({
@@ -31,7 +37,8 @@ export default function PayeeInfoViewPage() {
   };
 
   const fetchPayeeData = async () => {
-    setIsPageLoading(true); // 데이터를 다시 불러올 때 로딩 상태를 설정
+    setIsPageLoading(true);
+
     try {
       const response = await fetch("/api/member/my_payee_info", {
         method: "GET",
@@ -41,37 +48,40 @@ export default function PayeeInfoViewPage() {
       });
 
       if (!response.ok) {
-        throw new Error("수취인 정보를 불러오는데 실패했습니다.");
+        throw new Error("수취인 정보를 불러오는 데 실패했습니다.");
       }
+
       const data = await response.json();
+      const row = data.payeeData;
 
-      const initialData = data.payeeData;
-
-      if (initialData) {
-        setOriginalData(initialData);
-        setFormData(initialData);
-      } else {
-        setOriginalData({});
-        setFormData({});
-      }
+      // 1) API 전체 데이터를 저장 (snake_case 기준)
       setApiData(data);
-      const view = formatPayeeInfoForView(apiData);
-      setViewData(view);
-      setValidityStatus(data.metadata.validityStatus || "expired");
-      setValidityPeriod({
-        end: data.metadata.validityPeriodEnd || null,
-      });
-      setCreatedAt(
-        data.metadata.createdAt ? new Date(data.metadata.createdAt) : null
-      );
-      setLastModified(
-        data.metadata.lastModified ? new Date(data.metadata.lastModified) : null
-      );
+
+      // 2) view model 생성 (InfoCard에서 사용하는 구조)
+      if (row) {
+        const view = formatPayeeInfoForView(data); // 반드시 data 자체를 넘긴다
+        setViewData(formatPayeeInfoForView(data));
+        console.log;
+      } else {
+        setViewData([]); // 아무 카드도 없게 만들기
+      }
+      // 3) 폼 초기값은 edit 모드에서만 사용할 수 있도록 남겨둠
+      if (row) {
+        // const normalized = mapPayeeRowToFormData(row);
+        // setFormData(normalized);
+      } else {
+        // setFormData(INITIAL_PAYEE_FORM_DATA);
+      }
+
+      // 4) metadata 설정 (snake_case 키 기준)
+      const meta = data.metadata || {};
+      setMetaData(meta);
     } catch (error) {
       console.error("Fetch Error:", error);
-      toast.error(`정보 로드 중 오류 발생: ${error.message}`);
-      setOriginalData({});
-      setFormData({});
+      toast.error(`정보 로드 오류: ${error.message}`);
+
+      setApiData({});
+      setViewData([]);
     } finally {
       setIsPageLoading(false);
     }
@@ -94,25 +104,25 @@ export default function PayeeInfoViewPage() {
     return <div>인증 상태 확인 중...</div>;
   }
 
-  // 🚨 1. Metadata만 갱신하는 함수 정의
-  const handleMetadataUpdate = async (newMetadata) => {
-    if (!newMetadata) return;
+  //   // 🚨 1. Metadata만 갱신하는 함수 정의
+  //   const handleMetadataUpdate = async (newMetadata) => {
+  //     if (!newMetadata) return;
 
-    // isPageLoading을 잠시 true로 설정하는 대신, 로딩 상태는 InfoCallToAction에서 관리하므로
-    // 여기서는 상태만 빠르게 업데이트합니다.
+  //     // isPageLoading을 잠시 true로 설정하는 대신, 로딩 상태는 InfoCallToAction에서 관리하므로
+  //     // 여기서는 상태만 빠르게 업데이트합니다.
 
-    setValidityStatus(newMetadata.validityStatus || "expired");
-    setValidityPeriod({
-      end: newMetadata.validityPeriodEnd || null,
-    });
-    // lastModified도 업데이트 (서버 응답에는 updated_at이 포함되어야 함)
-    setLastModified(
-      newMetadata.lastModified ? new Date(newMetadata.lastModified) : new Date()
-    );
+  //     setValidityStatus(newMetadata.validityStatus || "expired");
+  //     setValidityPeriod({
+  //       end: newMetadata.validityPeriodEnd || null,
+  //     });
+  //     // lastModified도 업데이트 (서버 응답에는 updated_at이 포함되어야 함)
+  //     setLastModified(
+  //       newMetadata.lastModified ? new Date(newMetadata.lastModified) : new Date()
+  //     );
 
-    // 이 함수는 PayeeData (originalData, formData)를 건드리지 않으므로,
-    // 수정 중인 데이터가 보존됩니다.
-  };
+  //     // 이 함수는 PayeeData (originalData, formData)를 건드리지 않으므로,
+  //     // 수정 중인 데이터가 보존됩니다.
+  //   };
 
   /**
    * @param {'30days' | 'once' | null} type
@@ -120,7 +130,6 @@ export default function PayeeInfoViewPage() {
   const handleConsent = async (type) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-
     // 💡 실제 API 호출: /api/member/payee_agree
     try {
       const response = await fetch("/api/member/payee_agree", {
@@ -161,25 +170,34 @@ export default function PayeeInfoViewPage() {
 
   const ExpiryDateForm = () => {
     return (
-      <Box className="bg-slate-50 border border-slate-200 rounded-lg p-4 shadow-none">
+      <Box className="w-full text-left bg-slate-50 border border-slate-200 rounded-lg p-4 shadow-none">
         <form>
           <h4 className="mb-2">정산 정보 확인</h4>
           <InfoEdit
             type="radio"
-            path="taxInfo.expiry_date"
+            path="meta_data.expired_option"
             options={[
               {
                 label: "30일간 동일한 정보로 정산 받겠습니다.",
-                value: "30_days",
+                value: "30days",
               },
               {
                 label: "정산 시마다 수취 정보를 재확인하겠습니다.",
-                value: "today_only",
+                value: "once",
               },
             ]}
-            errorKey="expiry_date"
+            errorKey="expired_option"
+            setFormData={setFormData}
+            formData={formData}
+            setErrors={setErrors}
+            errors={errors}
           ></InfoEdit>
-          <Button className="mt-4 w-full" variant="primary" type="submit">
+          <Button
+            className="mt-4 w-full"
+            variant="primary"
+            type="button"
+            onClick={() => handleConsent(formData.meta_data.expired_option)}
+          >
             유효기간 연장
           </Button>
         </form>
@@ -195,6 +213,7 @@ export default function PayeeInfoViewPage() {
       </Box>
     );
   };
+  console.log("metaData", metaData);
   return (
     <div className="flex flex-col gap-6 w-full">
       <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">
@@ -211,46 +230,103 @@ export default function PayeeInfoViewPage() {
             <br /> 정산 정보는 언제든 변경할 수 있습니다.
           </p>
         </motion.div>
-        <InfoCard
-          title=""
-          mode="view"
-          Info={[
-            {
-              label: "검토 상태",
-              id: "tax_type",
-              value: (
-                <div className="flex gap-1 items-center">
-                  <p>등록 완료</p>{" "}
-                  <span className="inline-block ml-2 mb-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full border-yellow-200 border">
-                    검수 중
-                  </span>
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <InfoCard
+            title=""
+            isOpen={true}
+            mode="view"
+            Info={[
+              {
+                label: "검토 상태",
+                id: "tax_type",
+                value: (
+                  <div className="flex gap-1 items-center">
+                    <p>
+                      {metaData?.expired_status === "valid"
+                        ? new Date(metaData?.agree_expired_at).toLocaleString(
+                            "ko-KR"
+                          )
+                        : metaData?.expired_status === "expired"
+                        ? new Date(metaData?.agree_expired_at).toLocaleString(
+                            "ko-KR"
+                          )
+                        : "등록 완료"}
+                    </p>
+                    <span
+                      className={cn(
+                        "inline-block ml-2 mb-1 text-xs font-medium px-2.5 py-0.5 rounded-full",
+                        metaData?.expired_status === "valid"
+                          ? "bg-sky-100 text-sky-600"
+                          : metaData?.expired_status === "expired"
+                          ? "bg-pink-100 text-pink-600"
+                          : "bg-amber-100 text-amber-600"
+                      )}
+                    >
+                      {metaData?.expired_status === "valid"
+                        ? "승인"
+                        : metaData?.expired_status === "expired"
+                        ? "수정 필요"
+                        : "검수 중"}
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                label: "정보 수집 유효기간",
+                id: "agree_expired_at",
+                value: (
+                  <div className="flex gap-1 items-center">
+                    <p>
+                      {new Date(metaData?.agree_expired_at).toLocaleString(
+                        "ko-KR"
+                      )}
+                    </p>
+                    <span
+                      className={cn(
+                        "inline-block ml-2 mb-1 text-xs font-medium px-2.5 py-0.5 rounded-full",
+                        metaData?.expired_status === "valid"
+                          ? "bg-sky-100 text-sky-600"
+                          : metaData?.expired_status === "expired"
+                          ? "bg-pink-100 text-pink-600"
+                          : "bg-amber-100 text-amber-600"
+                      )}
+                    >
+                      {metaData?.expired_status === "valid"
+                        ? "유효"
+                        : metaData?.expired_status === "expired"
+                        ? "만료"
+                        : "만료 임박"}
+                    </span>
+                  </div>
+                ),
+              },
+            ]}
+            children={
+              <>
+                <ExpiryDateForm />
+                <div className="flex items-center gap-2 border-t border-slate-200 my-2" />
+                <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full ">
+                  <p className="text-sm text-slate-700">최근 수정일시</p>
+                  <p className="text-sm text-slate-500">
+                    {metaData?.updated_at
+                      ? new Date(metaData.updated_at).toLocaleString("ko-KR")
+                      : "-"}
+                  </p>
                 </div>
-              ),
-            },
-            {
-              label: "정보 수집 유효기간",
-              id: "expiry_date",
-              value: (
-                <div className="flex gap-1 items-center">
-                  <p>2026년 01월 05일</p>{" "}
-                  <span className="inline-block ml-2 mb-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full border-yellow-200 border">
-                    만료 임박
-                  </span>
-                </div>
-              ),
-            },
-          ]}
-          children={
-            <>
-              <ExpiryDateForm />
-              <div className="flex items-center gap-2 border-t border-slate-200 my-2" />
-              <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full ">
-                <p className="text-sm text-slate-700">최근 수정일시</p>
-                <p className="text-sm text-slate-500">2024-01-05 14:23:45</p>
-              </div>
-            </>
-          }
-        ></InfoCard>
+              </>
+            }
+            errorKey=""
+            setFormData={setFormData}
+            formData={formData}
+            setErrors={setErrors}
+            errors={errors}
+          ></InfoCard>
+        </motion.div>
         {viewData?.map((info) => {
           return (
             <InfoCard

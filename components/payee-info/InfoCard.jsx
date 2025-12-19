@@ -75,8 +75,8 @@ export const InfoView = ({
 };
 
 export const InfoEdit = ({
-  label,
   id,
+  label,
   type = "text",
   path,
   options,
@@ -97,7 +97,11 @@ export const InfoEdit = ({
 
   const updateValue = (next) => {
     if (!setFormData || !path) return;
-    setFormData((prev) => setIn(prev, path, next));
+    setFormData((prev) => {
+      const updated = setIn(prev || {}, path, next);
+      return updated;
+    });
+
     clearError();
   };
 
@@ -107,17 +111,16 @@ export const InfoEdit = ({
     setFormData((prev) => setIn(prev, p, !cur));
     clearError();
   };
-
   return (
     <div className="flex flex-col gap-2 items-start">
       <p className="font-medium text-base text-slate-700">{label}</p>
 
       {/* RADIO */}
       {type === "radio" ? (
-        <div className="flex items-center justify-between gap-4 flex-col md:grid md:grid-cols-2">
+        <div className="flex items-center justify-between gap-4 flex-col md:grid md:grid-cols-2 w-full">
           {options?.map((option) => {
             const checked = currentValue === option.value;
-
+            console.log(option.defaultChecked);
             return (
               <motion.button
                 key={option.value}
@@ -134,7 +137,7 @@ export const InfoEdit = ({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 w-full">
                   {checked ? (
                     <div className="rounded-full bg-sky-400 w-4 h-4" />
                   ) : (

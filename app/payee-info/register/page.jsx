@@ -307,7 +307,7 @@ export default function PayeeInfoPage() {
 
         if (response.ok) {
           console.log("수취인정보 등록 성공!");
-          navigate("/payee_info_done");
+          navigate("/payee-info/done");
         } else {
           const errorData = await response.json();
           console.error("수취인정보 등록 실패:", errorData);
