@@ -3,11 +3,19 @@ export const TABLE_NAMES = {
     SBN_MEMBER_PAYEE: 'sb_cr_console_member_payee',
     SBN_FILE_INFO: 'sb_cr_console_file_info',
     SBN_PAYEE_REQUEST: 'sb_cr_console_payee_request',
-    SBN_PAYEE_REQUEST_LOG: 'sb_cr_console_payee_send_log',
+    SBN_PAYEE_REQUEST_LOG: 'sb_cr_console_payee_request_log',
+    SBN_SEND_LOG: 'sb_cr_console_send_log',
 };
+
+export const COLUMN_NAMES = {
+    SBN_MEMBER_PAYEE: {
+        USER_ID: 'user_id',
+    }
+}
 
 // 먼데이닷컴 보드 ID 상수
 export const MONDAY_BOARD_IDS = {
+    PAYEE_INFO: 5025498925,
     PAYEE_REQUEST: 5024220056,
     WORK_SETTLEMENT: 1930292711,
 };
@@ -23,6 +31,9 @@ export const MONDAY_COLUMN_IDS = {
         // 이전 SQL에서 확인된 연동 컬럼 ID들
         LINK_CR_INVENTORY: 'board_relation_mkxsn9r6',    // CR 인벤토리 연동 컬럼
         LINK_TASK_SETTLEMENT: 'board_relation_mkxsa8rp', // 과업 정산 연동 컬럼
+        PAYEE_INFO: 'board_relation_mkxtff2q',           // 외부 CR 수취인 정보
+        PAYEE_REGISTER_STATE: 'color_mkxsfvkn',          // 수취정보 등록단계
+        AGREE_STATE: 'color_mkxs71cp',                   // 정보 동의 상태
     },
     WORK_SETTLEMENT: {
         STATUS: 'color_mkygz7n5' // 상태 컬럼 ('Label')
@@ -48,6 +59,6 @@ export const NHN_CONFIG = {
         URL: `https://api-alimtalk.cloud.toast.com/alimtalk/v2.3/appkeys/${process.env.NHN_KAKAO_APP_KEY}/messages`,
         SECRET_KEY: process.env.NHN_KAKAO_SECRET_KEY,
         SENDER_KEY: '025bce653e7eecbdbc0e36d2c857d298fd34b333', // NHN에 등록된 발신 프로필 키
-        TEMPLATE_CODE: 'cr_finance_001',
+        TEMPLATE_CODE: 'cr_console_000',
     }
 };
