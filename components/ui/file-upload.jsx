@@ -15,164 +15,189 @@ import FilePreviewModal from "./image-preview-modal";
  * @param {string} props.label - The label for the upload area.
  * @param {string} [props.accept] - The accepted file types (e.g., "image/*,.pdf").
  */
-export default function FileUpload({ file, onFileChange, label, accept }) {
-    const [isDragging, setIsDragging] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const fileInputRef = useRef(null);
-    const dragCounter = useRef(0);
+// components/ui/file-upload.jsx (확장 버전)
+export default function FileUpload({
+  file, // File | undefined
+  existingFile, // {url, name, ext} | null | undefined
+  onFileChange, // (file?: File) => void
+  onRemoveExisting, // () => void
+  label,
+  accept,
+  disabled = false,
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const dragCounter = useRef(0);
 
-    const handleDragEnter = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter.current++;
-        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-            setIsDragging(true);
-        }
-    };
+  const hasNewFile = !!file;
+  const hasExisting = !!existingFile?.url;
 
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter.current--;
-        if (dragCounter.current === 0) {
-            setIsDragging(false);
-        }
-    };
+  // ✅ 표시 대상 결정: new file 우선
+  const displayName = hasNewFile
+    ? file.name
+    : hasExisting
+    ? existingFile.name || "업로드된 파일"
+    : null;
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
+  // ✅ 미리보기 가능 여부 판단
+  const isImage =
+    (hasNewFile && file?.type?.startsWith("image/")) ||
+    (!hasNewFile &&
+      hasExisting &&
+      /\.(png|jpg|jpeg|webp)$/i.test(existingFile.url));
 
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-        dragCounter.current = 0;
+  const isPdf =
+    (hasNewFile && file?.type === "application/pdf") ||
+    (!hasNewFile && hasExisting && /\.pdf$/i.test(existingFile.url));
 
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            onFileChange(files[0]);
-        }
-    };
+  const isPreviewable = isImage || isPdf;
 
-    const handleFileChange = (e) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            onFileChange(files[0]);
-        }
-    };
+  const handleAreaClick = () => {
+    if (disabled) return;
+    // 기존 파일이 있어도 교체 업로드는 허용하는 정책이면 `if (file) return;`만 유지
+    if (hasNewFile) return;
+    fileInputRef.current?.click();
+  };
 
-    const handleAreaClick = () => {
-        if (file) return;
-        fileInputRef.current?.click();
-    };
+  const handleFileChange = (e) => {
+    if (disabled) return;
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      onFileChange(files[0]); // 새 파일 세팅
+    }
+  };
 
-    const handleRemoveFile = (e) => {
-        e.stopPropagation();
-        onFileChange(undefined);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
+  const handleRemoveNewFile = (e) => {
+    e.stopPropagation();
+    onFileChange(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-    const isImage = file?.type.startsWith("image/");
-    const isPdf = file?.type === "application/pdf";
-    const isPreviewable = isImage || isPdf;
+  const handleRemoveExistingFile = (e) => {
+    e.stopPropagation();
+    onRemoveExisting?.(); // delete 플래그 세팅은 상위에서 처리
+  };
 
-    const handlePreviewClick = (e) => {
-        e.stopPropagation();
-        if (file && isPreviewable) {
-            setIsModalOpen(true);
-        }
-    };
+  const handlePreviewClick = (e) => {
+    e.stopPropagation();
+    if (!isPreviewable) return;
+    setIsModalOpen(true);
+  };
 
-    return (
-        <>
-            <div className="space-y-2">
-                <Label htmlFor={label}>{label}</Label>
-                <div
-                    onClick={handleAreaClick}
-                    onDragEnter={handleDragEnter}
-                    onDragLeave={handleDragLeave}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    className={cn(
-                        "relative overflow-hidden border-2 border-dashed border-slate-300 rounded-xl p-6 text-center transition-all duration-300 ease-in-out",
-                        file ? "" : "cursor-pointer",
-                        isDragging
-                            ? "border-transparent bg-sky-100/80 ring-2 ring-sky-500/20"
-                            : "hover:border-slate-400 hover:bg-slate-50/50"
-                    )}
-                >
-                    <input
-                        ref={fileInputRef}
-                        id={label}
-                        type="file"
-                        accept={accept}
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor={label}>{label}</Label>
 
-                    <div
-                        className={cn(
-                            "transition-opacity duration-200",
-                            isDragging && "opacity-20"
-                        )}
-                    >
-                        {file ? (
-                            <div
-                                className={cn(
-                                    "flex flex-col items-center justify-center gap-3",
-                                    isPreviewable && "cursor-pointer" // 미리보기 가능할 때만 커서 변경
-                                )}
-                                onClick={handlePreviewClick}
-                            >
-                                {isImage ? (
-                                    <ImageIcon className="w-10 h-10 text-sky-500" />
-                                ) : (
-                                    <FileIcon className="w-10 h-10 text-slate-500" />
-                                )}
-                                <span className="text-sm font-medium text-slate-700">
-                  {file.name}
-                </span>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleRemoveFile}
-                                    className="text-red-500 hover:bg-red-50 hover:text-red-600 z-10"
-                                >
-                                    <XIcon className="w-4 h-4 mr-2" />
-                                    파일 삭제
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center gap-2 text-slate-500">
-                                <UploadIcon className="w-8 h-8" />
-                                <p className="text-sm font-medium">
-                                    파일을 드래그하거나 클릭하여 업로드하세요
-                                </p>
-                                <p className="text-xs">PDF, JPG, PNG 파일 (최대 10MB)</p>
-                            </div>
-                        )}
-                    </div>
+        <div
+          onClick={handleAreaClick}
+          // drag 로직 동일 (disabled면 early return 추가 가능)
+          className={cn(
+            "relative overflow-hidden border-2 border-dashed border-slate-300 rounded-xl p-6 text-center transition-all duration-300 ease-in-out",
+            disabled
+              ? "opacity-60 cursor-not-allowed"
+              : hasNewFile
+              ? ""
+              : "cursor-pointer",
+            isDragging
+              ? "border-transparent bg-sky-100/80 ring-2 ring-sky-500/20"
+              : "hover:border-slate-400 hover:bg-slate-50/50"
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            id={label}
+            type="file"
+            accept={accept}
+            onChange={handleFileChange}
+            className="hidden"
+            disabled={disabled}
+          />
 
-                    {isDragging && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-sky-500/10 backdrop-blur-sm pointer-events-none">
-                            <UploadIcon className="w-12 h-12 text-sky-600 animate-bounce" />
-                            <p className="mt-2 text-lg font-semibold text-sky-700">
-                                여기에 파일을 놓으세요
-                            </p>
-                        </div>
-                    )}
-                </div>
+          {displayName ? (
+            <div
+              className={cn(
+                "flex flex-col items-center justify-center gap-3",
+                isPreviewable && "cursor-pointer"
+              )}
+              onClick={handlePreviewClick}
+            >
+              {isImage ? (
+                <ImageIcon className="w-10 h-10 text-sky-500" />
+              ) : (
+                <FileIcon className="w-10 h-10 text-slate-500" />
+              )}
+
+              <span className="text-sm font-medium text-slate-700">
+                {displayName}
+              </span>
+
+              <div className="flex gap-2">
+                {/* 새 파일 삭제 */}
+                {hasNewFile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveNewFile}
+                    className="text-red-500 hover:bg-red-50 hover:text-red-600 z-10"
+                  >
+                    <XIcon className="w-4 h-4 mr-2" />
+                    파일 삭제
+                  </Button>
+                )}
+
+                {/* 기존 파일 삭제 */}
+                {!hasNewFile && hasExisting && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveExistingFile}
+                    className="text-red-500 hover:bg-red-50 hover:text-red-600 z-10"
+                  >
+                    <XIcon className="w-4 h-4 mr-2" />
+                    기존 파일 삭제
+                  </Button>
+                )}
+
+                {/* 교체 업로드 버튼(정책 옵션) */}
+                {!disabled && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    파일 변경
+                  </Button>
+                )}
+              </div>
             </div>
-            <FilePreviewModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                file={file}
-            />
-        </>
-    );
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 text-slate-500">
+              <UploadIcon className="w-8 h-8" />
+              <p className="text-sm font-medium">
+                파일을 드래그하거나 클릭하여 업로드하세요
+              </p>
+              <p className="text-xs">PDF, JPG, PNG 파일 (최대 10MB)</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ✅ 모달은 "new file" 또는 "existing url" 둘 다 처리해야 함 */}
+      <FilePreviewModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        file={file} // 새 업로드 File
+        fileUrl={existingFile?.url} // 기존 S3 url
+        fileName={existingFile?.name}
+      />
+    </>
+  );
 }

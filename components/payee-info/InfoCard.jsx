@@ -44,17 +44,14 @@ export default function InfoBox({
               Info.map((info, index) => <InfoView key={index} {...info} />)}
             {mode === "edit" &&
               Info.map((info, index) => (
-                <>
-                  {console.log(info.label, info.readOnly)}
-                  <InfoEdit
-                    key={index}
-                    {...info}
-                    formData={formData}
-                    setFormData={setFormData}
-                    errors={errors}
-                    setErrors={setErrors}
-                  />
-                </>
+                <InfoEdit
+                  key={index}
+                  {...info}
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                />
               ))}
           </div>
         )}
@@ -121,13 +118,14 @@ export const InfoEdit = ({
     <div className="flex flex-col gap-2 items-start">
       <p className="font-medium text-base text-slate-700">{label}</p>
 
-      {/* RADIO */}
+      {/* FILE */}
       {type === "file" ? (
         <div className="w-full">
           <FileUpload
-            label={""}
-            file={formData.files}
-            onFileChange={""}
+            file={currentValue ?? undefined}
+            onFileChange={(file) => {
+              updateValue(file ?? null);
+            }}
             accept="image/*,.pdf"
           />
         </div>
