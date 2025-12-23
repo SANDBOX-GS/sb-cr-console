@@ -7,7 +7,6 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPayeeInfoForView } from "@/utils/formatPayeeInfoForView";
-import { INITIAL_PAYEE_FORM_DATA } from "@/constants/payeeFormSchema";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -54,18 +53,14 @@ export default function PayeeInfoViewPage() {
       const data = await response.json();
       const row = data.payeeData;
 
-      // 1) API 전체 데이터를 저장 (snake_case 기준)
-      setApiData(data);
-
-      // 2) view model 생성 (InfoCard에서 사용하는 구조)
+      // 1) view model 생성 (InfoCard에서 사용하는 구조)
       if (row) {
-        const view = formatPayeeInfoForView(data); // 반드시 data 자체를 넘긴다
         setViewData(formatPayeeInfoForView(data));
         console.log;
       } else {
         setViewData([]); // 아무 카드도 없게 만들기
       }
-      // 3) 폼 초기값은 edit 모드에서만 사용할 수 있도록 남겨둠
+      // 2) 폼 초기값은 edit 모드에서만 사용할 수 있도록 남겨둠
       if (row) {
         // const normalized = mapPayeeRowToFormData(row);
         // setFormData(normalized);
@@ -73,14 +68,13 @@ export default function PayeeInfoViewPage() {
         // setFormData(INITIAL_PAYEE_FORM_DATA);
       }
 
-      // 4) metadata 설정 (snake_case 키 기준)
+      // 3) metadata 설정 (snake_case 키 기준)
       const meta = data.metadata || {};
       setMetaData(meta);
     } catch (error) {
       console.error("Fetch Error:", error);
       toast.error(`정보 로드 오류: ${error.message}`);
 
-      setApiData({});
       setViewData([]);
     } finally {
       setIsPageLoading(false);
@@ -101,9 +95,21 @@ export default function PayeeInfoViewPage() {
 
   // 로딩 중이거나 인증되지 않았다면 콘텐츠를 보여주지 않음
   if (isLoading || !isLoggedIn) {
-    return <div>인증 상태 확인 중...</div>;
+    return (
+      <div className="mx-auto my-auto">
+        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        인증 상태 확인 중...
+      </div>
+    );
   }
 
+  if (isPageLoading) {
+    return (
+      <>
+        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      </>
+    );
+  }
   //   // 🚨 1. Metadata만 갱신하는 함수 정의
   //   const handleMetadataUpdate = async (newMetadata) => {
   //     if (!newMetadata) return;
@@ -234,7 +240,6 @@ export default function PayeeInfoViewPage() {
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
         >
           <InfoCard
             title=""
@@ -308,16 +313,22 @@ export default function PayeeInfoViewPage() {
             ]}
             children={
               <>
-                <ExpiryDateForm />
-                <div className="flex items-center gap-2 border-t border-slate-200 my-2" />
-                <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full ">
-                  <p className="text-sm text-slate-700">최근 수정일시</p>
-                  <p className="text-sm text-slate-500">
-                    {metaData?.updated_at
-                      ? new Date(metaData.updated_at).toLocaleString("ko-KR")
-                      : "-"}
-                  </p>
-                </div>
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <ExpiryDateForm />
+                  <div className="flex items-center gap-2 border-t border-slate-200 my-2" />
+                  <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full ">
+                    <p className="text-sm text-slate-700">최근 수정일시</p>
+                    <p className="text-sm text-slate-500">
+                      {metaData?.updated_at
+                        ? new Date(metaData.updated_at).toLocaleString("ko-KR")
+                        : "-"}
+                    </p>
+                  </div>
+                </motion.div>
               </>
             }
             errorKey=""
@@ -329,14 +340,20 @@ export default function PayeeInfoViewPage() {
         </motion.div>
         {viewData?.map((info) => {
           return (
-            <InfoCard
-              title={info.label}
-              mode="view"
-              Info={info.value}
-              isToggle={info.id !== "basic_info"} // 기본정보는 토글 숨김
-              isOpen={openById[info.id] ?? false} // ✅ 박스별 open
-              onToggle={() => toggleById(info.id)}
-            ></InfoCard>
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              <InfoCard
+                title={info.label}
+                mode="view"
+                Info={info.value}
+                isToggle={info.id !== "basic_info"} // 기본정보는 토글 숨김
+                isOpen={openById[info.id] ?? false} // ✅ 박스별 open
+                onToggle={() => toggleById(info.id)}
+              ></InfoCard>
+            </motion.div>
           );
         })}
         <Button

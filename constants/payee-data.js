@@ -1,3 +1,8 @@
+export const BIZ_TYPES = {
+  INDIVIDUAL: "individual",
+  SOLE_PROPRIETOR: "sole_proprietor",
+  CORPORATE_BUSINESS: "corporate_business",
+};
 export const BUSINESS_TYPE_LABEL = {
   individual: "개인",
   sole_proprietor: "개인 사업자",
@@ -86,6 +91,10 @@ export const KOREAN_BANKS = [
   "토스뱅크",
 ];
 
+export const CONSENT_TYPE = [
+  { value: "30days", label: "30일간 동일한 정보로 정산 받겠습니다." },
+  { value: "once", label: "정산 시마다 수취 정보를 재확인하겠습니다." },
+];
 // --- JSDoc을 사용한 타입 정의 ---
 
 /**
@@ -114,13 +123,6 @@ export const KOREAN_BANKS = [
  * - "tax_invoice" | "electronic_invoice" | "cash_receipt" | "individual"
  *   (실제 값은 ISSUE_TYPES 상수와 반드시 일치해야 함)
  * @typedef {"tax_invoice" | "electronic_invoice" | "cash_receipt" | "individual"} InvoiceType
- */
-
-/**
- * 수취정보 유효기간 선택값
- * - "30": 30일간 동일한 정보로 정산
- * - "1": 정산 시마다 수취정보 재확인
- * @typedef {"30" | "1" | ""} ExpiryOption
  */
 
 /**
