@@ -318,9 +318,13 @@ export default function PayeeInfoViewPage() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <ExpiryDateForm />
-                  <div className="flex items-center gap-2 border-t border-slate-200 my-2" />
-                  <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full ">
+                  {metaData?.expired_status === "valid" ? (
+                    <></>
+                  ) : (
+                    <ExpiryDateForm />
+                  )}
+                  <div className="flex items-center gap-2 border-t border-slate-200 my-1 mb-2" />
+                  <div className="flex items-center gap-2 text-sm text-slate-500 justify-between w-full">
                     <p className="text-sm text-slate-700">최근 수정일시</p>
                     <p className="text-sm text-slate-500">
                       {metaData?.updated_at
