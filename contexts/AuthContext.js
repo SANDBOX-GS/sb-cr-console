@@ -8,6 +8,8 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    // 수취인 정보 유무 상태
+    const [hasPayeeInfo, setHasPayeeInfo] = useState(false);
 
     const router = useRouter();
 
@@ -18,13 +20,17 @@ export function AuthProvider({ children }) {
                 credentials: 'include',
             });
             if (response.ok) {
+                const data = await response.json();
                 setIsLoggedIn(true);
+                setHasPayeeInfo(data.hasPayeeInfo); // API가 준 값 저장
             } else {
                 setIsLoggedIn(false);
+                setHasPayeeInfo(false);
             }
         } catch (error) {
             console.error("Failed to check auth status:", error);
             setIsLoggedIn(false);
+            setHasPayeeInfo(false);
         } finally {
             setIsLoading(false);
         }
@@ -36,6 +42,10 @@ export function AuthProvider({ children }) {
 
     const login = () => {
         setIsLoggedIn(true);
+        // 로그인 직후에는 hasPayeeInfo를 모르므로, checkAuthStatus를 다시 호출하거나
+        // 로그인 API에서 값을 받아와서 넘겨주는 것이 좋음.
+        // 일단은 임시로 true 처리 후 페이지 이동 시 API가 다시 체크하게 됨.
+        checkAuthStatus();
     };
 
     const logout = async () => {
@@ -53,7 +63,13 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isLoggedIn, login, logout, isLoading }}>
+        <AuthContext.Provider value={{
+            isLoggedIn,
+            isLoading,
+            hasPayeeInfo,
+            login,
+            logout
+        }}>
             {children}
         </AuthContext.Provider>
     );
