@@ -62,3 +62,6 @@ export const NHN_CONFIG = {
         TEMPLATE_CODE: 'cr_console_000',
     }
 };
+
+export const IMG_URL =
+  "https://sandboxnetwork-public-hosting.s3.ap-northeast-2.amazonaws.com/cr_console";

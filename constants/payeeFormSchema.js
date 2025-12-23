@@ -40,53 +40,53 @@ export const EXPIRY_OPTIONS = {
  * 전체 수취인 formData 구조 (snake_case 기준)
  * 실제 API 입력/출력과 동일한 구조를 유지한다.
  */
-export const INITIAL_PAYEE_FORM_DATA = {
+const form데이터_출력ver = {
   basic_info: {
     consent_type: "", // 30days / once / ""
   },
-  recipient_info: {
+
+  biz_type: {
     biz_type: "individual",
     is_overseas: false, // 해외거주 여부
     is_minor: false, // 미성년자 여부
     is_foreigner: false, // 외국인 여부
-
+  },
+  personal_info: {
     // 개인(내국인)
     user_name: "",
     ssn: "",
     identification_type: "", // resident_id, driver_license 등
+    id_document: null,
 
     // 개인(외국인)
     user_name: "",
     ssn: "",
-    identification_type: "",
+    identification_type: "foreigner_card",
+    id_document: null,
 
+    // 법정대리인 (미성년자)
+    user_name: "",
+    guardian_name: "family_relation_certificate",
+    guardian_tel: "",
+  },
+  biz_info: {
     // 사업자 / 법인
     biz_name: "",
     biz_reg_no: "",
-
-    // 법정대리인 (미성년자)
-    guardian_name: "",
-    guardian_tel: "",
+    business_document: null,
   },
-
   account_info: {
     bank_name: "",
     account_holder: "",
     account_number: "",
     swift_code: "", // 해외 계좌일 경우
     bank_address: "", // 해외 은행 주소
+    bank_document: null, // 통장사본
   },
 
   tax_info: {
     is_simple_taxpayer: false,
     invoice_type: "tax_invoice",
-  },
-
-  files: {
-    business_document: null, // 사업자등록증/법인등록증
-    id_document: null, // 신분증/외국인등록증
-    bank_document: null, // 통장사본
-    family_relation_certificate: null, // 미성년자 가족관계증명서
   },
 };
 /**
