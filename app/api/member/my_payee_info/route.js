@@ -33,11 +33,22 @@ export async function GET(req) {
     connection = await dbConnect();
 
     // 2. 수취인 정보 조회 (가장 최신 1건)
+
     const [payeeRows] = await connection.query(
-      `SELECT * FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
+      `
+    SELECT 
+      p.*,
+      m.email,
+      m.tel
+    FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} AS p
+    LEFT JOIN ${TABLE_NAMES.SBN_MEMBER} AS m
+      ON p.member_idx = m.idx
+    WHERE p.member_idx = ?
+    ORDER BY p.created_at DESC
+    LIMIT 1
+  `,
       [memberIdx]
     );
-
     if (payeeRows.length === 0) {
       return NextResponse.json(
         {
