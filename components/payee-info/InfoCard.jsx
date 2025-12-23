@@ -8,6 +8,7 @@ import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
 import { getIn, setIn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import FileUpload from "../ui/file-upload";
 
 export default function InfoBox({
   title = "",
@@ -38,19 +39,22 @@ export default function InfoBox({
           )}
         </div>
         {isOpen && (
-          <div className="flex flex-col gap-4 md:gap-5 md:grid md:grid-cols-2 md:gap-x-12">
+          <div className={cn("flex flex-col gap-4")}>
             {mode === "view" &&
               Info.map((info, index) => <InfoView key={index} {...info} />)}
             {mode === "edit" &&
               Info.map((info, index) => (
-                <InfoEdit
-                  key={index}
-                  {...info}
-                  formData={formData}
-                  setFormData={setFormData}
-                  errors={errors}
-                  setErrors={setErrors}
-                />
+                <>
+                  {console.log(info.label, info.readOnly)}
+                  <InfoEdit
+                    key={index}
+                    {...info}
+                    formData={formData}
+                    setFormData={setFormData}
+                    errors={errors}
+                    setErrors={setErrors}
+                  />
+                </>
               ))}
           </div>
         )}
@@ -77,6 +81,7 @@ export const InfoView = ({
 export const InfoEdit = ({
   id,
   label,
+  value,
   type = "text",
   path,
   options,
@@ -85,6 +90,7 @@ export const InfoEdit = ({
   setFormData,
   errors,
   setErrors,
+  readOnly,
 }) => {
   // 현재 값
   const currentValue = path ? getIn(formData, path, "") : "";
@@ -116,18 +122,26 @@ export const InfoEdit = ({
       <p className="font-medium text-base text-slate-700">{label}</p>
 
       {/* RADIO */}
-      {type === "radio" ? (
-        <div className="flex items-center justify-between gap-4 flex-col md:grid md:grid-cols-2 w-full">
+      {type === "file" ? (
+        <div className="w-full">
+          <FileUpload
+            label={""}
+            file={formData.files}
+            onFileChange={""}
+            accept="image/*,.pdf"
+          />
+        </div>
+      ) : /* radio */ type === "radio" ? (
+        <div className="w-full flex flex-col items-center justify-between gap-4 md:grid md:grid-cols-2 md:gap-5">
           {options?.map((option) => {
             const checked = currentValue === option.value;
-            console.log(option.defaultChecked);
             return (
               <motion.button
                 key={option.value}
                 type="button"
                 onClick={() => updateValue(option.value)}
                 className={`
-                  w-full border border-2 flex flex-col items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
+                  w-full border border-2 flex flex-col items-start justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
                   ${
                     checked
                       ? "border-sky-300 bg-sky-100 text-slate-700 shadow-sm font-medium"
@@ -160,35 +174,8 @@ export const InfoEdit = ({
             <p className="text-red-500 text-sm">{errors?.[errorKey]}</p>
           )}
         </div>
-      ) : /* CHECKBOX (단일 bool) */
-      type === "checkbox" ? (
-        <div className="flex flex-wrap gap-3">
-          {(() => {
-            const checked = !!currentValue;
-
-            return (
-              <motion.button
-                type="button"
-                onClick={() => updateValue(!checked)}
-                className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
-                  ${
-                    checked
-                      ? "border-sky-300 bg-sky-100 font-medium"
-                      : "border-slate-200 bg-white text-slate-600 hover:text-slate-800 font-normal"
-                  }
-                `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {checked ? <CheckCircleActive /> : <CheckCircle />}
-                <span className="font-medium text-sm">동의</span>
-              </motion.button>
-            );
-          })()}
-        </div>
       ) : /* CHECKBOX MULTI (옵션별 path 토글) */
-      type === "checkbox-multi" ? (
+      type === "checkbox" ? (
         <div className="flex flex-wrap gap-3">
           {options?.map((opt, idx) => {
             const checked = !!getIn(formData, opt.path, false);
@@ -222,6 +209,7 @@ export const InfoEdit = ({
           className="h-12"
           value={currentValue ?? ""}
           onChange={(e) => updateValue(e.target.value)}
+          readOnly={readOnly}
         />
       )}
     </div>
