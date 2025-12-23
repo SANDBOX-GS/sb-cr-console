@@ -62,9 +62,16 @@ export default function LoginPageContent() {
 
                 if (response.ok) {
                     // 200 OK: 로그인 성공
-                    login();
-                    navigate("/payee-info/register", { tab: "guide" });
-                    // 실제 애플리케이션에서는 여기서 토큰/세션 저장 로직이 들어갑니다.
+                    login(); // Context 업데이트 (로그인 상태 변경)
+
+                    // 수취인 정보 존재 여부에 따른 분기 처리
+                    if (data.hasPayeeInfo) {
+                        // 등록된 수취인 정보가 있으면 -> 조회 페이지로 이동
+                        navigate("/payee-info/view");
+                    } else {
+                        // 등록된 수취인 정보가 없으면 -> 등록 페이지로 이동
+                        navigate("/payee-info/register", { state: { tab: "guide" } });
+                    }
                 } else {
                     // 401, 403, 500 등 에러 처리
                     alert(`로그인 실패: ${data.message}`);

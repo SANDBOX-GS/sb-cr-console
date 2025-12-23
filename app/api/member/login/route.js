@@ -28,7 +28,7 @@ export async function POST(request) {
 
         const member = rows[0];
 
-        // 2. 상태 확인 및 비밀번호 비교
+        // 2. 상태 확인
         if (member.active_status !== 'active') {
             return NextResponse.json(
                 { message: '비활성화된 계정입니다. 계정을 활성화해 주세요.' },
@@ -36,6 +36,7 @@ export async function POST(request) {
             );
         }
 
+        // 3. 비밀번호 비교
         const passwordMatch = await bcrypt.compare(password, member.password);
 
         if (!passwordMatch) {
@@ -45,12 +46,24 @@ export async function POST(request) {
             );
         }
 
-        // 3. 로그인 성공 및 HTTP-Only 쿠키 발급
-        // Max-Age를 8시간(28800초)으로 설정
+        // 4. 수취인 정보 등록 여부 확인
+        // 해당 member_idx로 등록된 수취인 정보가 있는지 확인 (LIMIT 1로 존재 여부만 체크)
+        const [payeeRows] = await connection.execute(
+            `SELECT 1 FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} WHERE member_idx = ? LIMIT 1`,
+            [member.idx]
+        );
+
+        const hasPayeeInfo = payeeRows.length > 0; // 데이터가 있으면 true, 없으면 false
+
+        // 5. 로그인 성공 및 HTTP-Only 쿠키 발급
         const memberIdxCookie = `member_idx=${member.idx}; Max-Age=${SESSION_MAX_AGE}; Path=/; HttpOnly=true; Secure=true; SameSite=Strict`;
 
         return new NextResponse(
-            JSON.stringify({ message: '로그인 성공', member_idx: member.idx }),
+            JSON.stringify({
+                message: '로그인 성공',
+                member_idx: member.idx,
+                hasPayeeInfo: hasPayeeInfo // ✅ 프론트엔드로 플래그 전달
+            }),
             {
                 status: 200,
                 headers: {
