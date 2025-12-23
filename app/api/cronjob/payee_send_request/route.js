@@ -8,8 +8,8 @@ import {
     MONDAY_COLUMN_IDS
 } from '@/constants/dbConstants';
 
-// [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
-const REGISTER_BASE_URL = "http://localhost:8009/pw_register";
+// todo [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
+const REGISTER_BASE_URL = "http://13.125.225.158:8009/pw_register";
 
 // [추가] UUID 생성 함수
 function generateUUID() {
@@ -203,12 +203,23 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
 
         if (!result.header.isSuccessful) {
             console.error("❌ Email API Error Details:", JSON.stringify(result, null, 2));
+
+            // 실패 시: API에서 준 상세 에러 메시지 리턴
+            return {
+                success: false,
+                message: `[실패사유]: ${result.header.resultMessage} (에러코드: ${result.header.resultCode})`
+            };
         }
 
-        return result.header.isSuccessful;
+        // 성공 시
+        return { success: true };
     } catch (e) {
         console.error("NHN Email Fetch Error:", e);
-        return false;
+        // 네트워크 에러 등 예외 발생 시
+        return {
+            success: false,
+            message: `[실패사유]: ${e.message}`
+        };
     }
 }
 
@@ -288,7 +299,7 @@ export async function POST(request) {
             let updateUpdates = [];
             let mondayStatusToUpdate = null;
 
-            // (A) 이메일 발송
+            // (A) 이메일 발송 (발송 완료, 발송 취소된 경우에는 발송하지 않음)
             if (email_state === 'pending') {
 
                 // 🔹 [STEP 1] 회원 확인 및 UUID 확보 (이메일 발송 전 선행)
@@ -336,19 +347,24 @@ export async function POST(request) {
                     year: currentYear,
                     month: currentMonth,
                     payment_date: paymentDateStr,
-                    link_url: linkUrl // ✅ NHN 템플릿에 보낼 링크 변수
+                    link_url: linkUrl
                 };
 
-                const isSent = await sendNHNEmail(email, nameAsId, emailParams);
+                const sendResult = await sendNHNEmail(email, nameAsId, emailParams);
 
-                if (isSent) {
+                if (sendResult.success) {
                     updateUpdates.push("email_state = 'success'");
-                    mondayStatusToUpdate = "발송 성공";
+                    mondayStatusToUpdate = "발송성공";
                     console.log(`📧 Email Sent: ${email} (Link: ${linkUrl})`);
                 } else {
                     updateUpdates.push("email_state = 'fail'");
-                    mondayStatusToUpdate = "발송 실패";
-                    console.error(`📧 Email Fail: ${email}`);
+                    mondayStatusToUpdate = "발송실패";
+
+                    // 실패 사유 추출
+                    const failReason = sendResult.message;
+                    console.error(`📧 Email Fail: ${email} / Reason: ${failReason}`);
+
+                    // todo 실패사유를 정책에 따라서 슬랙으로 보내야됨
                 }
             }
 
@@ -385,7 +401,7 @@ export async function POST(request) {
                 // 1. 수취인 정보 요청 보드 상태 업데이트
                 if (item_id) {
                     await updateMondayStatus(item_id, mondayStatusToUpdate);
-                    if (mondayStatusToUpdate === "발송 성공") successCount++;
+                    if (mondayStatusToUpdate === "발송성공") successCount++;
                 }
 
                 // 2. [추가] 과업 정산 보드 상태 업데이트 (연결된 모든 아이템)
@@ -393,9 +409,9 @@ export async function POST(request) {
                 if (board_relation_mkxsa8rp) {
                     let settlementLabel = "";
 
-                    if (mondayStatusToUpdate === "발송 성공") {
+                    if (mondayStatusToUpdate === "발송성공") {
                         settlementLabel = "발송완료"; // 과업 정산 보드용 라벨
-                    } else if (mondayStatusToUpdate === "발송 실패") {
+                    } else if (mondayStatusToUpdate === "발송실패") {
                         settlementLabel = "발송실패"; // 과업 정산 보드용 라벨
                     }
 
