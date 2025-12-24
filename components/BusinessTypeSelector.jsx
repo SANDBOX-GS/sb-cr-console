@@ -134,7 +134,7 @@ function getBusinessTypeInfo(businessType) {
         individual: "일반 개인으로 기타소득 신고를 통해 정산을 받으실 수 있습니다.",
         sole_proprietor:
             "개인사업자로 사업소득 신고를 통해 정산을 받으실 수 있습니다. 사업자등록번호가 필요합니다.",
-        corporation:
+        corporate_business:
             "법인사업자로 사업소득 신고를 통해 정산을 받으실 수 있습니다. 법인등록번호가 필요합니다.",
         domestic_foreigner:
             "국내에 거주하는 외국인으로 외국인등록번호가 필요합니다.",
