@@ -148,9 +148,22 @@ export const InfoEdit = ({
             {type === "file" ? (
                 <div className="w-full">
                     <FileUpload
-                        file={currentValue ?? undefined}
+                        file={currentValue?.file || undefined}
+                        existingFile={currentValue}
                         onFileChange={(file) => {
-                            updateValue(file ?? null);
+                            updateValue({
+                                ...currentValue, // 기존 url, ext 정보 유지
+                                file: file ?? null,
+                                name: file ? file.name : currentValue?.name // 새 파일명 반영
+                            });
+                        }}
+                        onRemoveExisting={() => {
+                            updateValue({
+                                ...currentValue,
+                                url: null,
+                                name: "",
+                                file: null
+                            });
                         }}
                         accept="image/*,.pdf"
                     />
