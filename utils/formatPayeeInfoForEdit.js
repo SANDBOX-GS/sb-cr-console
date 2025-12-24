@@ -108,7 +108,7 @@ export const mapApiToFormData = (apiData) => {
     }
 
     // 2) personal_info
-    const personal_info = {...base.personal_info};
+    const personal_info = { ...base.personal_info };
     personal_info.user_name = row.user_name || "";
     personal_info.tel = row.tel || "";
     personal_info.email = row.email || "";
@@ -146,7 +146,7 @@ export const mapApiToFormData = (apiData) => {
     };
 
     // 3) biz_info (개인사업자/법인)
-    const biz_info = {...base.biz_info};
+    const biz_info = { ...base.biz_info };
     if (bizType === BIZ_TYPES.SOLE_PROPRIETOR) {
         biz_info.biz_name = row.biz_name || "";
         biz_info.biz_reg_no = row.biz_reg_no || "";
@@ -272,7 +272,9 @@ export const buildEditSections = (formData) => {
                     },
                     {
                         value: BIZ_TYPES.CORPORATE_BUSINESS,
-                        label: BUSINESS_TYPE_LABEL[BIZ_TYPES.CORPORATE_BUSINESS],
+                        label: BUSINESS_TYPE_LABEL[
+                            BIZ_TYPES.CORPORATE_BUSINESS
+                        ],
                     },
                 ],
             },
@@ -320,7 +322,7 @@ export const buildEditSections = (formData) => {
         },
         {
             id: "tel",
-            label: "전화번호",
+            label: "연락처",
             value: personal_info.tel,
             type: "text",
             path: "personal_info.tel",
@@ -353,10 +355,11 @@ export const buildEditSections = (formData) => {
                 id: "identification_type",
                 label: "신분증 종류",
                 value: personal_info.identification_type || "",
-                type: "radio",
+                type: "select",
                 path: "personal_info.identification_type",
                 errorKey: "identification_type",
                 options: ID_DOCUMENT_TYPES,
+                fullWidth: true,
             });
         }
         if (!isMinor) {
@@ -390,7 +393,8 @@ export const buildEditSections = (formData) => {
                 {
                     id: "family_relation_certificate",
                     label: "가족관계증명서",
-                    value: personal_info.family_relation_certificate?.name || "",
+                    value:
+                        personal_info.family_relation_certificate?.name || "",
                     type: "file",
                     path: "personal_info.family_relation_certificate",
                     errorKey: "family_relation_certificate",
@@ -450,7 +454,7 @@ export const buildEditSections = (formData) => {
             type: "select",
             path: "account_info.bank_name",
             errorKey: "bank_name",
-            options: KOREAN_BANKS.map((name) => ({value: name, label: name})),
+            options: KOREAN_BANKS.map((name) => ({ value: name, label: name })),
         },
         {
             id: "account_holder",
@@ -467,6 +471,7 @@ export const buildEditSections = (formData) => {
             type: "text",
             path: "account_info.account_number",
             errorKey: "account_number",
+            fullWidth: true,
         },
         {
             id: "bank_document",
@@ -495,6 +500,7 @@ export const buildEditSections = (formData) => {
                 type: "text",
                 path: "account_info.bank_address",
                 errorKey: "bank_address",
+                fullWidth: true,
             }
         );
     }
@@ -578,7 +584,10 @@ export const buildSubmitFormData = (formData) => {
 
         if (!biz_type.is_foreigner) {
             fd.set("ssn", personal_info.ssn || "");
-            fd.set("identification_type", personal_info.identification_type || "");
+            fd.set(
+                "identification_type",
+                personal_info.identification_type || ""
+            );
         } else {
             fd.set("ssn", personal_info.ssn || "");
             fd.set(
@@ -647,12 +656,12 @@ export const normalizePayeeEditFormData = (
 
     const next = {
         ...nextFormData,
-        basic_info: {...nextFormData.basic_info},
-        biz_type: {...nextFormData.biz_type},
-        personal_info: {...nextFormData.personal_info},
-        biz_info: {...nextFormData.biz_info},
-        account_info: {...nextFormData.account_info},
-        tax_info: {...nextFormData.tax_info},
+        basic_info: { ...nextFormData.basic_info },
+        biz_type: { ...nextFormData.biz_type },
+        personal_info: { ...nextFormData.personal_info },
+        biz_info: { ...nextFormData.biz_info },
+        account_info: { ...nextFormData.account_info },
+        tax_info: { ...nextFormData.tax_info },
     };
 
     // 기본값 보정
@@ -775,5 +784,5 @@ export const formatPayeeInfoForEdit = (apiData) => {
     const rawFormData = mapApiToFormData(apiData || null);
     const formData = normalizePayeeEditFormData(rawFormData, null);
     const sections = buildEditSections(formData);
-    return {formData, sections};
+    return { formData, sections };
 };

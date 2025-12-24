@@ -50,12 +50,15 @@ export default function InfoBox({
                 </div>
                 {isOpen && (
                     <div className={cn("flex flex-col gap-4")}>
-                        {mode === "view" &&
-                            Info.map((info, index) => (
-                                <InfoView key={index} {...info} />
-                            ))}
+                        {mode === "view" && (
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
+                                {Info.map((info, index) => (
+                                    <InfoView key={index} {...info} />
+                                ))}
+                            </div>
+                        )}
                         {mode === "edit" && (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
                                 {Info.map((info, index) => (
                                     <InfoEdit
                                         key={index}
@@ -84,6 +87,7 @@ export const InfoView = ({
     label = "본명*",
     id = "real_name",
     value = "홍길동",
+    wrapperClassName,
 }) => {
     return (
         <div className="flex flex-row gap-2 items-center justify-between">
