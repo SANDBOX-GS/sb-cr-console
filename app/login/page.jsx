@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Box } from "@/components/common/Box";
 import Image from "next/image";
 import { IMG_URL } from "@/constants/dbConstants";
+import { toast } from "sonner";
 
 export default function LoginPageContent() {
   const { navigate } = useRouter();
@@ -75,13 +76,12 @@ export default function LoginPageContent() {
                         navigate("/payee-info/register", { state: { tab: "guide" } });
                     }
                 } else {
-                    // 401, 403, 500 등 에러 처리
-                    alert(`로그인 실패: ${data.message}`);
+                    toast.error(`로그인 실패: ${data.message}`);
                     console.error("Login failed:", data);
                 }
             } catch (error) {
                 console.error("API 호출 중 오류 발생:", error);
-                alert("네트워크 오류 또는 서버 접속에 실패했습니다.");
+          toast.error("네트워크 오류 또는 서버 접속에 실패했습니다.");
             }
         }
 
