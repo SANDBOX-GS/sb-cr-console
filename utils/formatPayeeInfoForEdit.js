@@ -355,11 +355,10 @@ export const buildEditSections = (formData) => {
                 id: "identification_type",
                 label: "신분증 종류",
                 value: personal_info.identification_type || "",
-                type: "select",
+                type: "radio",
                 path: "personal_info.identification_type",
                 errorKey: "identification_type",
                 options: ID_DOCUMENT_TYPES,
-                fullWidth: true,
             });
         }
         if (!isMinor) {

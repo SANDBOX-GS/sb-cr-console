@@ -87,7 +87,6 @@ export const InfoView = ({
     label = "본명*",
     id = "real_name",
     value = "홍길동",
-    wrapperClassName,
 }) => {
     return (
         <div className="flex flex-row gap-2 items-center justify-between">
@@ -113,6 +112,8 @@ export const InfoEdit = ({
     placeholder,
     maxLength,
     wrapperClassName,
+    placeholder,
+    maxLength,
 }) => {
     // 현재 값
     const currentValue = path ? getIn(formData, path, "") : "";
