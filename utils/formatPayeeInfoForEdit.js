@@ -7,6 +7,13 @@ import {
     KOREAN_BANKS,
     CONSENT_TYPE,
     BIZ_TYPES,
+    BUSINESS_TYPE_LABEL,
+    ID_DOCUMENT_TYPES,
+    TAX_ISSUE_TYPE_LABEL,
+    ISSUE_TYPES,
+    KOREAN_BANKS,
+    CONSENT_TYPE,
+    BIZ_TYPES,
 } from "@/constants/payee-data";
 
 /**
@@ -114,20 +121,23 @@ export const mapApiToFormData = (apiData) => {
     personal_info.email = row.email || "";
 
     if (bizType === BIZ_TYPES.INDIVIDUAL) {
-        // 내국인
-        if (!isForeigner) {
-            personal_info.ssn = row.ssn || "";
-            personal_info.identification_type = row.identification_type || "";
-        } else {
-            // 외국인: ssn은 외국인등록번호로 사용, identification_type는 기본 foreigner_card
-            personal_info.ssn = row.ssn || "";
-            personal_info.identification_type =
-                row.identification_type || "foreigner_card";
-        }
+        if (bizType === BIZ_TYPES.INDIVIDUAL) {
+            // 내국인
+            if (!isForeigner) {
+                personal_info.ssn = row.ssn || "";
+                personal_info.identification_type =
+                    row.identification_type || "";
+            } else {
+                // 외국인: ssn은 외국인등록번호로 사용, identification_type는 기본 foreigner_card
+                personal_info.ssn = row.ssn || "";
+                personal_info.identification_type =
+                    row.identification_type || "foreigner_card";
+            }
 
-        if (isMinor) {
-            personal_info.guardian_name = row.guardian_name || "";
-            personal_info.guardian_tel = row.guardian_tel || "";
+            if (isMinor) {
+                personal_info.guardian_name = row.guardian_name || "";
+                personal_info.guardian_tel = row.guardian_tel || "";
+            }
         }
     }
 
@@ -161,6 +171,12 @@ export const mapApiToFormData = (apiData) => {
         name: apiFiles.business_document?.name || "",
         ext: apiFiles.business_document?.ext || "",
     };
+    biz_info.business_document = {
+        ...base.biz_info.business_document,
+        url: apiFiles.business_document?.url || null,
+        name: apiFiles.business_document?.name || "",
+        ext: apiFiles.business_document?.ext || "",
+    };
 
     // 4) account_info
     const account_info = {
@@ -179,7 +195,6 @@ export const mapApiToFormData = (apiData) => {
         (account_info.swift_code = row.swift_code || ""),
             (account_info.bank_address = row.bank_address || "");
     }
-
     // 5) tax_info
     const tax_info = {
         ...base.tax_info,
@@ -228,6 +243,25 @@ export const buildEditSections = (formData) => {
     const isMinor = biz_type.is_minor;
     const isForeigner = biz_type.is_foreigner;
 
+    // 1) 기본 정보 (ConsentType)
+    sections.push({
+        id: "basic_info",
+        label: "기본 정보",
+        value: [
+            {
+                id: "consent_type",
+                label: "수취 정보 유효기간",
+                value:
+                    basic_info.consent_type === "30days"
+                        ? "30일간 동일한 정보로 정산 받겠습니다."
+                        : "정산 시마다 수취 정보를 재확인하겠습니다.",
+                type: "radio",
+                path: "basic_info.consent_type",
+                errorKey: "consent_type",
+                options: CONSENT_TYPE,
+            },
+        ],
+    });
     // 1) 기본 정보 (ConsentType)
     sections.push({
         id: "basic_info",
@@ -310,6 +344,7 @@ export const buildEditSections = (formData) => {
             ],
         });
     }
+
     sections.push(bizTypeSection);
     const personalFields = [
         {
@@ -777,7 +812,6 @@ export const normalizePayeeEditFormData = (
 
     return next;
 };
-
 /** 4) 통합 엔트리 */
 export const formatPayeeInfoForEdit = (apiData) => {
     const rawFormData = mapApiToFormData(apiData || null);
