@@ -114,6 +114,7 @@ export const InfoEdit = ({
     wrapperClassName,
     placeholder,
     maxLength,
+    wrapperClassName,
 }) => {
     // 현재 값
     const currentValue = path ? getIn(formData, path, "") : "";
