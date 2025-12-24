@@ -59,7 +59,7 @@ export const NHN_CONFIG = {
         URL: `https://api-alimtalk.cloud.toast.com/alimtalk/v2.3/appkeys/${process.env.NHN_KAKAO_APP_KEY}/messages`,
         SECRET_KEY: process.env.NHN_KAKAO_SECRET_KEY,
         SENDER_KEY: "025bce653e7eecbdbc0e36d2c857d298fd34b333", // NHN에 등록된 발신 프로필 키
-        TEMPLATE_CODE: "cr_finance_001",
+        TEMPLATE_CODE: "cr_console_000",
     },
 };
 
