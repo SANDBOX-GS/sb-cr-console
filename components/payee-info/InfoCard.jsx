@@ -109,9 +109,9 @@ export const InfoEdit = ({
     errors,
     setErrors,
     readOnly,
-    wrapperClassName,
     placeholder,
     maxLength,
+    wrapperClassName,
 }) => {
     // 현재 값
     const currentValue = path ? getIn(formData, path, "") : "";
@@ -154,7 +154,7 @@ export const InfoEdit = ({
                             updateValue({
                                 ...currentValue, // 기존 url, ext 정보 유지
                                 file: file ?? null,
-                                name: file ? file.name : currentValue?.name // 새 파일명 반영
+                                name: file ? file.name : currentValue?.name, // 새 파일명 반영
                             });
                         }}
                         onRemoveExisting={() => {
@@ -162,7 +162,7 @@ export const InfoEdit = ({
                                 ...currentValue,
                                 url: null,
                                 name: "",
-                                file: null
+                                file: null,
                             });
                         }}
                         accept="image/*,.pdf"
