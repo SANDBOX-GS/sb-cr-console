@@ -15,17 +15,17 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="ko">
-            <body>
+            <body className="min-h-screen flex flex-col">
                 <AuthProvider>
-                    <Header />
-                    <div className="min-h-screen flex flex-col py-20 px-5">
+                    <Header className="sticky top-0 z-50 shrink-0 bg-white" />
+                    <main className="flex-1 min-h-0 py-20 px-5">
                         <Suspense fallback={<div>Loading Page...</div>}>
                             {children}
                         </Suspense>
-                    </div>
+                    </main>
 
                     <Toaster />
-                    <Footer />
+                    <Footer className="shrink-0" />
                 </AuthProvider>
             </body>
         </html>

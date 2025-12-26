@@ -38,7 +38,7 @@ const Modal = dynamic(
 
 export const NotionPage = ({ recordMap }) => {
     return (
-        <main className="mx-auto px-4 py-10 max-w-[821px] overflow-x-hidden bg-white rounded-xl shadow shadow-sky-900/15 shadow-[0_-4px_16px]">
+        <main className="mx-auto px-4 py-10 w-full max-w-[821px] overflow-x-hidden bg-white rounded-xl shadow shadow-sky-900/15 shadow-[0_-4px_16px]">
             <NotionRenderer
                 recordMap={recordMap}
                 fullPage={false}

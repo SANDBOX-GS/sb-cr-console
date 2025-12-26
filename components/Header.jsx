@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import { IMG_URL } from "@/constants/dbConstants";
+import { cn } from "@/lib/utils";
 
-export function Header() {
+export function Header({ className }) {
     const router = useRouter();
     const { isLoggedIn, logout, isLoading } = useAuth();
 
@@ -26,7 +27,10 @@ export function Header() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-white backdrop-blur-xl h-[66px] relative shrink-0 w-full border-b border-slate-200/50 shadow-sky-900/15 shadow-[0_4px_16px]"
+            className={cn(
+                "bg-white backdrop-blur-xl h-[66px] relative shrink-0 w-full border-b border-slate-200/50 shadow-sky-900/15 shadow-[0_4px_16px]",
+                className
+            )}
         >
             <div className="flex flex-row items-center overflow-clip relative size-full">
                 <div className="box-border content-stretch flex h-[66px] items-center justify-between px-8 py-4 relative w-full">

@@ -2,6 +2,7 @@
 .notion-app,
 .notion-page {
     overflow-x: hidden;
+    width: 100% !important;
 }
 
 /* DB(테이블)만 필요하면 스크롤 허용 */
@@ -53,4 +54,8 @@
     color: #62748e;
     border: 1px solid #e2e8f0;
     background-color: white;
+}
+
+.notion-page {
+    width: 100% !important;
 }
