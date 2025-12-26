@@ -150,27 +150,25 @@ export const mapApiToFormData = (apiData) => {
 
     // 3) biz_info (개인사업자/법인)
     const biz_info = { ...base.biz_info };
-    if (bizType === BIZ_TYPES.SOLE_PROPRIETOR) {
+    if (
+        bizType === (BIZ_TYPES.SOLE_PROPRIETOR || BIZ_TYPES.CORPORATE_BUSINESS)
+    ) {
         biz_info.biz_name = row.biz_name || "";
         biz_info.biz_reg_no = row.biz_reg_no || "";
-    } else if (bizType === BIZ_TYPES.CORPORATE_BUSINESS) {
-        biz_info.biz_name = row.corp_name || "";
-        biz_info.biz_reg_no = row.corp_reg_no || "";
+
+        biz_info.business_document = {
+            ...base.biz_info.business_document,
+            url: apiFiles.business_document?.url || null,
+            name: apiFiles.business_document?.name || "",
+            ext: apiFiles.business_document?.ext || "",
+        };
+        biz_info.business_document = {
+            ...base.biz_info.business_document,
+            url: apiFiles.business_document?.url || null,
+            name: apiFiles.business_document?.name || "",
+            ext: apiFiles.business_document?.ext || "",
+        };
     }
-
-    biz_info.business_document = {
-        ...base.biz_info.business_document,
-        url: apiFiles.business_document?.url || null,
-        name: apiFiles.business_document?.name || "",
-        ext: apiFiles.business_document?.ext || "",
-    };
-    biz_info.business_document = {
-        ...base.biz_info.business_document,
-        url: apiFiles.business_document?.url || null,
-        name: apiFiles.business_document?.name || "",
-        ext: apiFiles.business_document?.ext || "",
-    };
-
     // 4) account_info
     const account_info = {
         ...base.account_info,
@@ -608,12 +606,12 @@ export const buildSubmitFormData = (formData) => {
             fd.set("guardian_name", personal_info.guardian_name || "");
             fd.set("guardian_tel", personal_info.guardian_tel || "");
         }
-    } else if (biz_type.biz_type === BIZ_TYPES.SOLE_PROPRIETOR) {
+    } else if (
+        biz_type.biz_type === BIZ_TYPES.SOLE_PROPRIETOR ||
+        biz_type.biz_type === BIZ_TYPES.CORPORATE_BUSINESS
+    ) {
         fd.set("biz_name", biz_info.biz_name || "");
         fd.set("biz_reg_no", biz_info.biz_reg_no || "");
-    } else if (biz_type.biz_type === BIZ_TYPES.CORPORATE_BUSINESS) {
-        fd.set("corp_name", biz_info.biz_name || "");
-        fd.set("corp_reg_no", biz_info.biz_reg_no || "");
     }
 
     // 계좌 정보

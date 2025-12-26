@@ -1,27 +1,27 @@
 "use client";
-import {useState, useEffect, useMemo} from "react";
-import {useRouter} from "@/hooks/useRouter";
-import {motion} from "framer-motion";
-import {useAuth} from "@/contexts/AuthContext";
-import {Button} from "@/components/common/Button";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "@/hooks/useRouter";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/common/Button";
 import InfoCard from "@/components/payee-info/InfoCard";
-import {toast} from "sonner";
+import { toast } from "sonner";
 import {
     formatPayeeInfoForEdit,
     buildEditSections,
     buildSubmitFormData,
     normalizePayeeEditFormData,
 } from "@/utils/formatPayeeInfoForEdit";
-import {formatSSN} from "@/lib/utils";
+import { formatSSN } from "@/lib/utils";
 
 export default function PayeeInfoEditPage() {
-    const {navigate} = useRouter();
+    const { navigate } = useRouter();
     const [metaData, setMetaData] = useState({});
     const [formData, setFormData] = useState(null);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isPageLoading, setIsPageLoading] = useState(true);
-    const {isLoggedIn, isLoading} = useAuth();
+    const { isLoggedIn, isLoading } = useAuth();
     // 데이터를 불러오는 로직을 분리합니다.
     const sections = useMemo(() => {
         if (!formData) return [];
@@ -30,7 +30,8 @@ export default function PayeeInfoEditPage() {
 
     const setFormDataNormalized = (updater) => {
         setFormData((prev) => {
-            const next = typeof updater === "function" ? updater(prev) : updater;
+            const next =
+                typeof updater === "function" ? updater(prev) : updater;
 
             // 2. SSN 필드가 존재하고, 값이 변경되었다면 포맷팅 적용
             if (next?.personal_info?.ssn !== prev?.personal_info?.ssn) {
@@ -74,7 +75,7 @@ export default function PayeeInfoEditPage() {
             const data = await response.json();
             const row = data.payeeData;
             // 1) view model 생성 (InfoCard에서 사용하는 구조)
-            const {formData: normalized} = formatPayeeInfoForEdit(
+            const { formData: normalized } = formatPayeeInfoForEdit(
                 data?.payeeData ? data : null
             );
 
@@ -106,8 +107,7 @@ export default function PayeeInfoEditPage() {
     if (isLoading || !isLoggedIn) {
         return (
             <div className="mx-auto my-auto flex flex-col items-center gap-4">
-                <div
-                    className="w-8 h-8 border-[5px] border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-[5px] border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                 인증 상태 확인 중...
             </div>
         );
@@ -135,14 +135,17 @@ export default function PayeeInfoEditPage() {
                 if (!formData?.personal_info?.ssn)
                     newErrors.ssn = "주민등록번호를 입력해 주세요.";
                 if (!isMinor && !formData?.personal_info?.identification_type)
-                    newErrors.identification_type = "신분증 종류를 선택해 주세요.";
+                    newErrors.identification_type =
+                        "신분증 종류를 선택해 주세요.";
             }
 
             if (isMinor) {
                 if (!formData?.personal_info?.guardian_name)
-                    newErrors.guardian_name = "법정대리인 이름을 입력해 주세요.";
+                    newErrors.guardian_name =
+                        "법정대리인 이름을 입력해 주세요.";
                 if (!formData?.personal_info?.guardian_tel)
-                    newErrors.guardian_tel = "법정대리인 연락처를 입력해 주세요.";
+                    newErrors.guardian_tel =
+                        "법정대리인 연락처를 입력해 주세요.";
             }
         }
 
@@ -191,7 +194,9 @@ export default function PayeeInfoEditPage() {
 
             if (isMinor) {
                 if (
-                    !hasFileOrUrl(formData?.personal_info?.family_relation_certificate)
+                    !hasFileOrUrl(
+                        formData?.personal_info?.family_relation_certificate
+                    )
                 ) {
                     newErrors.family_relation_certificate =
                         "가족관계증명서를 업로드해 주세요.";
@@ -228,19 +233,10 @@ export default function PayeeInfoEditPage() {
 
         try {
             const submitFormData = buildSubmitFormData(formData); // ✅
-            for (const [k, v] of submitFormData.entries()) {
-                console.log(
-                    "[SUBMIT_FORMDATA]",
-                    k,
-                    v instanceof File ? `File(${v.name}, ${v.type}, ${v.size})` : v
-                );
-            }
-
             const response = await fetch("/api/member/payee_info_update", {
                 method: "POST",
                 body: submitFormData,
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 toast.error(errorData.message);
@@ -259,17 +255,18 @@ export default function PayeeInfoEditPage() {
             <div className="flex flex-col gap-6 w-full">
                 <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">
                     <motion.div
-                        initial={{y: 30, opacity: 0}}
-                        animate={{y: 0, opacity: 1}}
-                        transition={{duration: 0.6}}
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.6 }}
                         className="text-center mb-12"
                     >
                         <h1>내정보 수정</h1>
 
                         <p className="mt-4 text-base text-slate-500 max-w-lg mx-auto">
                             등록된 정보를 수정하거나, 유효기간을 연장해 주세요.
-                            <br/>
-                            등록 요청 시 정산담당자가 영업일 3일 이내 검수를 진행합니다.
+                            <br />
+                            등록 요청 시 정산담당자가 영업일 3일 이내 검수를
+                            진행합니다.
                         </p>
                     </motion.div>
                     <form onSubmit={handleSubmit}>
@@ -278,9 +275,9 @@ export default function PayeeInfoEditPage() {
                                 return (
                                     <motion.div
                                         key={section.id}
-                                        initial={{y: 30, opacity: 0}}
-                                        animate={{y: 0, opacity: 1}}
-                                        transition={{duration: 0.6}}
+                                        initial={{ y: 30, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ duration: 0.6 }}
                                         className="text-center mb-12"
                                     >
                                         <InfoCard

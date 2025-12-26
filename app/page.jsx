@@ -13,7 +13,6 @@ import Image from "next/image";
 const Index = () => {
     const { navigate } = useRouter();
     const { isLoggedIn } = useAuth();
-    console.log(isLoggedIn);
     const navigateToStart = () => {
         if (isLoggedIn) {
             navigate("/payee-info/view");
