@@ -1,15 +1,14 @@
 "use client";
 
+import { IMG_URL } from "@/constants/dbConstants";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 
-// 기본 렌더러 (SSR off)
 const NotionRenderer = dynamic(
     () => import("react-notion-x").then((m) => m.NotionRenderer),
     { ssr: false }
 );
 
-// 선택 컴포넌트들
 const Code = dynamic(
     () => import("react-notion-x/build/third-party/code").then((m) => m.Code),
     { ssr: false }
@@ -39,20 +38,29 @@ const Modal = dynamic(
 
 export const NotionPage = ({ recordMap }) => {
     return (
-        <NotionRenderer
-            recordMap={recordMap}
-            fullPage={false}
-            darkMode={false}
-            mapPageUrl={(pageId) => `/notice/${pageId}`}
-            components={{
-                Code,
-                Collection,
-                Equation,
-                Pdf,
-                Modal,
-                // next/image를 쓰고 싶으면 react-notion-x 문서 패턴에 맞춰 커스텀 가능
-                nextImage: Image,
-            }}
-        />
+        <main className="mx-auto px-4 py-10 max-w-[821px] overflow-x-hidden bg-white rounded-xl shadow shadow-sky-900/15 shadow-[0_-4px_16px]">
+            <NotionRenderer
+                recordMap={recordMap}
+                fullPage={false}
+                darkMode={false}
+                mapPageUrl={(pageId) => `/notice/${pageId}`}
+                components={{
+                    Code,
+                    Collection,
+                    Equation,
+                    Pdf,
+                    Modal,
+                    nextImage: Image,
+                }}
+            />
+            <div className="w-full justify-end flex">
+                <Image
+                    className="mt-10"
+                    src={`${IMG_URL}/common/logo_horizontal_navy.png`}
+                    width={114}
+                    height={14}
+                />
+            </div>
+        </main>
     );
 };

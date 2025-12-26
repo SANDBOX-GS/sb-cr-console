@@ -1,0 +1,56 @@
+/* 페이지 전체 가로 스크롤 방지 */
+.notion-app,
+.notion-page {
+    overflow-x: hidden;
+}
+
+/* DB(테이블)만 필요하면 스크롤 허용 */
+.notion-collection {
+    overflow-x: auto;
+}
+
+/* DB 테이블만 가로 스크롤 허용 */
+.notion-collection,
+.notion-table-view {
+    overflow-x: auto;
+}
+.notion .notion-code {
+    border-radius: 12px;
+    color: #334155;
+    border: 1px solid #7dd3fc;
+    background-color: #e0f2fe;
+    margin: 0 4px;
+}
+
+.notion-inline-code {
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: #ffffff;
+    background: linear-gradient(90deg, #4edcf1 -0.53%, #7fb7fb 99.47%);
+    margin: 0 4px;
+}
+
+.notion-simple-table-header-cell {
+    color: #334155;
+    border: 1px solid #7dd3fc !important;
+    background-color: #e0f2fe !important;
+}
+.notion-simple-table-header-row {
+    color: #334155;
+    border: 1px solid #7dd3fc !important;
+    background-color: #e0f2fe !important;
+}
+
+.notion-simple-table-header-row td {
+    background: transparent;
+    border: transparent;
+    color: #334155;
+    border: 1px solid #7dd3fc !important;
+    background-color: #e0f2fe !important;
+}
+
+.notion-simple-table-row td {
+    color: #62748e;
+    border: 1px solid #e2e8f0;
+    background-color: white;
+}
