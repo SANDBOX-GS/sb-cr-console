@@ -1,6 +1,7 @@
 export const TABLE_NAMES = {
     SBN_MEMBER: 'sb_cr_console_member',
     SBN_MEMBER_PAYEE: 'sb_cr_console_member_payee',
+    SBN_MEMBER_PAYEE_LOG: 'sb_cr_console_member_payee_log',
     SBN_FILE_INFO: 'sb_cr_console_file_info',
     SBN_PAYEE_REQUEST: 'sb_cr_console_payee_request',
     SBN_PAYEE_REQUEST_LOG: 'sb_cr_console_payee_request_log',
@@ -17,6 +18,7 @@ export const COLUMN_NAMES = {
 export const MONDAY_BOARD_IDS = {
     PAYEE_INFO: 5025498925,
     PAYEE_REQUEST: 5024220056,
+    PAYEE_REQUEST_LOG: 5024220117,
     WORK_SETTLEMENT: 1930292711,
 };
 
