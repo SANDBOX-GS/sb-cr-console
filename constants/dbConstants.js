@@ -10,9 +10,9 @@ export const TABLE_NAMES = {
 
 export const COLUMN_NAMES = {
     SBN_MEMBER_PAYEE: {
-        USER_ID: 'user_id',
-    }
-}
+        USER_ID: "user_id",
+    },
+};
 
 // 먼데이닷컴 보드 ID 상수
 export const MONDAY_BOARD_IDS = {
@@ -67,3 +67,9 @@ export const NHN_CONFIG = {
 
 export const IMG_URL =
   "https://sandboxnetwork-public-hosting.s3.ap-northeast-2.amazonaws.com/cr_console";
+
+export const NOTION_PAGE_ID = {
+    NOTICE: "1e529436cbac80c78345e0202cb267a9",
+    TERMS: "2d329436cbac808b9aa0cae47412bb64",
+    PRIVACY: "2d329436cbac80c48fd7f0dc3b286d70",
+};

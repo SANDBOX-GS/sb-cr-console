@@ -8,6 +8,7 @@ import {createMondayLogItem} from "@/lib/mondayCommon";
 import crypto from "crypto";
 import {cookies} from "next/headers";
 
+const DUMMY_PAYOUT_RATIO_ID = "DEFAULT_RATIO";
 const FILE_TYPE_TAG = "PAYEE_DOCUMENT";
 
 /**
@@ -34,10 +35,10 @@ export async function POST(req) {
     let connection;
     const newlyUploadedS3Keys = [];
 
-    try {
-        const formData = await req.formData();
-        const payload = {};
-        const fileUploads = [];
+  try {
+    const formData = await req.formData();
+    const payload = {};
+    const fileUploads = [];
 
         // 1) FormData 파싱
         for (const [key, value] of formData.entries()) {
@@ -271,7 +272,7 @@ export async function POST(req) {
             );
         }
 
-        await connection.commit();
+    await connection.commit();
 
         return NextResponse.json(
             { message: "정보 수정 요청이 완료되었습니다.", payout_ratio_id: mondayItemId },

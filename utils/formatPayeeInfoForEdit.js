@@ -108,26 +108,29 @@ export const mapApiToFormData = (apiData) => {
     }
 
     // 2) personal_info
-    const personal_info = {...base.personal_info};
+    const personal_info = { ...base.personal_info };
     personal_info.user_name = row.user_name || "";
     personal_info.tel = row.tel || "";
     personal_info.email = row.email || "";
 
     if (bizType === BIZ_TYPES.INDIVIDUAL) {
-        // 내국인
-        if (!isForeigner) {
-            personal_info.ssn = row.ssn || "";
-            personal_info.identification_type = row.identification_type || "";
-        } else {
-            // 외국인: ssn은 외국인등록번호로 사용, identification_type는 기본 foreigner_card
-            personal_info.ssn = row.ssn || "";
-            personal_info.identification_type =
-                row.identification_type || "foreigner_card";
-        }
+        if (bizType === BIZ_TYPES.INDIVIDUAL) {
+            // 내국인
+            if (!isForeigner) {
+                personal_info.ssn = row.ssn || "";
+                personal_info.identification_type =
+                    row.identification_type || "";
+            } else {
+                // 외국인: ssn은 외국인등록번호로 사용, identification_type는 기본 foreigner_card
+                personal_info.ssn = row.ssn || "";
+                personal_info.identification_type =
+                    row.identification_type || "foreigner_card";
+            }
 
-        if (isMinor) {
-            personal_info.guardian_name = row.guardian_name || "";
-            personal_info.guardian_tel = row.guardian_tel || "";
+            if (isMinor) {
+                personal_info.guardian_name = row.guardian_name || "";
+                personal_info.guardian_tel = row.guardian_tel || "";
+            }
         }
     }
 
@@ -146,22 +149,26 @@ export const mapApiToFormData = (apiData) => {
     };
 
     // 3) biz_info (개인사업자/법인)
-    const biz_info = {...base.biz_info};
-    if (bizType === BIZ_TYPES.SOLE_PROPRIETOR) {
+    const biz_info = { ...base.biz_info };
+    if (
+        bizType === (BIZ_TYPES.SOLE_PROPRIETOR || BIZ_TYPES.CORPORATE_BUSINESS)
+    ) {
         biz_info.biz_name = row.biz_name || "";
         biz_info.biz_reg_no = row.biz_reg_no || "";
-    } else if (bizType === BIZ_TYPES.CORPORATE_BUSINESS) {
-        biz_info.biz_name = row.corp_name || "";
-        biz_info.biz_reg_no = row.corp_reg_no || "";
+
+        biz_info.business_document = {
+            ...base.biz_info.business_document,
+            url: apiFiles.business_document?.url || null,
+            name: apiFiles.business_document?.name || "",
+            ext: apiFiles.business_document?.ext || "",
+        };
+        biz_info.business_document = {
+            ...base.biz_info.business_document,
+            url: apiFiles.business_document?.url || null,
+            name: apiFiles.business_document?.name || "",
+            ext: apiFiles.business_document?.ext || "",
+        };
     }
-
-    biz_info.business_document = {
-        ...base.biz_info.business_document,
-        url: apiFiles.business_document?.url || null,
-        name: apiFiles.business_document?.name || "",
-        ext: apiFiles.business_document?.ext || "",
-    };
-
     // 4) account_info
     const account_info = {
         ...base.account_info,
@@ -179,7 +186,6 @@ export const mapApiToFormData = (apiData) => {
         (account_info.swift_code = row.swift_code || ""),
             (account_info.bank_address = row.bank_address || "");
     }
-
     // 5) tax_info
     const tax_info = {
         ...base.tax_info,
@@ -272,7 +278,9 @@ export const buildEditSections = (formData) => {
                     },
                     {
                         value: BIZ_TYPES.CORPORATE_BUSINESS,
-                        label: BUSINESS_TYPE_LABEL[BIZ_TYPES.CORPORATE_BUSINESS],
+                        label: BUSINESS_TYPE_LABEL[
+                            BIZ_TYPES.CORPORATE_BUSINESS
+                        ],
                     },
                 ],
             },
@@ -308,6 +316,7 @@ export const buildEditSections = (formData) => {
             ],
         });
     }
+
     sections.push(bizTypeSection);
     const personalFields = [
         {
@@ -320,7 +329,7 @@ export const buildEditSections = (formData) => {
         },
         {
             id: "tel",
-            label: "전화번호",
+            label: "연락처",
             value: personal_info.tel,
             type: "text",
             path: "personal_info.tel",
@@ -390,7 +399,8 @@ export const buildEditSections = (formData) => {
                 {
                     id: "family_relation_certificate",
                     label: "가족관계증명서",
-                    value: personal_info.family_relation_certificate?.name || "",
+                    value:
+                        personal_info.family_relation_certificate?.name || "",
                     type: "file",
                     path: "personal_info.family_relation_certificate",
                     errorKey: "family_relation_certificate",
@@ -450,7 +460,7 @@ export const buildEditSections = (formData) => {
             type: "select",
             path: "account_info.bank_name",
             errorKey: "bank_name",
-            options: KOREAN_BANKS.map((name) => ({value: name, label: name})),
+            options: KOREAN_BANKS.map((name) => ({ value: name, label: name })),
         },
         {
             id: "account_holder",
@@ -467,6 +477,7 @@ export const buildEditSections = (formData) => {
             type: "text",
             path: "account_info.account_number",
             errorKey: "account_number",
+            fullWidth: true,
         },
         {
             id: "bank_document",
@@ -495,6 +506,7 @@ export const buildEditSections = (formData) => {
                 type: "text",
                 path: "account_info.bank_address",
                 errorKey: "bank_address",
+                fullWidth: true,
             }
         );
     }
@@ -578,7 +590,10 @@ export const buildSubmitFormData = (formData) => {
 
         if (!biz_type.is_foreigner) {
             fd.set("ssn", personal_info.ssn || "");
-            fd.set("identification_type", personal_info.identification_type || "");
+            fd.set(
+                "identification_type",
+                personal_info.identification_type || ""
+            );
         } else {
             fd.set("ssn", personal_info.ssn || "");
             fd.set(
@@ -591,12 +606,12 @@ export const buildSubmitFormData = (formData) => {
             fd.set("guardian_name", personal_info.guardian_name || "");
             fd.set("guardian_tel", personal_info.guardian_tel || "");
         }
-    } else if (biz_type.biz_type === BIZ_TYPES.SOLE_PROPRIETOR) {
+    } else if (
+        biz_type.biz_type === BIZ_TYPES.SOLE_PROPRIETOR ||
+        biz_type.biz_type === BIZ_TYPES.CORPORATE_BUSINESS
+    ) {
         fd.set("biz_name", biz_info.biz_name || "");
         fd.set("biz_reg_no", biz_info.biz_reg_no || "");
-    } else if (biz_type.biz_type === BIZ_TYPES.CORPORATE_BUSINESS) {
-        fd.set("corp_name", biz_info.biz_name || "");
-        fd.set("corp_reg_no", biz_info.biz_reg_no || "");
     }
 
     // 계좌 정보
@@ -647,12 +662,12 @@ export const normalizePayeeEditFormData = (
 
     const next = {
         ...nextFormData,
-        basic_info: {...nextFormData.basic_info},
-        biz_type: {...nextFormData.biz_type},
-        personal_info: {...nextFormData.personal_info},
-        biz_info: {...nextFormData.biz_info},
-        account_info: {...nextFormData.account_info},
-        tax_info: {...nextFormData.tax_info},
+        basic_info: { ...nextFormData.basic_info },
+        biz_type: { ...nextFormData.biz_type },
+        personal_info: { ...nextFormData.personal_info },
+        biz_info: { ...nextFormData.biz_info },
+        account_info: { ...nextFormData.account_info },
+        tax_info: { ...nextFormData.tax_info },
     };
 
     // 기본값 보정
@@ -769,11 +784,10 @@ export const normalizePayeeEditFormData = (
 
     return next;
 };
-
 /** 4) 통합 엔트리 */
 export const formatPayeeInfoForEdit = (apiData) => {
     const rawFormData = mapApiToFormData(apiData || null);
     const formData = normalizePayeeEditFormData(rawFormData, null);
     const sections = buildEditSections(formData);
-    return {formData, sections};
+    return { formData, sections };
 };
