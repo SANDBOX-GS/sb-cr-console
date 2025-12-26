@@ -43,6 +43,7 @@ export const NotionPage = ({ recordMap }) => {
             recordMap={recordMap}
             fullPage={false}
             darkMode={false}
+            mapPageUrl={(pageId) => `/notice/${pageId}`}
             components={{
                 Code,
                 Collection,
