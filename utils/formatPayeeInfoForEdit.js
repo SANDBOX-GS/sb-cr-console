@@ -255,25 +255,6 @@ export const buildEditSections = (formData) => {
             },
         ],
     });
-    // 1) 기본 정보 (ConsentType)
-    sections.push({
-        id: "basic_info",
-        label: "기본 정보",
-        value: [
-            {
-                id: "consent_type",
-                label: "수취 정보 유효기간",
-                value:
-                    basic_info.consent_type === "30days"
-                        ? "30일간 동일한 정보로 정산 받겠습니다."
-                        : "정산 시마다 수취 정보를 재확인하겠습니다.",
-                type: "radio",
-                path: "basic_info.consent_type",
-                errorKey: "consent_type",
-                options: CONSENT_TYPE,
-            },
-        ],
-    });
 
     // 2) 사업자 구분 + 특이사항
 
