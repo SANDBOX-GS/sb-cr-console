@@ -1,8 +1,8 @@
-export const dynamic = 'force-dynamic';
-import dbConnect from '@/lib/dbConnect';
-import { TABLE_NAMES } from '@/constants/dbConstants';
-import bcrypt from 'bcryptjs';
-import { NextResponse } from 'next/server';
+export const dynamic = "force-dynamic";
+import dbConnect from "@/lib/dbConnect";
+import { TABLE_NAMES } from "@/constants/dbConstants";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
 const SESSION_MAX_AGE = 60 * 60 * 8; // 8시간
 
@@ -21,7 +21,7 @@ export async function POST(request) {
 
         if (rows.length === 0) {
             return NextResponse.json(
-                { message: '이메일 또는 비밀번호가 일치하지 않습니다.' },
+                { message: "이메일 또는 비밀번호가 일치하지 않습니다." },
                 { status: 401 }
             );
         }
@@ -29,9 +29,9 @@ export async function POST(request) {
         const member = rows[0];
 
         // 2. 상태 확인
-        if (member.active_status !== 'active') {
+        if (member.active_status !== "active") {
             return NextResponse.json(
-                { message: '비활성화된 계정입니다. 계정을 활성화해 주세요.' },
+                { message: "비활성화된 계정입니다. 계정을 활성화해 주세요." },
                 { status: 403 }
             );
         }
@@ -41,7 +41,7 @@ export async function POST(request) {
 
         if (!passwordMatch) {
             return NextResponse.json(
-                { message: '이메일 또는 비밀번호가 일치하지 않습니다.' },
+                { message: "이메일 또는 비밀번호가 일치하지 않습니다." },
                 { status: 401 }
             );
         }
@@ -60,24 +60,23 @@ export async function POST(request) {
 
         return new NextResponse(
             JSON.stringify({
-                message: '로그인 성공',
+                message: "로그인 성공",
                 member_idx: member.idx,
-                hasPayeeInfo: hasPayeeInfo // ✅ 프론트엔드로 플래그 전달
+                hasPayeeInfo: hasPayeeInfo, // ✅ 프론트엔드로 플래그 전달
             }),
             {
                 status: 200,
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Set-Cookie': memberIdxCookie,
+                    "Content-Type": "application/json",
+                    "Set-Cookie": memberIdxCookie,
                 },
             }
         );
-
     } catch (error) {
-        console.error('로그인 중 서버 오류 발생:', error);
+        console.error("로그인 중 서버 오류 발생:", error);
 
         return NextResponse.json(
-            { message: '서버 오류가 발생했습니다.' },
+            { message: "서버 오류가 발생했습니다." },
             { status: 500 }
         );
     } finally {

@@ -1,5 +1,4 @@
 export const dynamic = "force-dynamic";
-
 import dbConnect from "@/lib/dbConnect";
 import {TABLE_NAMES, MONDAY_BOARD_IDS, MONDAY_API_CONFIG} from "@/constants/dbConstants";
 import {NextResponse} from "next/server";

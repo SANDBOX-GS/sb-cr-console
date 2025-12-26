@@ -1,31 +1,35 @@
-export const dynamic = 'force-dynamic';
-import dbConnect from '@/lib/dbConnect';
+export const dynamic = "force-dynamic";
+import dbConnect from "@/lib/dbConnect";
 import {
     TABLE_NAMES,
     NHN_CONFIG,
     MONDAY_API_CONFIG,
     MONDAY_BOARD_IDS,
-    MONDAY_COLUMN_IDS
-} from '@/constants/dbConstants';
+    MONDAY_COLUMN_IDS,
+} from "@/constants/dbConstants";
 
 // todo [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
 const REGISTER_BASE_URL = "http://13.125.225.158:8009/pw_register";
 
 // [추가] UUID 생성 함수
 function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+        /[xy]/g,
+        function (c) {
+            var r = (Math.random() * 16) | 0,
+                v = c === "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        }
+    );
 }
 
 // ==========================================
 // [추가] 먼데이 CR 인벤토리 이름 가져오기 (Mirror 컬럼)
 // ==========================================
 async function getMondayCrName(itemId) {
-    if (!itemId) return '';
+    if (!itemId) return "";
 
-// [수정 1] text와 value도 같이 요청해서 데이터가 어디에 들어오는지 확인
+    // [수정 1] text와 value도 같이 요청해서 데이터가 어디에 들어오는지 확인
     const query = `query ($itemId: [ID!], $columnId: [String!]) {
         items (ids: $itemId) {
             column_values (ids: $columnId) {
@@ -48,32 +52,35 @@ async function getMondayCrName(itemId) {
     // 만약 undefined라면 상수가 잘못된 것입니다.
     if (!targetColumnId) {
         console.error("❌ Error: Column ID Constant is Undefined!");
-        return '';
+        return "";
     }
 
     const variables = {
         itemId: parseInt(itemId),
-        columnId: [targetColumnId]
+        columnId: [targetColumnId],
     };
 
     try {
         const response = await fetch(MONDAY_API_CONFIG.URL, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': MONDAY_API_CONFIG.TOKEN
+                "Content-Type": "application/json",
+                Authorization: MONDAY_API_CONFIG.TOKEN,
             },
-            body: JSON.stringify({ query, variables })
+            body: JSON.stringify({ query, variables }),
         });
 
         const result = await response.json();
 
         // 🔍 [디버깅 로그] 먼데이 API 원본 응답 확인 (이 로그를 꼭 확인하세요!)
-        console.log(`🔍 Monday Raw Response (Item: ${itemId}):`, JSON.stringify(result, null, 2));
+        console.log(
+            `🔍 Monday Raw Response (Item: ${itemId}):`,
+            JSON.stringify(result, null, 2)
+        );
 
         if (result.errors) {
             console.error("❌ Monday API Error:", result.errors);
-            return '';
+            return "";
         }
 
         if (result.data && result.data.items.length > 0) {
@@ -81,23 +88,25 @@ async function getMondayCrName(itemId) {
 
             // 컬럼 데이터가 아예 없는 경우 (컬럼 ID가 틀렸을 때 발생)
             if (!item.column_values || item.column_values.length === 0) {
-                console.error(`⚠️ No column values found for ID: ${targetColumnId}. Check if this column exists on the board.`);
-                return '';
+                console.error(
+                    `⚠️ No column values found for ID: ${targetColumnId}. Check if this column exists on the board.`
+                );
+                return "";
             }
 
             const colValue = item.column_values[0];
 
             // [수정 2] display_value가 없으면 text라도 가져오도록 처리
-            const finalName = colValue.display_value || colValue.text || '';
+            const finalName = colValue.display_value || colValue.text || "";
 
             // 따옴표(")가 포함된 경우 제거 (JSON 파싱 잔여물 등)
-            return finalName.replace(/"/g, '');
+            return finalName.replace(/"/g, "");
         }
 
-        return '';
+        return "";
     } catch (e) {
         console.error(`❌ Monday Fetch Name Error (Item: ${itemId}):`, e);
-        return '';
+        return "";
     }
 }
 
@@ -108,7 +117,13 @@ async function updateMondayStatus(itemId, labelValue) {
     const columnId = MONDAY_COLUMN_IDS.PAYEE_REQUEST.STATUS;
     const boardId = MONDAY_BOARD_IDS.PAYEE_REQUEST;
 
-    await executeMondayStatusUpdate(boardId, itemId, columnId, labelValue, "Payee Request");
+    await executeMondayStatusUpdate(
+        boardId,
+        itemId,
+        columnId,
+        labelValue,
+        "Payee Request"
+    );
 }
 
 // ==========================================
@@ -118,25 +133,46 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue) {
     if (!itemIdsStr) return;
 
     // 콤마(,)로 구분된 ID들을 배열로 변환 및 공백 제거
-    const itemIds = itemIdsStr.split(',').map(id => id.trim()).filter(id => id);
+    const itemIds = itemIdsStr
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id);
 
     if (itemIds.length === 0) return;
 
     const columnId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.STATUS; // 'color_mkygz7n5'
     const boardId = MONDAY_BOARD_IDS.WORK_SETTLEMENT;
 
-    console.log(`🔄 Updating Work Settlement Items: [${itemIds.join(', ')}] -> ${labelValue}`);
+    console.log(
+        `🔄 Updating Work Settlement Items: [${itemIds.join(
+            ", "
+        )}] -> ${labelValue}`
+    );
 
     // 연결된 모든 정산 아이템 업데이트 (병렬 처리)
-    await Promise.all(itemIds.map(async (id) => {
-        await executeMondayStatusUpdate(boardId, id, columnId, labelValue, "Work Settlement");
-    }));
+    await Promise.all(
+        itemIds.map(async (id) => {
+            await executeMondayStatusUpdate(
+                boardId,
+                id,
+                columnId,
+                labelValue,
+                "Work Settlement"
+            );
+        })
+    );
 }
 
 // ==========================================
 // [공통] 먼데이 상태 업데이트 실행 함수
 // ==========================================
-async function executeMondayStatusUpdate(boardId, itemId, columnId, labelValue, logPrefix) {
+async function executeMondayStatusUpdate(
+    boardId,
+    itemId,
+    columnId,
+    labelValue,
+    logPrefix
+) {
     const query = `mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
         change_simple_column_value (board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) {
             id
@@ -147,24 +183,29 @@ async function executeMondayStatusUpdate(boardId, itemId, columnId, labelValue, 
         boardId: parseInt(boardId),
         itemId: parseInt(itemId),
         columnId: columnId,
-        value: labelValue
+        value: labelValue,
     };
 
     try {
         const response = await fetch(MONDAY_API_CONFIG.URL, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': MONDAY_API_CONFIG.TOKEN
+                "Content-Type": "application/json",
+                Authorization: MONDAY_API_CONFIG.TOKEN,
             },
-            body: JSON.stringify({ query, variables })
+            body: JSON.stringify({ query, variables }),
         });
 
         const result = await response.json();
         if (result.errors) {
-            console.error(`❌ [${logPrefix}] Update Error (Item: ${itemId}):`, result.errors);
+            console.error(
+                `❌ [${logPrefix}] Update Error (Item: ${itemId}):`,
+                result.errors
+            );
         } else {
-            console.log(`✅ [${logPrefix}] Updated: ${itemId} -> ${labelValue}`);
+            console.log(
+                `✅ [${logPrefix}] Updated: ${itemId} -> ${labelValue}`
+            );
         }
     } catch (e) {
         console.error(`❌ [${logPrefix}] API Error (Item: ${itemId}):`, e);
@@ -180,34 +221,39 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
         templateParameter: {
             name: receiverName,
             email: receiverEmail,
-            ...templateParams
+            ...templateParams,
         },
-        receiverList: [{
-            receiveMailAddr: receiverEmail,
-            receiveName: receiverName,
-            receiveType: "MRT0"
-        }],
-        userId: "CR_CONSOLE_USER"
+        receiverList: [
+            {
+                receiveMailAddr: receiverEmail,
+                receiveName: receiverName,
+                receiveType: "MRT0",
+            },
+        ],
+        userId: "CR_CONSOLE_USER",
     };
 
     try {
         const response = await fetch(NHN_CONFIG.EMAIL.AD_URL, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'X-Secret-Key': NHN_CONFIG.EMAIL.SECRET_KEY
+                "Content-Type": "application/json",
+                "X-Secret-Key": NHN_CONFIG.EMAIL.SECRET_KEY,
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
         });
         const result = await response.json();
 
         if (!result.header.isSuccessful) {
-            console.error("❌ Email API Error Details:", JSON.stringify(result, null, 2));
+            console.error(
+                "❌ Email API Error Details:",
+                JSON.stringify(result, null, 2)
+            );
 
             // 실패 시: API에서 준 상세 에러 메시지 리턴
             return {
                 success: false,
-                message: `[실패사유]: ${result.header.resultMessage} (에러코드: ${result.header.resultCode})`
+                message: `[실패사유]: ${result.header.resultMessage} (에러코드: ${result.header.resultCode})`,
             };
         }
 
@@ -218,7 +264,7 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
         // 네트워크 에러 등 예외 발생 시
         return {
             success: false,
-            message: `[실패사유]: ${e.message}`
+            message: `[실패사유]: ${e.message}`,
         };
     }
 }
@@ -227,30 +273,35 @@ async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
 // 3. NHN 알림톡 발송 함수
 // ==========================================
 async function sendNHNKakao(receiverPhone, templateParams) {
-    const cleanPhone = receiverPhone.replace(/-/g, '');
+    const cleanPhone = receiverPhone.replace(/-/g, "");
     const body = {
         senderKey: NHN_CONFIG.KAKAO.SENDER_KEY,
         templateCode: NHN_CONFIG.KAKAO.TEMPLATE_CODE,
-        recipientList: [{
-            recipientNo: cleanPhone,
-            templateParameter: { ...templateParams }
-        }]
+        recipientList: [
+            {
+                recipientNo: cleanPhone,
+                templateParameter: { ...templateParams },
+            },
+        ],
     };
 
     try {
         const response = await fetch(NHN_CONFIG.KAKAO.URL, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'X-Secret-Key': NHN_CONFIG.KAKAO.SECRET_KEY
+                "Content-Type": "application/json",
+                "X-Secret-Key": NHN_CONFIG.KAKAO.SECRET_KEY,
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
         });
         const result = await response.json();
 
         // [디버깅] 실패했다면 에러 내용을 로그에 출력
         if (!result.header.isSuccessful) {
-            console.error("❌ Kakao API Error Details:", JSON.stringify(result, null, 2));
+            console.error(
+                "❌ Kakao API Error Details:",
+                JSON.stringify(result, null, 2)
+            );
         }
 
         return result.header.isSuccessful;
@@ -279,31 +330,43 @@ export async function POST(request) {
         const [targets] = await connection.execute(query);
 
         if (targets.length === 0) {
-            return new Response(JSON.stringify({ message: '발송 대기중인 건이 없습니다.' }), { status: 200 });
+            return new Response(
+                JSON.stringify({ message: "발송 대기중인 건이 없습니다." }),
+                { status: 200 }
+            );
         }
 
         const now = new Date();
         const currentYear = String(now.getFullYear());
-        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+        const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
 
-        const paymentDateStr = `${currentYear}.${String(now.getMonth() + 2).padStart(2, '0')}.10 예정`;
+        const paymentDateStr = `${currentYear}.${String(
+            now.getMonth() + 2
+        ).padStart(2, "0")}.10 예정`;
         const writeDateStr = `${currentYear}년 ${currentMonth}월 ${now.getDate()}일`;
         const writeDetailStr = `${currentYear}년 ${currentMonth}월 귀속 수익`;
 
         let successCount = 0;
 
         for (const target of targets) {
-            const { idx, item_id, email, tel, email_state, kakao_state, board_relation_mkxsa8rp } = target;
+            const {
+                idx,
+                item_id,
+                email,
+                tel,
+                email_state,
+                kakao_state,
+                board_relation_mkxsa8rp,
+            } = target;
             const nameAsId = email;
 
             let updateUpdates = [];
             let mondayStatusToUpdate = null;
 
             // (A) 이메일 발송 (발송 완료, 발송 취소된 경우에는 발송하지 않음)
-            if (email_state === 'pending') {
-
+            if (email_state === "pending") {
                 // 🔹 [STEP 1] 회원 확인 및 UUID 확보 (이메일 발송 전 선행)
-                let targetUUID = '';
+                let targetUUID = "";
 
                 try {
                     // 1-1. 이미 존재하는 회원인지 확인
@@ -331,10 +394,15 @@ export async function POST(request) {
                              VALUES (?, ?, ?, 'inactive')`,
                             [targetUUID, email, crInvName]
                         );
-                        console.log(`👤 New Member Inserted: ${email} / UUID: ${targetUUID} / Name: ${crInvName}`);
+                        console.log(
+                            `👤 New Member Inserted: ${email} / UUID: ${targetUUID} / Name: ${crInvName}`
+                        );
                     }
                 } catch (dbErr) {
-                    console.error(`DB Error during Member Check/Insert for ${email}:`, dbErr);
+                    console.error(
+                        `DB Error during Member Check/Insert for ${email}:`,
+                        dbErr
+                    );
                     // DB 에러 시 이메일 발송을 중단하고 다음 타겟으로 넘어감 (안전장치)
                     continue;
                 }
@@ -347,10 +415,14 @@ export async function POST(request) {
                     year: currentYear,
                     month: currentMonth,
                     payment_date: paymentDateStr,
-                    link_url: linkUrl
+                    link_url: linkUrl,
                 };
 
-                const sendResult = await sendNHNEmail(email, nameAsId, emailParams);
+                const sendResult = await sendNHNEmail(
+                    email,
+                    nameAsId,
+                    emailParams
+                );
 
                 if (sendResult.success) {
                     updateUpdates.push("email_state = 'success'");
@@ -362,21 +434,23 @@ export async function POST(request) {
 
                     // 실패 사유 추출
                     const failReason = sendResult.message;
-                    console.error(`📧 Email Fail: ${email} / Reason: ${failReason}`);
+                    console.error(
+                        `📧 Email Fail: ${email} / Reason: ${failReason}`
+                    );
 
                     // todo 실패사유를 정책에 따라서 슬랙으로 보내야됨
                 }
             }
 
             // (B) 알림톡 발송
-            if (kakao_state === 'pending') {
+            if (kakao_state === "pending") {
                 if (tel && tel.length > 9) {
                     const kakaoParams = {
                         yyyy: currentYear,
                         mm: currentMonth,
                         write_date: writeDateStr,
                         write_detail: writeDetailStr,
-                        due_date: paymentDateStr
+                        due_date: paymentDateStr,
                     };
 
                     const isSent = await sendNHNKakao(tel, kakaoParams);
@@ -392,7 +466,9 @@ export async function POST(request) {
 
             // (C) DB 업데이트
             if (updateUpdates.length > 0) {
-                const updateSql = `UPDATE ${TABLE_NAMES.SBN_PAYEE_REQUEST} SET ${updateUpdates.join(', ')} WHERE idx = ?`;
+                const updateSql = `UPDATE ${
+                    TABLE_NAMES.SBN_PAYEE_REQUEST
+                } SET ${updateUpdates.join(", ")} WHERE idx = ?`;
                 await connection.execute(updateSql, [idx]);
             }
 
@@ -417,21 +493,29 @@ export async function POST(request) {
 
                     // 변환된 라벨로 업데이트 요청
                     if (settlementLabel) {
-                        await updateWorkSettlementStatus(board_relation_mkxsa8rp, settlementLabel);
+                        await updateWorkSettlementStatus(
+                            board_relation_mkxsa8rp,
+                            settlementLabel
+                        );
                     }
                 }
             }
         }
 
-        return new Response(JSON.stringify({
-            message: 'Notification Job Completed',
-            processed_count: targets.length,
-            success_email_count: successCount
-        }), { status: 200 });
-
+        return new Response(
+            JSON.stringify({
+                message: "Notification Job Completed",
+                processed_count: targets.length,
+                success_email_count: successCount,
+            }),
+            { status: 200 }
+        );
     } catch (error) {
-        console.error('Server Error:', error);
-        return new Response(JSON.stringify({ message: 'Server Error', error: error.message }), { status: 500 });
+        console.error("Server Error:", error);
+        return new Response(
+            JSON.stringify({ message: "Server Error", error: error.message }),
+            { status: 500 }
+        );
     } finally {
         if (connection) connection.release();
     }

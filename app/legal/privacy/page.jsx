@@ -2,8 +2,6 @@ import { getNotionPage } from "@/lib/notion";
 import { NotionPage } from "@/components/common/NotionPage";
 import { NOTION_PAGE_ID } from "@/constants/dbConstants";
 
-export const revalidate = 60 * 60; // 1h
-
 export default async function PrivacyPage() {
     const recordMap = await getNotionPage(NOTION_PAGE_ID.PRIVACY);
 

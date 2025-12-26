@@ -1,13 +1,17 @@
-export const dynamic = 'force-dynamic';
-import dbConnect from '@/lib/dbConnect';
-import { TABLE_NAMES } from '@/constants/dbConstants'; // 테이블 명이 정의된 상수라고 가정
+export const dynamic = "force-dynamic";
+import dbConnect from "@/lib/dbConnect";
+import { TABLE_NAMES } from "@/constants/dbConstants"; // 테이블 명이 정의된 상수라고 가정
 
 // UUID 생성 함수
 function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+        /[xy]/g,
+        function (c) {
+            var r = (Math.random() * 16) | 0,
+                v = c === "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        }
+    );
 }
 
 export async function POST(request) {
@@ -19,7 +23,7 @@ export async function POST(request) {
         if (body.challenge) {
             return new Response(JSON.stringify({ challenge: body.challenge }), {
                 status: 200,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { "Content-Type": "application/json" },
             });
         }
 
@@ -37,7 +41,7 @@ export async function POST(request) {
 
             if (emailData) {
                 // Case A: 데이터가 객체이고 .email이나 .text 속성이 있는 경우 (가장 흔함)
-                if (typeof emailData === 'object') {
+                if (typeof emailData === "object") {
                     email = emailData.email || emailData.text || null;
                 }
                 // Case B: 데이터가 그냥 문자열인 경우
@@ -50,7 +54,9 @@ export async function POST(request) {
         if (!email) {
             console.log("이메일 정보가 없습니다.", body);
             // 이메일이 없어도 Monday 쪽에는 성공 응답을 보내야 재시도를 안함
-            return new Response(JSON.stringify({ message: 'No email found' }), { status: 200 });
+            return new Response(JSON.stringify({ message: "No email found" }), {
+                status: 200,
+            });
         }
 
         // 3. DB 연결
@@ -65,7 +71,10 @@ export async function POST(request) {
 
             if (existing.length > 0) {
                 // 이미 존재하면 무시하고 성공 처리 (또는 업데이트 로직 추가 가능)
-                return new Response(JSON.stringify({ message: 'Email already exists' }), { status: 200 });
+                return new Response(
+                    JSON.stringify({ message: "Email already exists" }),
+                    { status: 200 }
+                );
             }
 
             // 5. 데이터 삽입 (inactive 상태로)
@@ -79,25 +88,30 @@ export async function POST(request) {
                 [newUserId, email]
             );
 
-            console.log(`[Monday Webhook] 신규 inactive 유저 생성 완료: ${email}`);
+            console.log(
+                `[Monday Webhook] 신규 inactive 유저 생성 완료: ${email}`
+            );
 
-            return new Response(JSON.stringify({ message: 'User created successfully' }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
-            });
-
+            return new Response(
+                JSON.stringify({ message: "User created successfully" }),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
         } catch (dbError) {
-            console.error('DB Error:', dbError);
-            return new Response(JSON.stringify({ message: 'Database Error' }), { status: 500 });
+            console.error("DB Error:", dbError);
+            return new Response(JSON.stringify({ message: "Database Error" }), {
+                status: 500,
+            });
         } finally {
             if (connection) connection.end();
         }
-
     } catch (error) {
-        console.error('Server Error:', error);
-        return new Response(JSON.stringify({ message: 'Server Error' }), {
+        console.error("Server Error:", error);
+        return new Response(JSON.stringify({ message: "Server Error" }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
         });
     }
 }
