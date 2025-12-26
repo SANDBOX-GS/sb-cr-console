@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import dbConnect from "@/lib/dbConnect";
-import {TABLE_NAMES} from "@/constants/dbConstants";
-import {cookies} from "next/headers";
+import { TABLE_NAMES } from "@/constants/dbConstants";
+import { cookies } from "next/headers";
 
 /**
  * GET /api/member/status
@@ -16,12 +16,16 @@ export async function GET() {
         const memberIdxCookie = cookieStore.get("member_idx");
 
         if (!memberIdxCookie || !memberIdxCookie.value) {
-            return new Response(JSON.stringify({ message: "No cookie" }), { status: 401 });
+            return new Response(JSON.stringify({ message: "No cookie" }), {
+                status: 401,
+            });
         }
 
         const member_idx = parseInt(memberIdxCookie.value, 10);
         if (isNaN(member_idx) || member_idx <= 0) {
-            return new Response(JSON.stringify({ message: "Invalid ID" }), { status: 401 });
+            return new Response(JSON.stringify({ message: "Invalid ID" }), {
+                status: 401,
+            });
         }
 
         connection = await dbConnect();
@@ -34,7 +38,9 @@ export async function GET() {
         );
 
         if (rows.length === 0 || rows[0].active_status !== "active") {
-            return new Response(JSON.stringify({ message: "User invalid" }), { status: 401 });
+            return new Response(JSON.stringify({ message: "User invalid" }), {
+                status: 401,
+            });
         }
 
         // 수취인 정보 등록 여부 확인
@@ -51,15 +57,17 @@ export async function GET() {
             JSON.stringify({
                 message: "Authenticated",
                 isLoggedIn: true,
-                hasPayeeInfo: hasPayeeInfo // <--- 이걸 프론트로 보냅니다
+                hasPayeeInfo: hasPayeeInfo, // <--- 이걸 프론트로 보냅니다
             }),
             { status: 200, headers: { "Content-Type": "application/json" } }
         );
     } catch (error) {
         console.error("인증 상태 확인 중 서버 오류 발생:", error);
         return new Response(
-            JSON.stringify({message: "Server error during authentication check."}),
-            {status: 500, headers: {"Content-Type": "application/json"}}
+            JSON.stringify({
+                message: "Server error during authentication check.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
         );
     } finally {
         if (connection) {

@@ -1,10 +1,18 @@
-export const dynamic = 'force-dynamic';
-import dbConnect from '@/lib/dbConnect';
-import { TABLE_NAMES } from '@/constants/dbConstants';
-import bcrypt from 'bcryptjs';
+export const dynamic = "force-dynamic";
+import dbConnect from "@/lib/dbConnect";
+import { TABLE_NAMES } from "@/constants/dbConstants";
+import bcrypt from "bcryptjs";
 
 export async function POST(request) {
-    const { code, email, password, agreed_to_terms, agreed_to_privacy, agreed_to_third_party, agreed_to_marketing } = await request.json();
+    const {
+        code,
+        email,
+        password,
+        agreed_to_terms,
+        agreed_to_privacy,
+        agreed_to_third_party,
+        agreed_to_marketing,
+    } = await request.json();
     let connection;
 
     try {
@@ -19,8 +27,8 @@ export async function POST(request) {
         // 이메일이 존재하지 않는 경우
         if (rows.length === 0) {
             return new Response(
-                JSON.stringify({ message: '이메일이 존재하지 않습니다.' }),
-                { status: 404, headers: { 'Content-Type': 'application/json' } }
+                JSON.stringify({ message: "이메일이 존재하지 않습니다." }),
+                { status: 404, headers: { "Content-Type": "application/json" } }
             );
         }
 
@@ -29,16 +37,18 @@ export async function POST(request) {
         // code가 없거나 서로 다르면 유효하지 않은 접근으로 처리
         if (!code || member.user_id !== code) {
             return new Response(
-                JSON.stringify({ message: '유효하지 않은 접근입니다. (잘못된 인증 코드)' }),
-                { status: 403, headers: { 'Content-Type': 'application/json' } }
+                JSON.stringify({
+                    message: "유효하지 않은 접근입니다. (잘못된 인증 코드)",
+                }),
+                { status: 403, headers: { "Content-Type": "application/json" } }
             );
         }
 
         // 2. active_status 확인
-        if (member.active_status === 'active') {
+        if (member.active_status === "active") {
             return new Response(
-                JSON.stringify({ message: '이미 등록된 계정입니다.' }),
-                { status: 409, headers: { 'Content-Type': 'application/json' } }
+                JSON.stringify({ message: "이미 등록된 계정입니다." }),
+                { status: 409, headers: { "Content-Type": "application/json" } }
             );
         }
 
@@ -63,27 +73,36 @@ export async function POST(request) {
              WHERE email = ? AND user_id = ?`,
             [
                 hashedPassword,
-                agreed_to_terms, agreed_to_terms,
-                agreed_to_privacy, agreed_to_privacy,
-                agreed_to_third_party, agreed_to_third_party,
-                agreed_to_marketing, agreed_to_marketing,
+                agreed_to_terms,
+                agreed_to_terms,
+                agreed_to_privacy,
+                agreed_to_privacy,
+                agreed_to_third_party,
+                agreed_to_third_party,
+                agreed_to_marketing,
+                agreed_to_marketing,
                 email,
-                code
+                code,
             ]
         );
 
-        return new Response(JSON.stringify({ message: '계정이 성공적으로 활성화되었습니다.' }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
-
+        return new Response(
+            JSON.stringify({ message: "계정이 성공적으로 활성화되었습니다." }),
+            {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+            }
+        );
     } catch (error) {
-        console.error('데이터베이스 처리 중 오류 발생:', error);
+        console.error("데이터베이스 처리 중 오류 발생:", error);
 
-        return new Response(JSON.stringify({ message: '서버 오류가 발생했습니다.' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+            JSON.stringify({ message: "서버 오류가 발생했습니다." }),
+            {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+            }
+        );
     } finally {
         if (connection) {
             connection.release();

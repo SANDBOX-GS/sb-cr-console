@@ -1,7 +1,7 @@
-export const dynamic = 'force-dynamic';
-import dbConnect from '@/lib/dbConnect';
-import { TABLE_NAMES } from '@/constants/dbConstants';
-import { NextResponse } from 'next/server';
+export const dynamic = "force-dynamic";
+import dbConnect from "@/lib/dbConnect";
+import { TABLE_NAMES } from "@/constants/dbConstants";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
     let connection;
@@ -11,7 +11,7 @@ export async function POST(request) {
 
         if (!token) {
             return NextResponse.json(
-                { message: 'Token is required' },
+                { message: "Token is required" },
                 { status: 400 }
             );
         }
@@ -28,7 +28,7 @@ export async function POST(request) {
 
         if (rows.length === 0) {
             return NextResponse.json(
-                { message: '유효하지 않은 링크입니다.' },
+                { message: "유효하지 않은 링크입니다." },
                 { status: 404 } // Not Found
             );
         }
@@ -36,9 +36,12 @@ export async function POST(request) {
         const member = rows[0];
 
         // 2. 이미 활성화된 계정인지 체크 (선택 사항이지만 보안상 권장)
-        if (member.active_status === 'active') {
+        if (member.active_status === "active") {
             return NextResponse.json(
-                { message: '이미 가입이 완료된 계정입니다. 로그인 페이지로 이동합니다.' },
+                {
+                    message:
+                        "이미 가입이 완료된 계정입니다. 로그인 페이지로 이동합니다.",
+                },
                 { status: 409 } // Conflict
             );
         }
@@ -48,15 +51,14 @@ export async function POST(request) {
             {
                 valid: true,
                 email: member.email,
-                message: '유효한 접근입니다.'
+                message: "유효한 접근입니다.",
             },
             { status: 200 }
         );
-
     } catch (error) {
-        console.error('UUID 검증 중 서버 오류 발생:', error);
+        console.error("UUID 검증 중 서버 오류 발생:", error);
         return NextResponse.json(
-            { message: '서버 오류가 발생했습니다.' },
+            { message: "서버 오류가 발생했습니다." },
             { status: 500 }
         );
     } finally {

@@ -1,8 +1,8 @@
 "use client";
 
-import { IMG_URL } from "@/constants/dbConstants";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { IMG_URL } from "@/constants/dbConstants";
 
 const NotionRenderer = dynamic(
     () => import("react-notion-x").then((m) => m.NotionRenderer),
