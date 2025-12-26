@@ -7,13 +7,6 @@ import {
     KOREAN_BANKS,
     CONSENT_TYPE,
     BIZ_TYPES,
-    BUSINESS_TYPE_LABEL,
-    ID_DOCUMENT_TYPES,
-    TAX_ISSUE_TYPE_LABEL,
-    ISSUE_TYPES,
-    KOREAN_BANKS,
-    CONSENT_TYPE,
-    BIZ_TYPES,
 } from "@/constants/payee-data";
 
 /**
