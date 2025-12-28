@@ -135,3 +135,79 @@
         line-height: 160%;
     }
 }
+.logo-fill {
+    clip-path: inset(0 100% 0 0);
+    animation: logoFillSnap 2s linear infinite;
+}
+
+@keyframes logoFillSnap {
+    0% {
+        clip-path: inset(0 100% 0 0); /* 0% */
+    }
+    55% {
+        clip-path: inset(0 0% 0 0); /* 100% 채움 */
+    }
+    70% {
+        clip-path: inset(0 0% 0 0); /* 잠깐 유지 */
+    }
+    75.00% {
+        clip-path: inset(0 100% 0 0); /* 여기서 뿅 리셋 */
+    }
+    100% {
+        clip-path: inset(0 100% 0 0); /* 리셋 상태로 대기 */
+    }
+}
+
+@layer utilities {
+    /* success */
+    .toast-gradient-success {
+        @apply bg-gradient-to-r from-cyan-50 to-sky-100 border-sky-200 shadow-sky-700/15 shadow-lg text-sky-800;
+    }
+
+    /* info */
+    .toast-gradient-info {
+        @apply bg-gradient-to-r from-emerald-50 to-cyan-100 border-emerald-200 shadow-cyan-700/15 shadow-lg text-cyan-800;
+    }
+
+    /* warning */
+    .toast-gradient-warning {
+        @apply bg-gradient-to-r from-amber-50 to-orange-100 border-orange-200 shadow-orange-700/15 shadow-lg text-orange-800;
+    }
+
+    /* error */
+    .toast-gradient-error {
+        @apply bg-gradient-to-r from-pink-50 to-red-100 border-pink-200 shadow-red-700/15 shadow-lg text-pink-800;
+    }
+
+    /* loading */
+    .toast-gradient-loading {
+        @apply bg-gradient-to-r from-slate-50 to-slate-100 border-slate-300 shadow-slate-700/15 shadow-lg text-slate-800;
+    }
+}
+
+/* =========================
+   공통
+========================= */
+/* 공통 */
+.toaster [data-sonner-toast] {
+    @apply border shadow-lg rounded-xl shadow-slate-700/15 border-slate-300;
+}
+.toaster [data-sonner-toast][data-type="success"] {
+    @apply toast-gradient-success;
+}
+
+.toaster [data-sonner-toast][data-type="info"] {
+    @apply toast-gradient-info;
+}
+
+.toaster [data-sonner-toast][data-type="warning"] {
+    @apply toast-gradient-warning;
+}
+
+.toaster [data-sonner-toast][data-type="error"] {
+    @apply toast-gradient-error;
+}
+
+.toaster [data-sonner-toast][data-type="loading"] {
+    @apply toast-gradient-loading;
+}

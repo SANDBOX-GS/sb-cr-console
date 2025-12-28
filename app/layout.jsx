@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Suspense } from "react";
+import Loading from "./loading";
 
 export const metadata = {
     title: "크리에이터 정산 시스템",
@@ -19,9 +20,7 @@ export default function RootLayout({ children }) {
                 <AuthProvider>
                     <Header className="sticky top-0 z-50 shrink-0 bg-white" />
                     <main className="flex-1 min-h-0 py-20 px-5">
-                        <Suspense fallback={<div>Loading Page...</div>}>
-                            {children}
-                        </Suspense>
+                        <Suspense fallback={<Loading />}>{children}</Suspense>
                     </main>
 
                     <Toaster />
