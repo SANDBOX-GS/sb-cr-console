@@ -443,7 +443,6 @@ export async function POST(req) {
                 file.file_size,
                 file.seq,
                 file.tag,
-                file.version, // 원본 버전 기록
                 file.memo,
                 file.creator_id,
                 new Date() // create_datetime
@@ -452,7 +451,7 @@ export async function POST(req) {
             await connection.query(
                 `INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO}
                  (type, ref_table_name, ref_table_idx, file_url, file_name, file_realname, file_ext, file_size, seq,
-                  tag, version, memo, creator_id, create_datetime)
+                  tag, memo, creator_id, create_datetime)
                  VALUES ?`,
                 [fileLogValues]
             );
