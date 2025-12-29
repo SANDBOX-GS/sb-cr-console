@@ -16,10 +16,10 @@ export const COLUMN_NAMES = {
 
 // 먼데이닷컴 보드 ID 상수
 export const MONDAY_BOARD_IDS = {
-    PAYEE_INFO: 5025498925,
-    PAYEE_REQUEST: 5024220056,
-    PAYEE_REQUEST_LOG: 5024220117,
-    WORK_SETTLEMENT: 1930292711,
+    PAYEE_INFO: 5025498925,           // 외부 CR - 수취인 개인 정보
+    PAYEE_REQUEST: 5024220056,        // 외부 CR - 수취인 정보 요청
+    PAYEE_LOG: 5024220117,            // 외부 CR - 수취인 개인 정보 수정 이력
+    WORK_SETTLEMENT: 1930292711,      // 과업 정산
 };
 
 // 먼데이닷컴 컬럼 ID 상수 (보드별로 관리)
@@ -39,6 +39,29 @@ export const MONDAY_COLUMN_IDS = {
     },
     WORK_SETTLEMENT: {
         STATUS: 'color_mkygz7n5' // 상태 컬럼 ('Label')
+    },
+    PAYEE_LOG: {
+        BIZ_TYPE_STATUS: "color_mkxtxram",   // 사업자 구분 (상태)
+        CORP_NAME: "long_text_mkxt6ds1",     // 법인명
+        BIZ_REG_NO: "text_mkxt31vr",         // 사업자등록번호
+        BIZ_REG_FILE: "file_mkxtev4k",       // 사업자등록증 (파일)
+        USER_NAME: "text_mkxtba0q",          // 본명
+        SSN: "text_mkxts5rz",                // 주민등록번호
+        PHONE: "phone_mkxtstbk",             // 휴대폰 번호
+        EMAIL: "email_mkxt1k94",             // 이메일
+        ID_FILE: "file_mkxtcr5n",            // 신분증 (파일)
+        FOREIGN_REG_NO: "text_mkxt86q5",     // 외국인등록번호
+        GUARDIAN_NAME: "text_mkxtsa43",      // 법정대리인 성명
+        GUARDIAN_PHONE: "phone_mkxt1gnp",    // 법정대리인 연락처
+        RELATION_FILE: "file_mkxtbw7m",      // 가족관계증명서 (파일)
+        BANK_NAME: "text_mkxtsrm2",          // 은행명
+        ACCOUNT_HOLDER: "text_mkxtk278",     // 예금주
+        ACCOUNT_NUMBER: "text_mkxth905",     // 계좌번호
+        SWIFT_CODE: "text_mkxtzw24",         // SWIFT CODE
+        BANK_ADDRESS: "long_text_mkxtrjk1",  // 은행 주소
+        BANK_COPY_FILE: "file_mkxt4x6w",     // 통장사본 (파일)
+        IS_SIMPLE_TAX: "boolean_mkxts2x5",   // 간이과세자 여부 (체크박스)
+        INVOICE_TYPE: "dropdown_mkxtyexm",   // 발행 유형 (드롭다운)
     }
 };
 
