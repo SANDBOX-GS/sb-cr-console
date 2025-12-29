@@ -7,9 +7,11 @@ import {
     MONDAY_BOARD_IDS,
     MONDAY_COLUMN_IDS,
 } from "@/constants/dbConstants";
+import { MONDAY_LABEL } from "@/constants/mondayLabel";
+import { sendNHNEmail, sendNHNKakao } from "@/lib/nhnSender";
 
 // todo [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
-const REGISTER_BASE_URL = "http://13.125.225.158:8009/pw_register";
+const REGISTER_BASE_URL = "https://creator.sandbox.co.kr/register";
 
 // [추가] UUID 생성 함수
 function generateUUID() {
@@ -213,105 +215,6 @@ async function executeMondayStatusUpdate(
 }
 
 // ==========================================
-// 2. NHN 이메일 발송 함수
-// ==========================================
-async function sendNHNEmail(receiverEmail, receiverName, templateParams) {
-    const body = {
-        templateId: NHN_CONFIG.EMAIL.TEMPLATE_ID,
-        templateParameter: {
-            name: receiverName,
-            email: receiverEmail,
-            ...templateParams,
-        },
-        receiverList: [
-            {
-                receiveMailAddr: receiverEmail,
-                receiveName: receiverName,
-                receiveType: "MRT0",
-            },
-        ],
-        userId: "CR_CONSOLE_USER",
-    };
-
-    try {
-        const response = await fetch(NHN_CONFIG.EMAIL.AD_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Secret-Key": NHN_CONFIG.EMAIL.SECRET_KEY,
-            },
-            body: JSON.stringify(body),
-        });
-        const result = await response.json();
-
-        if (!result.header.isSuccessful) {
-            console.error(
-                "❌ Email API Error Details:",
-                JSON.stringify(result, null, 2)
-            );
-
-            // 실패 시: API에서 준 상세 에러 메시지 리턴
-            return {
-                success: false,
-                message: `[실패사유]: ${result.header.resultMessage} (에러코드: ${result.header.resultCode})`,
-            };
-        }
-
-        // 성공 시
-        return { success: true };
-    } catch (e) {
-        console.error("NHN Email Fetch Error:", e);
-        // 네트워크 에러 등 예외 발생 시
-        return {
-            success: false,
-            message: `[실패사유]: ${e.message}`,
-        };
-    }
-}
-
-// ==========================================
-// 3. NHN 알림톡 발송 함수
-// ==========================================
-async function sendNHNKakao(receiverPhone, templateParams) {
-    const cleanPhone = receiverPhone.replace(/-/g, "");
-    const body = {
-        senderKey: NHN_CONFIG.KAKAO.SENDER_KEY,
-        templateCode: NHN_CONFIG.KAKAO.TEMPLATE_CODE,
-        recipientList: [
-            {
-                recipientNo: cleanPhone,
-                templateParameter: { ...templateParams },
-            },
-        ],
-    };
-
-    try {
-        const response = await fetch(NHN_CONFIG.KAKAO.URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Secret-Key": NHN_CONFIG.KAKAO.SECRET_KEY,
-            },
-            body: JSON.stringify(body),
-        });
-        const result = await response.json();
-
-        // [디버깅] 실패했다면 에러 내용을 로그에 출력
-        if (!result.header.isSuccessful) {
-            console.error(
-                "❌ Kakao API Error Details:",
-                JSON.stringify(result, null, 2)
-            );
-        }
-
-        return result.header.isSuccessful;
-    } catch (e) {
-        console.error("NHN Kakao Fetch Error:", e);
-        return false;
-    }
-}
-
-// ==========================================
 // 4. 메인 로직 (POST)
 // ==========================================
 export async function POST(request) {
@@ -363,54 +266,57 @@ export async function POST(request) {
             let updateUpdates = [];
             let mondayStatusToUpdate = null;
 
-            // (A) 이메일 발송 (발송 완료, 발송 취소된 경우에는 발송하지 않음)
-            if (email_state === "pending") {
-                // 🔹 [STEP 1] 회원 확인 및 UUID 확보 (이메일 발송 전 선행)
-                let targetUUID = "";
+            // ------------------------------------------------------------------
+            // 🔹 [STEP 0] 공통 데이터 준비 (회원 확인, 이름 확보, 링크 생성)
+            // ------------------------------------------------------------------
+            // 이 로직을 if문 밖으로 꺼내야 이메일/카카오톡 어디서든 쓸 수 있습니다.
 
-                try {
-                    // 1-1. 이미 존재하는 회원인지 확인
-                    const [members] = await connection.execute(
-                        `SELECT user_id FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
-                        [email]
+            let targetUUID = "";
+            let targetName = ""; // 사용자 실명 (cr_inv_name)
+            let linkUrl = "";
+
+            try {
+                // 1. 이미 존재하는 회원인지 확인 (이름도 같이 조회)
+                const [members] = await connection.execute(
+                    `SELECT user_id FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
+                    [email]
+                );
+
+                if (members.length > 0) {
+                    // [CASE A] 이미 존재하는 회원 -> DB 정보 사용
+                    targetUUID = members[0].user_id;
+                    targetName = members[0].cr_inv_name; // DB에 저장된 이름 사용
+                } else {
+                    // [CASE B] 신규 회원 -> 먼데이 API로 이름 가져오기 & DB 생성
+
+                    // 1) 먼데이 API 호출 (이름 획득)
+                    targetName = await getMondayCrName(item_id);
+
+                    // 2) UUID 생성
+                    targetUUID = generateUUID();
+
+                    // 3) DB Insert
+                    await connection.execute(
+                        `INSERT INTO ${TABLE_NAMES.SBN_MEMBER}
+                             (user_id, email, cr_inv_name, active_status)
+                         VALUES (?, ?, ?, 'inactive')`,
+                        [targetUUID, email, targetName]
                     );
-
-                    if (members.length > 0) {
-                        // 이미 존재하면 기존 UUID 사용
-                        targetUUID = members[0].user_id;
-                    } else {
-                        // 신규 회원인 경우: 먼데이에서 CR 이름 가져오기
-                        // 1. 먼데이 API 호출하여 이름(display_value) 획득
-                        const crInvName = await getMondayCrName(item_id);
-
-                        // 2. UUID 생성
-                        targetUUID = generateUUID();
-
-                        // 3. DB Insert (cr_inv_name 포함)
-                        // 주의: cr_inv_id는 먼데이에서 안 주면 공백 처리
-                        await connection.execute(
-                            `INSERT INTO ${TABLE_NAMES.SBN_MEMBER}
-                                 (user_id, email, cr_inv_name, active_status)
-                             VALUES (?, ?, ?, 'inactive')`,
-                            [targetUUID, email, crInvName]
-                        );
-                        console.log(
-                            `👤 New Member Inserted: ${email} / UUID: ${targetUUID} / Name: ${crInvName}`
-                        );
-                    }
-                } catch (dbErr) {
-                    console.error(
-                        `DB Error during Member Check/Insert for ${email}:`,
-                        dbErr
-                    );
-                    // DB 에러 시 이메일 발송을 중단하고 다음 타겟으로 넘어감 (안전장치)
-                    continue;
+                    console.log(`👤 New Member Inserted: ${email} / Name: ${targetName}`);
                 }
 
-                // 🔹 [STEP 2] 링크 URL 생성
-                const linkUrl = `${REGISTER_BASE_URL}?code=${targetUUID}`;
+                // 2. 링크 생성 (공통 변수)
+                linkUrl = `${REGISTER_BASE_URL}?code=${targetUUID}`;
+            } catch (dbErr) {
+                console.error(`❌ Critical Error for ${email}:`, dbErr);
+                // 회원 정보를 못 가져오면 이메일도, 카카오톡도 못 보내므로 스킵
+                continue;
+            }
 
-                // 🔹 [STEP 3] 이메일 파라미터 구성
+            // ------------------------------------------------------------------
+            // (A) 이메일 발송
+            // ------------------------------------------------------------------
+            if (email_state === "pending") {
                 const emailParams = {
                     year: currentYear,
                     month: currentMonth,
@@ -418,42 +324,33 @@ export async function POST(request) {
                     link_url: linkUrl,
                 };
 
-                const sendResult = await sendNHNEmail(
-                    email,
-                    nameAsId,
-                    emailParams
-                );
+                // nameAsId 대신 실제 targetName 사용해도 되고, 기존 로직 유지하려면 email 사용
+                const sendResult = await sendNHNEmail(email, email, emailParams);
 
                 if (sendResult.success) {
                     updateUpdates.push("email_state = 'success'");
-                    mondayStatusToUpdate = "발송성공";
-                    console.log(`📧 Email Sent: ${email} (Link: ${linkUrl})`);
+                    mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT;
+                    console.log(`📧 Email Sent: ${email}`);
                 } else {
                     updateUpdates.push("email_state = 'fail'");
-                    mondayStatusToUpdate = "발송실패";
-
-                    // 실패 사유 추출
-                    const failReason = sendResult.message;
-                    console.error(
-                        `📧 Email Fail: ${email} / Reason: ${failReason}`
-                    );
-
-                    // todo 실패사유를 정책에 따라서 슬랙으로 보내야됨
+                    mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED;
+                    console.error(`📧 Email Fail: ${email} / Reason: ${sendResult.message}`);
                 }
             }
 
+            // ------------------------------------------------------------------
             // (B) 알림톡 발송
+            // ------------------------------------------------------------------
             if (kakao_state === "pending") {
                 if (tel && tel.length > 9) {
+
                     const kakaoParams = {
-                        yyyy: currentYear,
-                        mm: currentMonth,
-                        write_date: writeDateStr,
-                        write_detail: writeDetailStr,
-                        due_date: paymentDateStr,
+                        name: targetName,
+                        url: linkUrl
                     };
 
                     const isSent = await sendNHNKakao(tel, kakaoParams);
+
                     if (isSent) {
                         updateUpdates.push("kakao_state = 'success'");
                         console.log(`💬 Kakao Sent: ${tel}`);
@@ -464,7 +361,9 @@ export async function POST(request) {
                 }
             }
 
-            // (C) DB 업데이트
+            // ------------------------------------------------------------------
+            // (C) DB 상태 업데이트
+            // ------------------------------------------------------------------
             if (updateUpdates.length > 0) {
                 const updateSql = `UPDATE ${
                     TABLE_NAMES.SBN_PAYEE_REQUEST
@@ -472,12 +371,14 @@ export async function POST(request) {
                 await connection.execute(updateSql, [idx]);
             }
 
+            // ------------------------------------------------------------------
             // (D) 먼데이 상태 업데이트 (수취인 정보 + 과업 정산 연결 아이템들)
+            // ------------------------------------------------------------------
             if (mondayStatusToUpdate) {
                 // 1. 수취인 정보 요청 보드 상태 업데이트
                 if (item_id) {
                     await updateMondayStatus(item_id, mondayStatusToUpdate);
-                    if (mondayStatusToUpdate === "발송성공") successCount++;
+                    if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) successCount++;
                 }
 
                 // 2. [추가] 과업 정산 보드 상태 업데이트 (연결된 모든 아이템)
@@ -485,10 +386,10 @@ export async function POST(request) {
                 if (board_relation_mkxsa8rp) {
                     let settlementLabel = "";
 
-                    if (mondayStatusToUpdate === "발송성공") {
-                        settlementLabel = "발송완료"; // 과업 정산 보드용 라벨
-                    } else if (mondayStatusToUpdate === "발송실패") {
-                        settlementLabel = "발송실패"; // 과업 정산 보드용 라벨
+                    if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) {
+                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT; // 과업 정산 보드용 라벨
+                    } else if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED) {
+                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED; // 과업 정산 보드용 라벨
                     }
 
                     // 변환된 라벨로 업데이트 요청

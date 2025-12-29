@@ -11,7 +11,7 @@ import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { sendNHNEmail, sendNHNKakao } from "@/lib/nhnSender";
 
 // todo [설정] 정보제공동의 기본 URL (임시로 패스워드 등록페이지로 보냄)
-const REGISTER_BASE_URL = "http://13.125.225.158:8009/pw_register";
+const REGISTER_BASE_URL = "https://creator.sandbox.co.kr/register";
 
 export async function POST(request) {
     const pool = await dbConnect();

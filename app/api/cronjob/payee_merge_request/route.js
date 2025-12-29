@@ -4,8 +4,9 @@ import {
     TABLE_NAMES,
     MONDAY_BOARD_IDS,
     MONDAY_COLUMN_IDS,
-    MONDAY_API_CONFIG, // [추가] API 설정 import
+    MONDAY_API_CONFIG,
 } from "@/constants/dbConstants";
+import { MONDAY_LABEL } from "@/constants/mondayLabel";
 
 /**
  * 먼데이닷컴 아이템 생성 함수
@@ -135,7 +136,7 @@ export async function POST(request) {
 
                 const mondayColumnValues = {
                     [C_IDS.EMAIL]: { email: email, text: email },
-                    [C_IDS.STATUS]: { label: "발송 요청" },
+                    [C_IDS.STATUS]: { label: MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.PENDING },
                 };
 
                 if (tel) {
