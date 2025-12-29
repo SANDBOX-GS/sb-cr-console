@@ -7,13 +7,6 @@ services:
     container_name: sb-cr-console-prod
     image: rkdfydrn1990/sb-cr-console:latest
 
-    build:
-      context: .
-      dockerfile: Dockerfile  # 운영용 Dockerfile 사용
-      args:
-        # .env.prod 파일에 있는 MYSQL_URI 값을 자동으로 가져와서 빌드에 주입합니다.
-        MYSQL_URI: ${MYSQL_URI}
-
     ports:
       - "8009:3000" # 호스트(AWS 서버):컨테이너
     restart: always
