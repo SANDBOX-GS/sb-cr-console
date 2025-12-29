@@ -686,29 +686,29 @@ export const normalizePayeeEditFormData = (
         next.account_info.bank_address = "";
     }
 
-    // ✅ 개인이 아니면 개인 전용 플래그/필드/파일 정리
-    if (!isIndividual) {
-        next.biz_type.is_minor = false;
-        next.biz_type.is_foreigner = false;
-
-        next.personal_info.ssn = "";
-        next.personal_info.identification_type = "";
-        next.personal_info.id_document = {
-            file: null,
-            url: null,
-            name: "",
-            ext: "",
-        };
-
-        next.personal_info.guardian_name = "";
-        next.personal_info.guardian_tel = "";
-        next.personal_info.family_relation_certificate = {
-            file: null,
-            url: null,
-            name: "",
-            ext: "",
-        };
-    }
+    // ✅ 개인이 아니면 개인 전용 플래그/필드/파일 정리 ( g
+    // if (!isIndividual) {
+    //     next.biz_type.is_minor = false;
+    //     next.biz_type.is_foreigner = false;
+    //
+    //     next.personal_info.ssn = "";
+    //     next.personal_info.identification_type = "";
+    //     next.personal_info.id_document = {
+    //         file: null,
+    //         url: null,
+    //         name: "",
+    //         ext: "",
+    //     };
+    //
+    //     next.personal_info.guardian_name = "";
+    //     next.personal_info.guardian_tel = "";
+    //     next.personal_info.family_relation_certificate = {
+    //         file: null,
+    //         url: null,
+    //         name: "",
+    //         ext: "",
+    //     };
+    // }
 
     // ✅ 개인일 때: 미성년자 토글 off면 법정대리인/가족관계증명서 초기화
     if (isIndividual && !isMinor) {
@@ -736,48 +736,49 @@ export const normalizePayeeEditFormData = (
     }
 
     // ✅ biz_type 전환 시 반대편 영역 값 제거 (캐시 방지)
-    const prevBizType = prevFormData?.biz_type?.biz_type;
-    const bizTypeChanged = prevBizType && prevBizType !== bizType;
+    // const prevBizType = prevFormData?.biz_type?.biz_type;
+    // const bizTypeChanged = prevBizType && prevBizType !== bizType;
+    //
+    // if (bizTypeChanged) {
+    //     if (bizType === BIZ_TYPES.INDIVIDUAL) {
+    //         next.biz_info.biz_name = "";
+    //         next.biz_info.biz_reg_no = "";
+    //         next.biz_info.business_document = {
+    //             file: null,
+    //             url: null,
+    //             name: "",
+    //             ext: "",
+    //         };
+    //     } else {
+    //         // ✅ [추가] 개인 전용 플래그 전부 리셋 (사업자/법인에서는 의미 없음)
+    //         next.biz_type.is_overseas = false;
+    //         next.biz_type.is_minor = false;
+    //         next.biz_type.is_foreigner = false;
+    //
+    //         // ✅ [추가] 해외거주로 생긴 계좌 필드 리셋
+    //         next.account_info.swift_code = "";
+    //         next.account_info.bank_address = "";
+    //         next.personal_info.ssn = "";
+    //         next.personal_info.identification_type = "";
+    //         next.personal_info.id_document = {
+    //             file: null,
+    //             url: null,
+    //             name: "",
+    //             ext: "",
+    //         };
+    //         next.personal_info.guardian_name = "";
+    //         next.personal_info.guardian_tel = "";
+    //         next.personal_info.family_relation_certificate = {
+    //             file: null,
+    //             url: null,
+    //             name: "",
+    //             ext: "",
+    //         };
+    //     }
+    // }
 
-    if (bizTypeChanged) {
-        if (bizType === BIZ_TYPES.INDIVIDUAL) {
-            next.biz_info.biz_name = "";
-            next.biz_info.biz_reg_no = "";
-            next.biz_info.business_document = {
-                file: null,
-                url: null,
-                name: "",
-                ext: "",
-            };
-        } else {
-            // ✅ [추가] 개인 전용 플래그 전부 리셋 (사업자/법인에서는 의미 없음)
-            next.biz_type.is_overseas = false;
-            next.biz_type.is_minor = false;
-            next.biz_type.is_foreigner = false;
-
-            // ✅ [추가] 해외거주로 생긴 계좌 필드 리셋
-            next.account_info.swift_code = "";
-            next.account_info.bank_address = "";
-            next.personal_info.ssn = "";
-            next.personal_info.identification_type = "";
-            next.personal_info.id_document = {
-                file: null,
-                url: null,
-                name: "",
-                ext: "",
-            };
-            next.personal_info.guardian_name = "";
-            next.personal_info.guardian_tel = "";
-            next.personal_info.family_relation_certificate = {
-                file: null,
-                url: null,
-                name: "",
-                ext: "",
-            };
-        }
-    }
+    // 세무 정보 정규화
     const forceSimpleTaxFalseTypes = new Set(["cash_receipt", "individual"]);
-
     if (forceSimpleTaxFalseTypes.has(next.tax_info?.invoice_type)) {
         next.tax_info.is_simple_taxpayer = false;
     }

@@ -15,6 +15,8 @@ export function Footer({ className }) {
                     src={`${IMG_URL}/common/symbol_gray_46.png`}
                     width="46"
                     height="32"
+                    alt="no image"
+                    unoptimized
                 />
                 <div>
                     <div className="flex flex-col md:flex-row md:gap-2 md:flex-wrap">

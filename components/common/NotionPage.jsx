@@ -59,6 +59,8 @@ export const NotionPage = ({ recordMap }) => {
                     src={`${IMG_URL}/common/logo_horizontal_navy.png`}
                     width={114}
                     height={14}
+                    alt="no image"
+                    unoptimized
                 />
             </div>
         </main>

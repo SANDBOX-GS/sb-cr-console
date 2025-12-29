@@ -100,6 +100,8 @@ export default function LoginClient() {
                     src={`${IMG_URL}/common/symbol_120.png`}
                     width={120}
                     height={83}
+                    alt="no image"
+                    unoptimized
                 />
                 <h1 className="text-slate-800">
                     샌드박스 크리에이터

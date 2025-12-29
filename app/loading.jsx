@@ -10,6 +10,8 @@ export default function Loading() {
                 height={120}
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
                 draggable={false}
+                alt="no image"
+                unoptimized
             />
 
             <Image
@@ -18,6 +20,8 @@ export default function Loading() {
                 height={120}
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none logo-fill"
                 draggable={false}
+                alt="no image"
+                unoptimized
             />
         </div>
     );

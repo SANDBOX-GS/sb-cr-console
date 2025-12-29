@@ -30,19 +30,31 @@ const isBizType = (bizType) =>
     ["sole_proprietor", "corporate_business"].includes(bizType);
 const isIndividual = (bizType) => bizType === "individual";
 
+const calculateExpirationDate = (consentType) => {
+    const date = new Date(); // 현재 서버 시간
+
+    if (consentType === "30days") {
+        date.setDate(date.getDate() + 30); // 30일 뒤
+    } else {
+        date.setDate(date.getDate() + 1);  // 내일 (매번 재확인이므로 유효기간 짧게)
+    }
+
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+};
+
 export async function POST(req) {
     let connection;
     const newlyUploadedS3Keys = [];
 
-  try {
-    const formData = await req.formData();
-    const payload = {};
-    const fileUploads = [];
+    try {
+        const formData = await req.formData();
+        const payload = {};
+        const fileUploads = [];
 
         // 1) FormData 파싱
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-                if (value.size > 0) fileUploads.push({ fieldName: key, file: value });
+                if (value.size > 0) fileUploads.push({fieldName: key, file: value});
             } else {
                 payload[key] = toYn(value);
             }
@@ -54,19 +66,28 @@ export async function POST(req) {
 
         if (!memberIdxCookie || !memberIdxCookie.value) {
             return NextResponse.json(
-                { message: "인증 정보가 없습니다." },
-                { status: 401 }
+                {message: "인증 정보가 없습니다."},
+                {status: 401}
             );
         }
         const member_idx = parseInt(memberIdxCookie.value, 10);
 
         // 3) DB Payload 준비
-        const biz_type = payload.biz_type
+        const biz_type = payload.biz_type;
+        const is_overseas = toYn(payload.is_overseas) || 'N';
+        const is_minor = toYn(payload.is_minor) || 'N';
+        const is_foreigner = toYn(payload.is_foreigner) || 'N';
+
+        const calculatedExpiredAt = calculateExpirationDate(payload.consent_type);
+
         const baseDbPayload = {
             biz_type: nullIfEmpty(biz_type),
-            is_overseas: nullIfEmpty(toYn(payload.is_overseas)),
-            is_minor: nullIfEmpty(toYn(payload.is_minor)),
-            is_foreigner: nullIfEmpty(toYn(payload.is_foreigner)),
+
+            // 필수값(Flag)들은 null 대신 'N' 처리
+            is_overseas: is_overseas,
+            is_minor: is_minor,
+            is_foreigner: is_foreigner,
+
             bank_name: nullIfEmpty(payload.bank_name),
             account_holder: nullIfEmpty(payload.account_holder),
             account_number: nullIfEmpty(payload.account_number),
@@ -75,31 +96,45 @@ export async function POST(req) {
             invoice_type: nullIfEmpty(payload.invoice_type),
             is_simple_taxpayer: nullIfEmpty(toYn(payload.is_simple_taxpayer)),
 
-            // 상태값 설정 (검수 요청 시 pending / inactive)
+            agree_expired_at: calculatedExpiredAt,
+
             approval_status: "pending",
             active_status: "inactive",
-
-            user_name: isIndividual(biz_type) ? nullIfEmpty(payload.user_name) : null,
-            ssn: isIndividual(biz_type)
-                ? nullIfEmpty(toYn(payload.is_foreigner) === "Y" ? payload.foreigner_registration_number : payload.ssn)
-                : null,
-            identification_type:
-                isIndividual(biz_type) && toYn(payload.is_minor) === "N" && toYn(payload.is_foreigner) === "N"
-                    ? nullIfEmpty(payload.identification_type)
-                    : null,
-            biz_name: isBizType(biz_type) ? nullIfEmpty(payload.biz_name) : null,
-            biz_reg_no: isBizType(biz_type) ? nullIfEmpty(payload.biz_reg_no) : null,
-            guardian_name: toYn(payload.is_minor) === "Y" ? nullIfEmpty(payload.guardian_name) : null,
-            guardian_tel: toYn(payload.is_minor) === "Y" ? nullIfEmpty(payload.guardian_tel) : null,
         };
 
-        if (payload.agree_expired_at) {
-            baseDbPayload.agree_expired_at = nullIfEmpty(payload.agree_expired_at);
+        if (isIndividual(biz_type)) {
+            baseDbPayload.user_name = nullIfEmpty(payload.user_name);
+
+            // 외국인이면 외국인등록번호, 아니면 주민등록번호
+            baseDbPayload.ssn = nullIfEmpty(is_foreigner === "Y" ? payload.foreigner_registration_number : payload.ssn);
+
+            // 미성년자/외국인이 아니면 신분증 종류 업데이트
+            if (is_minor === "N" && is_foreigner === "N") {
+                baseDbPayload.identification_type = nullIfEmpty(payload.identification_type);
+            }
+
+            // 미성년자면 보호자 정보 업데이트
+            if (is_minor === "Y") {
+                baseDbPayload.guardian_name = nullIfEmpty(payload.guardian_name);
+                baseDbPayload.guardian_tel = nullIfEmpty(payload.guardian_tel);
+            }
+        }
+
+        // B. 사업자(개인/법인)일 경우에만 업데이트
+        if (isBizType(biz_type)) {
+            baseDbPayload.biz_name = nullIfEmpty(payload.biz_name);
+            baseDbPayload.biz_reg_no = nullIfEmpty(payload.biz_reg_no);
+        }
+
+        // C. 법인일 경우에만 업데이트
+        if (biz_type === "corporate_business") {
+            baseDbPayload.corp_name = nullIfEmpty(payload.corp_name);
+            baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
         }
 
         // 4) S3 업로드 (DB 연결 전 수행)
         const s3UploadResults = await Promise.all(
-            fileUploads.map(async ({ fieldName, file }) => {
+            fileUploads.map(async ({fieldName, file}) => {
                 const buffer = Buffer.from(await file.arrayBuffer());
                 const extension = file.name.split(".").pop();
                 const uniqueId = crypto.randomBytes(16).toString("hex");
@@ -110,7 +145,7 @@ export async function POST(req) {
                 await uploadFileToS3(buffer, s3Key, file.type);
                 newlyUploadedS3Keys.push(s3Key);
 
-                return { fieldName, s3Key, fileUrl, file, extension, dbFileName: s3FileName };
+                return {fieldName, s3Key, fileUrl, file, extension, dbFileName: s3FileName};
             })
         );
 
@@ -135,7 +170,10 @@ export async function POST(req) {
 
         // 6-1) Payee idx 조회
         const [payeeRows] = await connection.query(
-            `SELECT idx FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
+            `SELECT idx
+             FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE}
+             WHERE member_idx = ?
+             ORDER BY created_at DESC LIMIT 1`,
             [member_idx]
         );
 
@@ -146,7 +184,10 @@ export async function POST(req) {
 
         // 6-2) Payee 테이블 UPDATE (텍스트 정보 갱신)
         await connection.query(
-            `UPDATE ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?, updated_at = NOW() WHERE idx = ?`,
+            `UPDATE ${TABLE_NAMES.SBN_MEMBER_PAYEE}
+             SET ?,
+                 updated_at = NOW()
+             WHERE idx = ?`,
             [baseDbPayload, payee_idx]
         );
 
@@ -160,7 +201,8 @@ export async function POST(req) {
         delete logPayload.updated_at;
 
         const [logResult] = await connection.query(
-            `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE_LOG} SET ?`,
+            `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE_LOG}
+             SET ?`,
             logPayload
         );
         const log_idx = logResult.insertId;
@@ -176,8 +218,11 @@ export async function POST(req) {
 
                 // [A. Payee 테이블용] 최신 버전 조회
                 const [prevFileRows] = await connection.query(
-                    `SELECT idx, version FROM ${TABLE_NAMES.SBN_FILE_INFO} 
-                     WHERE ref_table_name = ? AND ref_table_idx = ? AND tag = ? 
+                    `SELECT idx, version
+                     FROM ${TABLE_NAMES.SBN_FILE_INFO}
+                     WHERE ref_table_name = ?
+                       AND ref_table_idx = ?
+                       AND tag = ?
                      ORDER BY version DESC LIMIT 1`,
                     [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, tag]
                 );
@@ -206,7 +251,8 @@ export async function POST(req) {
                     parent_idx: parentIdx,
                     creator_id: member_idx,
                 };
-                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`, payeeFilePayload);
+                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO}
+                                        SET ?`, payeeFilePayload);
 
                 // [B. Log 테이블용] 스냅샷 INSERT (로그 테이블 참조)
                 const logFilePayload = {
@@ -216,7 +262,8 @@ export async function POST(req) {
                     version: 1,
                     parent_idx: 0,
                 };
-                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`, logFilePayload);
+                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO}
+                                        SET ?`, logFilePayload);
             }
         }
 
@@ -232,16 +279,16 @@ export async function POST(req) {
 
         // 최신 파일 조회
         const [unchangedFiles] = await connection.query(
-            `SELECT * FROM ${TABLE_NAMES.SBN_FILE_INFO} t1
-         WHERE ref_table_name = ? 
-           AND ref_table_idx = ?
-           ${excludeCondition}
+            `SELECT *
+             FROM ${TABLE_NAMES.SBN_FILE_INFO} t1
+             WHERE ref_table_name = ?
+               AND ref_table_idx = ? ${excludeCondition}
            AND version = (
                SELECT MAX(version) FROM ${TABLE_NAMES.SBN_FILE_INFO} t2
-               WHERE t2.ref_table_name = t1.ref_table_name
-                 AND t2.ref_table_idx = t1.ref_table_idx
-                 AND t2.tag = t1.tag
-           )`,
+                 WHERE t2.ref_table_name = t1.ref_table_name
+               AND t2.ref_table_idx = t1.ref_table_idx
+               AND t2.tag = t1.tag
+                 )`,
             [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx]
         );
 
@@ -264,35 +311,45 @@ export async function POST(req) {
             ]);
 
             await connection.query(
-                `INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} 
-            (type, ref_table_name, ref_table_idx, file_url, file_name, file_realname, file_ext, file_size, seq, tag, version, memo, creator_id, create_datetime)
-            VALUES ?`,
+                `INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO}
+                 (type, ref_table_name, ref_table_idx, file_url, file_name, file_realname, file_ext, file_size, seq,
+                  tag, version, memo, creator_id, create_datetime)
+                 VALUES ?`,
                 [fileLogValues]
             );
         }
 
-    await connection.commit();
+        await connection.commit();
 
         return NextResponse.json(
-            { message: "정보 수정 요청이 완료되었습니다.", payout_ratio_id: mondayItemId },
-            { status: 200 }
+            {message: "정보 수정 요청이 완료되었습니다.", payout_ratio_id: mondayItemId},
+            {status: 200}
         );
     } catch (error) {
         if (connection) {
-            try { await connection.rollback(); } catch {}
+            try {
+                await connection.rollback();
+            } catch {
+            }
         }
         // DB 실패 시, 이미 올라간 S3 파일 삭제
         if (newlyUploadedS3Keys.length > 0) {
-            try { await Promise.all(newlyUploadedS3Keys.map((key) => deleteFileFromS3(key))); } catch {}
+            try {
+                await Promise.all(newlyUploadedS3Keys.map((key) => deleteFileFromS3(key)));
+            } catch {
+            }
         }
         console.error("Update Error:", error);
         return NextResponse.json(
-            { message: error.message || "서버 오류가 발생했습니다." },
-            { status: 500 }
+            {message: error.message || "서버 오류가 발생했습니다."},
+            {status: 500}
         );
     } finally {
         if (connection) {
-            try { connection.release(); } catch {}
+            try {
+                connection.release();
+            } catch {
+            }
         }
     }
 }

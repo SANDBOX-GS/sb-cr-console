@@ -40,12 +40,16 @@ export function Header({ className }) {
                             width="162"
                             height="20"
                             className="hidden md:block"
+                            alt="no image"
+                            unoptimized
                         />
                         <Image
                             src={`${IMG_URL}/common/symbol_40.png`}
                             width="29"
                             height="20"
                             className="md:hidden"
+                            alt="no image"
+                            unoptimized
                         />
                     </a>
                     <div className="content-stretch flex gap-10 items-centerㄴ justify-start relative shrink-0">

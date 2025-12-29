@@ -5,21 +5,30 @@
 # ===================================================
 FROM node:20-alpine AS builder
 
-# ARG 선언: 외부 (docker-compose)에서 MYSQL_URI 값을 받기 위해 선언
-ARG MYSQL_URI
-
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
-# ARG로 받은 MYSQL_URI 값을 환경 변수로 설정합니다.
-# 이 ENV는 이후 'RUN npm run build' 명령이 실행될 때 사용됩니다.
-ENV MYSQL_URI=${MYSQL_URI}
+# .env 파일의 환경변수들을 Dockerfile 내 ENV로 설정
+ENV MYSQL_URI="mysql://dummy:dummy@localhost:3306/dummy"
+ENV S3_ACCESS_KEY="dummy"
+ENV S3_SECRET_KEY="dummy"
+ENV S3_REGION="ap-northeast-2"
+ENV S3_ENDPOINT="https://dummy"
+ENV S3_BUCKET_NAME="dummy"
+ENV SLACK_TOKEN="dummy"
+ENV MONDAY_API_TOKEN="dummy"
+ENV NHN_EMAIL_APP_KEY="dummy"
+ENV NHN_EMAIL_SECRET_KEY="dummy"
+ENV NHN_KAKAO_APP_KEY="dummy"
+ENV NHN_KAKAO_SECRET_KEY="dummy"
+
+# NODE_ENV는 프로덕션 빌드용 고정
+ENV NODE_ENV=production
 
 COPY . .
 
 # Next.js 프로젝트 빌드 실행
-# 빌드 명령을 실행할 때 환경 변수를 명시적으로 사용하여 .env 파일 의존성을 우회합니다.
 RUN npm run build
 
 # ===================================================
@@ -31,16 +40,17 @@ WORKDIR /app
 # ENV 설정
 ENV PORT 3000
 
-# Next.js가 기본으로 사용하는 유저와 그룹 설정 (보안 강화)
+# 보안용 유저 설정
 RUN addgroup -g 1001 nodejs
 RUN adduser -u 1001 -D nextjs -G nodejs
-USER nextjs
 
 # 빌드된 파일 복사
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+
+USER nextjs
 
 EXPOSE 3000
 
