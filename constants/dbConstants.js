@@ -41,6 +41,7 @@ export const MONDAY_COLUMN_IDS = {
         STATUS: 'color_mkygz7n5' // 상태 컬럼 ('Label')
     },
     PAYEE_LOG: {
+        VERSION: "numeric_mkz4a4sa",         // 업데이트 버전
         BIZ_TYPE_STATUS: "color_mkxtxram",   // 사업자 구분 (상태)
         CORP_NAME: "long_text_mkxt6ds1",     // 법인명
         BIZ_REG_NO: "text_mkxt31vr",         // 사업자등록번호

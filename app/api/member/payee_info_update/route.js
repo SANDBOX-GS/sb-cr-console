@@ -88,6 +88,23 @@ export async function POST(req) {
         }
         const member_idx = parseInt(memberIdxCookie.value, 10);
 
+        // 2-1. DB 연결 및 현재 버전 조회 (먼데이에 버전 보내기위해 현재 버전 조회)
+        connection = await dbConnect();
+
+        const [currentPayeeRows] = await connection.query(
+            `SELECT idx, version FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} 
+             WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
+            [member_idx]
+        );
+
+        if (!currentPayeeRows || currentPayeeRows.length === 0) {
+            throw new Error("수정할 수취인 정보를 찾을 수 없습니다.");
+        }
+
+        const payee_idx = currentPayeeRows[0].idx;
+        const currentVersion = currentPayeeRows[0].version || 1; // 없으면 기본 1
+        const nextVersion = currentVersion + 1; // ★ 다음 버전 계산 (예: 1 -> 2)
+
         // 3. DB Insert/Update용 Payload 구성
         const biz_type = payload.biz_type;
         const is_overseas = toYn(payload.is_overseas) || 'N';
@@ -101,7 +118,6 @@ export async function POST(req) {
             is_overseas: is_overseas,
             is_minor: is_minor,
             is_foreigner: is_foreigner,
-
             bank_name: nullIfEmpty(payload.bank_name),
             account_holder: nullIfEmpty(payload.account_holder),
             account_number: nullIfEmpty(payload.account_number),
@@ -109,10 +125,10 @@ export async function POST(req) {
             bank_address: nullIfEmpty(payload.bank_address),
             invoice_type: nullIfEmpty(payload.invoice_type),
             is_simple_taxpayer: is_simple_taxpayer,
-
             agree_expired_at: calculatedExpiredAt,
             approval_status: "pending",
             active_status: "inactive",
+            version: nextVersion,
         };
 
         // 3-1. 개인/사업자별 조건부 필드 처리
@@ -146,11 +162,7 @@ export async function POST(req) {
             baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
         }
 
-        // -------------------------------------------------------------
         // 4. 파일 처리 (신규 업로드 + 기존 파일 다운로드 병합)
-        // -------------------------------------------------------------
-
-        // ★ 먼데이로 보낼 최종 파일 리스트 [{fieldName, file(Buffer), filename}]
         const finalAttachments = [];
 
         // 4-1. 신규 파일 S3 업로드
@@ -161,14 +173,12 @@ export async function POST(req) {
                 const uniqueId = crypto.randomBytes(16).toString("hex");
                 const s3FileName = `${uniqueId}.${extension}`;
                 const s3Key = `cr_console/payee_documents/${fieldName}/${s3FileName}`;
-
-                // DB에 저장될 전체 URL
                 const fileUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${s3Key}`;
 
                 await uploadFileToS3(buffer, s3Key, file.type);
                 newlyUploadedS3Keys.push(s3Key);
 
-                // ★ 신규 파일 추가
+                // 신규 파일 추가
                 finalAttachments.push({
                     fieldName: fieldName,
                     file: buffer,
@@ -180,7 +190,6 @@ export async function POST(req) {
         );
 
         // 4-2. 기존 파일(이번에 업로드 안 된 파일) 조회 및 다운로드
-        connection = await dbConnect();
 
         // 관리 대상 태그 목록
         const TARGET_TAGS = [
@@ -190,49 +199,38 @@ export async function POST(req) {
             "family_relation_certificate"
         ];
 
-        // 현재 멤버의 Payee IDX 조회
-        const [currentPayeeRows] = await connection.query(
-            `SELECT idx FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} 
-             WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
-            [member_idx]
-        );
+        for (const tag of TARGET_TAGS) {
+            // 이번에 새로 올린 파일 목록에 있다면 패스 (이미 finalAttachments에 있음)
+            if (fileUploads.some(f => f.fieldName === tag)) continue;
 
-        if (currentPayeeRows.length > 0) {
-            const currentPayeeIdx = currentPayeeRows[0].idx;
-
-            for (const tag of TARGET_TAGS) {
-                // 이번에 새로 올린 파일 목록에 있다면 패스 (이미 finalAttachments에 있음)
-                if (fileUploads.some(f => f.fieldName === tag)) continue;
-
-                // 없다면 DB에서 '가장 최신 버전' 파일 정보 조회
-                // ref_table_name, ref_table_idx, tag 기준으로 최신 version 1개만 가져옴
-                const [existingFileRows] = await connection.query(
-                    `SELECT file_url, file_realname 
+            // 없다면 DB에서 '가장 최신 버전' 파일 정보 조회
+            // ref_table_name, ref_table_idx, tag 기준으로 최신 version 1개만 가져옴
+            const [existingFileRows] = await connection.query(
+                `SELECT file_url, file_realname 
                      FROM ${TABLE_NAMES.SBN_FILE_INFO}
                      WHERE ref_table_name = ? 
                        AND ref_table_idx = ? 
                        AND tag = ?
                      ORDER BY version DESC LIMIT 1`,
-                    [TABLE_NAMES.SBN_MEMBER_PAYEE, currentPayeeIdx, tag]
-                );
+                [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, tag]
+            );
 
-                if (existingFileRows.length > 0) {
-                    const oldFile = existingFileRows[0];
-                    // ★ URL에서 S3 Key 추출
-                    const s3Key = getKeyFromDbUrl(oldFile.file_url);
+            if (existingFileRows.length > 0) {
+                const oldFile = existingFileRows[0];
+                // ★ URL에서 S3 Key 추출
+                const s3Key = getKeyFromDbUrl(oldFile.file_url);
 
-                    if (s3Key) {
-                        // ★ S3에서 파일 다운로드 (Buffer)
-                        const fileBuffer = await getFileBufferFromS3(s3Key);
+                if (s3Key) {
+                    // ★ S3에서 파일 다운로드 (Buffer)
+                    const fileBuffer = await getFileBufferFromS3(s3Key);
 
-                        if (fileBuffer) {
-                            // ★ 기존 파일 추가
-                            finalAttachments.push({
-                                fieldName: tag,
-                                file: fileBuffer,
-                                filename: oldFile.file_realname // DB에 저장된 실제 파일명 사용
-                            });
-                        }
+                    if (fileBuffer) {
+                        // ★ 기존 파일 추가
+                        finalAttachments.push({
+                            fieldName: tag,
+                            file: fileBuffer,
+                            filename: oldFile.file_realname // DB에 저장된 실제 파일명 사용
+                        });
                     }
                 }
             }
@@ -270,6 +268,7 @@ export async function POST(req) {
             [COL_ID.BANK_ADDRESS]: baseDbPayload.bank_address,
             [COL_ID.IS_SIMPLE_TAX]: is_simple_taxpayer === 'Y' ? { checked: true } : null,
             [COL_ID.INVOICE_TYPE]: invoiceTypeLabel ? { labels: [invoiceTypeLabel] } : null,
+            [COL_ID.VERSION]: nextVersion
         };
 
         // null 또는 undefined 값 제거 (API 오류 방지)
@@ -312,28 +311,17 @@ export async function POST(req) {
         // 6. DB 트랜잭션 시작
         baseDbPayload.payout_ratio_id = mondayItemId; // 먼데이 ID 저장
 
-        connection = await dbConnect();
         await connection.beginTransaction();
 
-        // 6-1. 기존 Payee 정보 조회
-        const [payeeRows] = await connection.query(
-            `SELECT idx FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
-            [member_idx]
-        );
-
-        if (!payeeRows || payeeRows.length === 0) {
-            throw new Error("수정할 수취인 정보를 찾을 수 없습니다.");
-        }
-        const payee_idx = payeeRows[0].idx;
-
-        // 6-2. Payee 정보 업데이트 (현재 정보 갱신)
-        // updated_at 갱신 포함
+        // 6-1. Payee 정보 업데이트 (현재 정보 갱신)
+        // ★ 여기서 baseDbPayload 안에 version: nextVersion이 포함되어 있으므로 Payee 테이블도 버전이 올라감
         await connection.query(
             `UPDATE ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?, updated_at = NOW() WHERE idx = ?`,
             [baseDbPayload, payee_idx]
         );
 
-        // 6-3. Log 테이블에 이력 저장 (스냅샷)
+        // 6-2. Log 테이블에 이력 저장 (스냅샷)
+        // ★ 여기서도 baseDbPayload를 쓰므로 Log 테이블에도 version: nextVersion이 들어감
         const logPayload = {
             ...baseDbPayload,
             member_idx: member_idx,
