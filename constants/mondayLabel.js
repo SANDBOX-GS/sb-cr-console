@@ -38,6 +38,11 @@ export const MONDAY_LABEL = {
 
     // [보드] 외부 CR - 수취인 개인 정보 수정 이력 (PAYEE_LOG)
     PAYEE_LOG: {
+        CREATED_TYPE: {
+            UPDATE: "수정",
+            CREATE: "신규",
+            NONE: "미분류",
+        },
         BIZ_TYPE: {
             INDIVIDUAL: "개인",
             SOLE_PROPRIETOR: "개인 사업자",

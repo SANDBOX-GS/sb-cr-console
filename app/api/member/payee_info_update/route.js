@@ -251,6 +251,7 @@ export async function POST(req) {
         const invoiceTypeLabel = LABEL_MAP.ISSUE_TYPES[payload.invoice_type?.toUpperCase()] || payload.invoice_type;
 
         const mondayColumnValues = {
+            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.UPDATE},
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
             [COL_ID.CORP_NAME]: baseDbPayload.corp_name || baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no || baseDbPayload.corp_reg_no,
