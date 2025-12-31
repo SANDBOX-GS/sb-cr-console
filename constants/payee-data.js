@@ -1,99 +1,115 @@
 export const BIZ_TYPES = {
-  INDIVIDUAL: "individual",
-  SOLE_PROPRIETOR: "sole_proprietor",
-  CORPORATE_BUSINESS: "corporate_business",
+    INDIVIDUAL: "individual",
+    SOLE_PROPRIETOR: "sole_proprietor",
+    CORPORATE_BUSINESS: "corporate_business",
+    SIMPLE_TAXPAYER: "simple_taxpayer",
+    TAX_FREE_BUSINESS: "tax_free_business",
 };
 export const BUSINESS_TYPE_LABEL = {
-  individual: "개인",
-  sole_proprietor: "개인 사업자",
-  corporate_business: "법인 사업자",
+    individual: "개인",
+    sole_proprietor: "개인 사업자",
+    corporate_business: "법인 사업자",
+    simple_taxpayer: "간이 과세자",
+    tax_free_business: "면세 사업자",
 };
 
 export const ID_DOCUMENT_TYPE_LABEL = [
-  {
-    resident_card: "주민등록증",
-    drivers_license: "운전면허증",
-    passport: "여권",
-    resident_register: "주민등록등본",
-    forigner_card: "외국인등록증",
-  },
+    {
+        resident_card: "주민등록증",
+        drivers_license: "운전면허증",
+        passport: "여권",
+        resident_register: "주민등록등본",
+        forigner_card: "외국인등록증",
+    },
 ];
 export const TAX_ISSUE_TYPE_LABEL = {
-  tax_invoice: "세금계산서",
-  electronic_invoice: "전자계산서",
-  cash_receipt: "현금영수증",
-  individual: "개인",
+    tax_invoice: "세금계산서",
+    electronic_invoice: "전자계산서",
+    cash_receipt_0: "현금영수증",
+    cash_receipt_10: "현금영수증",
+    individual: "개인",
 };
 
 /**
  * 신분증 종류 상수
  */
 export const ID_DOCUMENT_TYPES = [
-  { value: "resident_card", label: "주민등록증" },
-  { value: "drivers_license", label: "운전면허증" },
-  { value: "passport", label: "여권" },
-  { value: "resident_register", label: "주민등록등본" },
+    { value: "resident_card", label: "주민등록증" },
+    { value: "drivers_license", label: "운전면허증" },
+    { value: "passport", label: "여권" },
+    { value: "resident_register", label: "주민등록등본" },
 ];
 
 /**
  * 발행 유형 상수
  */
 export const ISSUE_TYPES = [
-  {
-    value: "tax_invoice",
-    label: "세금계산서",
-    description: "공급가액+VAT(10%)",
-    detail: "사업자등록이 있는 개인사업자 또는 법인사업자에 적용됩니다.",
-  },
-  {
-    value: "electronic_invoice",
-    label: "전자계산서",
-    description: "공급가액",
-    detail: "사업자등록이 없는 프리랜서에게 적용됩니다.",
-  },
-  {
-    value: "cash_receipt",
-    label: "현금영수증",
-    description: "공급가액",
-    detail: "개인이 소득공제를 받고자 할 때 발행됩니다.",
-  },
-  {
-    value: "individual",
-    label: "개인",
-    description: "공급가액-사업소득세(3.3%)",
-    detail: "개인 사업소득으로 신고하는 경우에 적용됩니다.",
-  },
+    {
+        value: "tax_invoice",
+        ratio: 10,
+        label: "세금계산서",
+        description: "공급가액+VAT(10%)",
+        detail: "사업자등록이 있는 개인사업자 또는 법인사업자에 적용됩니다.",
+    },
+    {
+        value: "electronic_invoice",
+        ratio: 0,
+        label: "전자계산서",
+        description: "공급가액+VAT(0%)",
+        detail: "사업자등록이 없는 프리랜서에게 적용됩니다.",
+    },
+    {
+        value: "cash_receipt_10",
+        ratio: 10,
+        label: "현금영수증",
+        description: "공급가액+VAT(10%)",
+        detail: "개인이 소득공제를 받고자 할 때 발행됩니다.",
+    },
+    {
+        value: "cash_receipt_0",
+        ratio: 0,
+        label: "현금영수증",
+        description: "공급가액+VAT(0%)",
+        detail: "개인이 소득공제를 받고자 할 때 발행됩니다.",
+    },
+    {
+        value: "individual",
+        ratio: -3.3,
+        label: "개인",
+        description: "공급가액-사업소득세(-3.3%)",
+        detail: "개인 사업소득으로 신고하는 경우에 적용됩니다.",
+    },
 ];
 
 /**
  * 한국 은행 목록 상수
  */
 export const KOREAN_BANKS = [
-  "KB국민은행",
-  "신한은행",
-  "우리은행",
-  "하나은행",
-  "NH농협은행",
-  "IBK기업은행",
-  "대구은행",
-  "부산은행",
-  "경남은행",
-  "광주은행",
-  "전북은행",
-  "제주은행",
-  "SC제일은행",
-  "씨티은행",
-  "새마을금고",
-  "신협",
-  "우체국",
-  "카카오뱅크",
-  "케이뱅크",
-  "토스뱅크",
+    "KB국민은행",
+    "신한은행",
+    "우리은행",
+    "하나은행",
+    "NH농협은행",
+    "IBK기업은행",
+    "대구은행",
+    "부산은행",
+    "경남은행",
+    "광주은행",
+    "전북은행",
+    "제주은행",
+    "SC제일은행",
+    "씨티은행",
+    "새마을금고",
+    "신협",
+    "우체국",
+    "카카오뱅크",
+    "케이뱅크",
+    "토스뱅크",
 ];
 
 export const CONSENT_TYPE = [
-  { value: "30days", label: "30일간 동일한 정보로 정산 받겠습니다." },
-  { value: "once", label: "정산 시마다 수취 정보를 재확인하겠습니다." },
+    { value: "30days", label: "30일간 동일한 정보로 정산 받겠습니다." },
+    { value: "once", label: "정산 시마다 수취 정보를 재확인하겠습니다." },
 ];
 // --- JSDoc을 사용한 타입 정의 ---
 
@@ -194,42 +210,42 @@ export const CONSENT_TYPE = [
  * @type {PayeeFormData}
  */
 export const INITIAL_PAYEE_FORM_DATA = {
-  recipientInfo: {
-    biz_type: "individual",
-    is_overseas: false,
-    is_minor: false,
-    is_foreigner: false,
+    recipientInfo: {
+        biz_type: "individual",
+        is_overseas: false,
+        is_minor: false,
+        is_foreigner: false,
 
-    real_name: "",
-    id_number: "",
-    id_document_type: "",
-    foreigner_name: "",
-    foreigner_registration_number: "",
+        real_name: "",
+        id_number: "",
+        id_document_type: "",
+        foreigner_name: "",
+        foreigner_registration_number: "",
 
-    business_name: "",
-    business_number: "",
+        business_name: "",
+        business_number: "",
 
-    guardian_name: "",
-    guardian_phone: "",
-  },
-  accountInfo: {
-    bank_name: "",
-    account_holder: "",
-    account_number: "",
-    swift_code: "",
-    bank_address: "",
-  },
-  taxInfo: {
-    is_simple_taxpayer: false,
-    invoice_type: "tax_invoice",
-    expiry_date: "", // 기본값: 미선택 상태
-  },
-  files: {
-    business_document: null,
-    id_document: null,
-    bank_document: null,
-    family_relation_certificate: null,
-  },
+        guardian_name: "",
+        guardian_phone: "",
+    },
+    accountInfo: {
+        bank_name: "",
+        account_holder: "",
+        account_number: "",
+        swift_code: "",
+        bank_address: "",
+    },
+    taxInfo: {
+        is_simple_taxpayer: false,
+        invoice_type: "tax_invoice",
+        expiry_date: "", // 기본값: 미선택 상태
+    },
+    files: {
+        business_document: null,
+        id_document: null,
+        bank_document: null,
+        family_relation_certificate: null,
+    },
 };
 
 /**

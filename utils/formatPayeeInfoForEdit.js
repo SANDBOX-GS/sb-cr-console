@@ -30,6 +30,10 @@ export const createInitialFormData = () => ({
         is_minor: false,
         is_foreigner: false,
     },
+    tax_info: {
+        invoice_type: "tax_invoice",
+        is_simple_taxpayer: false,
+    },
     personal_info: {
         user_name: "",
         tel: "",
@@ -73,10 +77,6 @@ export const createInitialFormData = () => ({
             name: "",
             ext: "",
         },
-    },
-    tax_info: {
-        invoice_type: "tax_invoice",
-        is_simple_taxpayer: false,
     },
 });
 
@@ -230,6 +230,8 @@ export const buildEditSections = (formData) => {
     const isIndividual = bizType === BIZ_TYPES.INDIVIDUAL;
     const isSoleProp = bizType === BIZ_TYPES.SOLE_PROPRIETOR;
     const isCorp = bizType === BIZ_TYPES.CORPORATE_BUSINESS;
+    const isSimpleTaxpayer = bizType === BIZ_TYPES.SIMPLE_TAXPAYER;
+    const isTaxFreeBiz = bizType === BIZ_TYPES.TAX_FREE_BUSINESS;
     const isOverseas = biz_type.is_overseas;
     const isMinor = biz_type.is_minor;
     const isForeigner = biz_type.is_foreigner;
@@ -277,6 +279,14 @@ export const buildEditSections = (formData) => {
                         label: BUSINESS_TYPE_LABEL[BIZ_TYPES.SOLE_PROPRIETOR],
                     },
                     {
+                        value: BIZ_TYPES.SIMPLE_TAXPAYER,
+                        label: BUSINESS_TYPE_LABEL[BIZ_TYPES.SIMPLE_TAXPAYER],
+                    },
+                    {
+                        value: BIZ_TYPES.TAX_FREE_BUSINESS,
+                        label: BUSINESS_TYPE_LABEL[BIZ_TYPES.TAX_FREE_BUSINESS],
+                    },
+                    {
                         value: BIZ_TYPES.CORPORATE_BUSINESS,
                         label: BUSINESS_TYPE_LABEL[
                             BIZ_TYPES.CORPORATE_BUSINESS
@@ -288,32 +298,77 @@ export const buildEditSections = (formData) => {
     };
 
     if (isIndividual) {
+        bizTypeSection.value.push(
+            {
+                id: "invoice_type",
+                label: "발행 유형",
+                value: TAX_ISSUE_TYPE_LABEL[tax_info.invoice_type],
+                type: "radio",
+                path: "tax_info.invoice_type",
+                errorKey: "invoice_type",
+                options: [ISSUE_TYPES[4]],
+            },
+            {
+                id: "biz_flags",
+                label: "특이사항",
+                type: "checkbox",
+                value: "",
+                className: "bg-slate-50 p-6 mt-6",
+                options: [
+                    {
+                        id: "is_overseas",
+                        label: "해외 거주자",
+                        checked: !!isOverseas,
+                        path: "biz_type.is_overseas",
+                    },
+                    {
+                        id: "is_minor",
+                        label: "미성년자",
+                        checked: !!isMinor,
+                        path: "biz_type.is_minor",
+                    },
+                    {
+                        id: "is_foreigner",
+                        label: "외국인",
+                        checked: !!isForeigner,
+                        path: "biz_type.is_foreigner",
+                    },
+                ],
+            }
+        );
+    }
+    if (isSoleProp || isSimpleTaxpayer) {
         bizTypeSection.value.push({
-            id: "biz_flags",
-            label: "특이사항",
-            type: "checkbox",
-            value: "",
-            className: "bg-slate-50 p-6 mt-6",
-            options: [
-                {
-                    id: "is_overseas",
-                    label: "해외 거주자",
-                    checked: !!isOverseas,
-                    path: "biz_type.is_overseas",
-                },
-                {
-                    id: "is_minor",
-                    label: "미성년자",
-                    checked: !!isMinor,
-                    path: "biz_type.is_minor",
-                },
-                {
-                    id: "is_foreigner",
-                    label: "외국인",
-                    checked: !!isForeigner,
-                    path: "biz_type.is_foreigner",
-                },
-            ],
+            id: "invoice_type",
+            label: "발행 유형",
+            value: TAX_ISSUE_TYPE_LABEL[tax_info.invoice_type],
+            type: "radio",
+            path: "tax_info.invoice_type",
+            errorKey: "invoice_type",
+            options: [ISSUE_TYPES[2], ISSUE_TYPES[3], ISSUE_TYPES[0]],
+        });
+    }
+
+    if (isTaxFreeBiz) {
+        bizTypeSection.value.push({
+            id: "invoice_type",
+            label: "발행 유형",
+            value: TAX_ISSUE_TYPE_LABEL[tax_info.invoice_type],
+            type: "radio",
+            path: "tax_info.invoice_type",
+            errorKey: "invoice_type",
+            options: [ISSUE_TYPES[1]],
+        });
+    }
+    if (isCorp) {
+        bizTypeSection.value.push({
+            id: "invoice_type",
+            label: "발행 유형",
+            value: TAX_ISSUE_TYPE_LABEL[tax_info.invoice_type],
+            type: "radio",
+            path: "tax_info.invoice_type",
+            errorKey: "invoice_type",
+            options: [ISSUE_TYPES[0]],
         });
     }
 
@@ -344,6 +399,7 @@ export const buildEditSections = (formData) => {
             readOnly: true,
         },
     ];
+
     // 3) 개인 정보 (개인일 때만)
     if (isIndividual) {
         personalFields.push({
@@ -517,47 +573,6 @@ export const buildEditSections = (formData) => {
         value: accountFields,
     });
 
-    // 6) 세무 정보
-    const TaxInfoSection = {
-        id: "tax_info",
-        label: "세무 정보",
-        value: [
-            {
-                id: "invoice_type",
-                label: "발행 유형",
-                value: TAX_ISSUE_TYPE_LABEL[tax_info.invoice_type] || "",
-                type: "radio",
-                path: "tax_info.invoice_type",
-                errorKey: "invoice_type",
-                options: ISSUE_TYPES,
-            },
-        ],
-    };
-
-    const isPossibleSimpleTax = ["세금계산서", "전자계산서"].includes(
-        TaxInfoSection.value[0].value
-    );
-
-    if (isPossibleSimpleTax) {
-        TaxInfoSection.value.push({
-            id: "is_simple_taxpayer",
-            className: "bg-slate-50 p-6 mt-6",
-            label: "간이과세자 여부",
-            type: "checkbox",
-            value: "",
-            options: [
-                {
-                    id: "is_simple_taxpayer",
-                    label: "간이과세자입니다.",
-                    checked: !!tax_info.is_simple_taxpayer,
-                    path: "tax_info.is_simple_taxpayer",
-                },
-            ],
-            errorKey: "is_simple_taxpayer",
-        });
-    }
-
-    sections.push(TaxInfoSection);
     return sections;
 };
 
@@ -664,10 +679,10 @@ export const normalizePayeeEditFormData = (
         ...nextFormData,
         basic_info: { ...nextFormData.basic_info },
         biz_type: { ...nextFormData.biz_type },
+        tax_info: { ...nextFormData.tax_info },
         personal_info: { ...nextFormData.personal_info },
         biz_info: { ...nextFormData.biz_info },
         account_info: { ...nextFormData.account_info },
-        tax_info: { ...nextFormData.tax_info },
     };
 
     // 기본값 보정
