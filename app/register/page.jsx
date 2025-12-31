@@ -632,13 +632,6 @@ export default function App() {
                                                             TERMS_CONTENT.privacy,
                                                     },
                                                     {
-                                                        key: "thirdParty",
-                                                        label: "개인정보 제 3자 제공 동의(필수)",
-                                                        required: true,
-                                                        content:
-                                                            TERMS_CONTENT.thirdParty,
-                                                    },
-                                                    {
                                                         key: "marketing",
                                                         label: "마케팅 및 혜택 프로모션 알림 동의(선택)",
                                                         required: false,

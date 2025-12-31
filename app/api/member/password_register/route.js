@@ -10,7 +10,6 @@ export async function POST(request) {
         password,
         agreed_to_terms,
         agreed_to_privacy,
-        agreed_to_third_party,
         agreed_to_marketing,
     } = await request.json();
     let connection;
@@ -74,12 +73,8 @@ export async function POST(request) {
             [
                 hashedPassword,
                 agreed_to_terms,
-                agreed_to_terms,
                 agreed_to_privacy,
-                agreed_to_privacy,
-                agreed_to_third_party,
-                agreed_to_third_party,
-                agreed_to_marketing,
+                { agreed_to_third_party: false },
                 agreed_to_marketing,
                 email,
                 code,
