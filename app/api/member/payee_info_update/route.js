@@ -21,7 +21,12 @@ import { toYn, nullIfEmpty, calculateExpirationDate } from "@/utils/formHelpers"
 const FILE_TYPE_TAG = "PAYEE_DOCUMENT"
 
 const isBizType = (bizType) =>
-  ["sole_proprietor", "corporate_business"].includes(bizType)
+  [
+    "sole_proprietor",
+    "corporate_business",
+    "simple_taxpayer",
+    "tax_free_business",
+  ].includes(bizType)
 const isIndividual = (bizType) => bizType === "individual"
 
 // URL에서 S3 Key 추출 헬퍼 (DB URL 구조에 따라 수정 필요)
