@@ -8,40 +8,13 @@ import {uploadFileToS3, deleteFileFromS3, getFileBufferFromS3} from "@/lib/s3-cl
 import {createMondayItem, uploadFileToMonday} from "@/lib/mondayCommon";
 import crypto from "crypto";
 import {cookies} from "next/headers";
+import { toYn, nullIfEmpty, calculateExpirationDate } from "@/utils/formHelpers";
 
 const FILE_TYPE_TAG = "PAYEE_DOCUMENT";
-
-/**
- * Utils
- */
-const toYn = (v) => {
-    if (v === true || v === "true") return "Y";
-    if (v === false || v === "false") return "N";
-    if (v === "Y" || v === "N") return v;
-    return v;
-};
-
-const nullIfEmpty = (v) => {
-    if (v === undefined || v === null) return null;
-    if (typeof v === "string" && v.trim() === "") return null;
-    return v;
-};
 
 const isBizType = (bizType) =>
     ["sole_proprietor", "corporate_business"].includes(bizType);
 const isIndividual = (bizType) => bizType === "individual";
-
-const calculateExpirationDate = (consentType) => {
-    const date = new Date(); // 현재 서버 시간
-
-    if (consentType === "30days") {
-        date.setDate(date.getDate() + 30); // 30일 뒤
-    } else {
-        date.setDate(date.getDate() + 1);  // 내일 (매번 재확인이므로 유효기간 짧게)
-    }
-
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
-};
 
 // URL에서 S3 Key 추출 헬퍼 (DB URL 구조에 따라 수정 필요)
 // 예: https://endpoint/bucket/cr_console/... -> cr_console/...
