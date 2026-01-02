@@ -5,7 +5,7 @@ import {TABLE_NAMES, MONDAY_BOARD_IDS, MONDAY_COLUMN_IDS} from "@/constants/dbCo
 import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import {NextResponse} from "next/server";
 import {uploadFileToS3, deleteFileFromS3, getFileBufferFromS3} from "@/lib/s3-client";
-import {createMondayLogItem, uploadFileToMonday} from "@/lib/mondayCommon";
+import {createMondayItem, uploadFileToMonday} from "@/lib/mondayCommon";
 import crypto from "crypto";
 import {cookies} from "next/headers";
 
@@ -282,7 +282,7 @@ export async function POST(req) {
         let mondayItemId = null;
         try {
             const itemName = baseDbPayload.user_name || baseDbPayload.biz_name || "수취인정보 수정요청";
-            mondayItemId = await createMondayLogItem(MONDAY_BOARD_IDS.PAYEE_LOG, itemName, mondayColumnValues);
+            mondayItemId = await createMondayItem(MONDAY_BOARD_IDS.PAYEE_LOG, itemName, mondayColumnValues);
 
             // 5-3 아이템 생성 후 파일 업로드 실행(finalAttachments 사용)
             if (mondayItemId && finalAttachments.length > 0) {

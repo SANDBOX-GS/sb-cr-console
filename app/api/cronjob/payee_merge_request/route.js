@@ -4,44 +4,9 @@ import {
     TABLE_NAMES,
     MONDAY_BOARD_IDS,
     MONDAY_COLUMN_IDS,
-    MONDAY_API_CONFIG,
 } from "@/constants/dbConstants";
 import { MONDAY_LABEL } from "@/constants/mondayLabel";
-
-/**
- * 먼데이닷컴 아이템 생성 함수
- */
-async function createMondayItem(itemName, columnValues) {
-    const query = `mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
-    create_item (board_id: $boardId, item_name: $itemName, column_values: $columnValues) {
-      id
-    }
-  }`;
-
-    const variables = {
-        boardId: parseInt(MONDAY_BOARD_IDS.PAYEE_REQUEST),
-        itemName: itemName,
-        columnValues: JSON.stringify(columnValues),
-    };
-
-    // [수정] 상수로 정의된 URL과 토큰 사용
-    const response = await fetch(MONDAY_API_CONFIG.URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: MONDAY_API_CONFIG.TOKEN,
-        },
-        body: JSON.stringify({ query, variables }),
-    });
-
-    const responseData = await response.json();
-
-    if (responseData.errors) {
-        throw new Error(JSON.stringify(responseData.errors));
-    }
-
-    return responseData.data.create_item.id;
-}
+import { createMondayItem, getMondayItemName } from "@/lib/mondayCommon";
 
 export async function POST(request) {
     let connection;
@@ -66,8 +31,7 @@ export async function POST(request) {
 
         logs.forEach((log) => {
             const email = log.email;
-            const tel =
-                log.tel && log.tel.trim() !== "" ? log.tel.trim() : null;
+            const tel = log.tel && log.tel.trim() !== "" ? log.tel.trim() : null;
 
             if (!groups[email]) {
                 groups[email] = { valid: {}, nulls: [] };
@@ -121,17 +85,26 @@ export async function POST(request) {
                 val.split(",").forEach((id) => crIdsSet.add(id.trim()))
             );
             const crIdsString = Array.from(crIdsSet).join(",");
+            const uniqueIds = Array.from(crIdsSet);
 
-            let finalItemName = `${email}`; // todo 기본값 (CR 이름 없을 경우 대비)
-            if (crIdsRaw.length > 0) {
-                const firstRawValue = crIdsRaw[0];
-
-                // 만약 먼데이 미러 컬럼이라 콤마(,)로 여러 개가 들어있다면, 그 중 맨 앞의 것만 사용
-                const firstCrName = firstRawValue.split(',')[0].trim();
-
-                if (firstCrName) {
-                    finalItemName = `${firstCrName}`;
+            // 1-1. 먼데이에서 실제 이름(Name) 조회
+            let realCrName = null;
+            if (uniqueIds.length > 0) {
+                const firstId = uniqueIds[0];
+                try {
+                    // ID로 이름 조회
+                    realCrName = await getMondayItemName(firstId);
+                } catch (e) {
+                    console.error("먼데이 이름 조회 실패:", e);
                 }
+            }
+
+            // 1-2. 아이템 제목 결정
+            let finalItemName = "";
+            if (realCrName) {
+                finalItemName = `${realCrName}`;
+            } else {
+                finalItemName = `${email}`; // 이름 조회 실패 시 이메일 사용
             }
 
             const taskIds = logs.map((l) => l.item_id);
@@ -175,6 +148,7 @@ export async function POST(request) {
 
                 // 먼데이 아이템 생성
                 const mondayItemId = await createMondayItem(
+                    MONDAY_BOARD_IDS.PAYEE_REQUEST,
                     finalItemName,
                     mondayColumnValues
                 );
