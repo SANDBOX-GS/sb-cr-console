@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import dbConnect from "@/lib/dbConnect";
 import { TABLE_NAMES, MONDAY_BOARD_IDS, MONDAY_COLUMN_IDS } from "@/constants/dbConstants";
 import { MONDAY_LABEL } from "@/constants/mondayLabel";
@@ -11,229 +12,284 @@ import { toYn, nullIfEmpty, calculateExpirationDate } from "@/utils/formHelpers"
 
 const FILE_TYPE_TAG = "PAYEE_DOCUMENT";
 
+const isBizType = (bizType) =>
+    ["sole_proprietor", "corporate_business"].includes(bizType);
+const isIndividual = (bizType) => bizType === "individual";
+
 export async function POST(req) {
     let connection;
     // 트랜잭션 실패 시 S3에 업로드된 파일의 키를 저장할 목록
-    const uploadedS3Keys = [];
+    const newlyUploadedS3Keys = [];
 
     try {
         const formData = await req.formData();
+        const payload = {};
+        const fileUploads = [];
 
-        const payload = {}; // 텍스트 데이터 (임시 필드 포함)
-        const fileUploads = []; // 파일 데이터 목록
-
+        // 1. FormData 파싱
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-                fileUploads.push({
-                    fieldName: key,
-                    file: value,
-                });
+                if (value.size > 0) fileUploads.push({ fieldName: key, file: value });
             } else {
-                let textValue = value;
-                // 'true'/'false' 문자열을 DB ENUM 타입 'Y'/'N'으로 변환
-                if (textValue === "true") textValue = "Y";
-                else if (textValue === "false") textValue = "N";
-
-                payload[key] = textValue;
+                payload[key] = value;
             }
         }
 
-        // *******************************************************************
-        // 🚨 0. 세션(쿠키)에서 실제 member_idx 가져오기
-        // *******************************************************************
+        // 2. 사용자 인증 (쿠키)
         const cookieStore = await cookies();
         const memberIdxCookie = cookieStore.get("member_idx");
 
-        // 쿠키 값이 없거나 유효하지 않으면 접근 거부
         if (!memberIdxCookie || !memberIdxCookie.value) {
             return NextResponse.json(
-                { message: "인증 정보가 없습니다. 다시 로그인해 주세요." },
+                { message: "인증 정보가 없습니다." },
                 { status: 401 }
             );
         }
-
-        // 쿠키 값은 문자열이므로 정수로 변환 (DB 저장용)
         const member_idx = parseInt(memberIdxCookie.value, 10);
-        if (isNaN(member_idx) || member_idx <= 0) {
-            return NextResponse.json(
-                { message: "유효하지 않은 사용자 ID입니다." },
-                { status: 401 }
-            );
-        }
-        // *******************************************************************
 
-        // *******************************************************************
-        // 1. Payee Info 테이블에 저장할 최종 페이로드 준비 및 DB 저장
-        // *******************************************************************
+        // 3. DB Payload 구성
+        // [신규 등록] 이므로 버전은 1로 고정
+        const nextVersion = 1;
 
-        // 필수 값 주입
-        payload.member_idx = member_idx;
-        payload.payout_ratio_id = DUMMY_PAYOUT_RATIO_ID;
-        payload.active_status = "inactive";
-        // DB 컬럼에 맞게 재구성 (dbPayload)
-        const dbPayload = {
-            member_idx: payload.member_idx,
-            payout_ratio_id: payload.payout_ratio_id,
-            biz_type: payload.biz_type,
-            is_overseas: payload.is_overseas,
-            is_minor: payload.is_minor,
-            is_foreigner: payload.is_foreigner,
-            bank_name: payload.bank_name,
-            account_holder: payload.account_holder,
-            account_number: payload.account_number,
-            swift_code: payload.swift_code,
-            bank_address: payload.bank_address,
-            invoice_type: payload.invoice_type,
-            is_simple_taxpayer: payload.is_simple_taxpayer,
-            active_status: payload.active_status,
+        const biz_type = payload.biz_type;
+        const is_overseas = toYn(payload.is_overseas) || 'N';
+        const is_minor = toYn(payload.is_minor) || 'N';
+        const is_foreigner = toYn(payload.is_foreigner) || 'N';
+        const is_simple_taxpayer = toYn(payload.is_simple_taxpayer) || 'N';
+        const calculatedExpiredAt = calculateExpirationDate(payload.consent_type);
 
-            // 개인, 사업자, 법인 필드 매핑
-            user_name:
-                payload.biz_type === "individual" ? payload.user_name : null,
-            ssn: payload.biz_type === "individual" ? payload.ssn : null,
-            identification_type:
-                payload.biz_type === "individual" &&
-                payload.is_minor === "N" &&
-                payload.is_foreigner === "N"
-                    ? payload.identification_type
-                    : null,
-
-            biz_name:
-                payload.biz_type === "sole_proprietor"
-                    ? payload.biz_name
-                    : null,
-            biz_reg_no:
-                payload.biz_type === "sole_proprietor"
-                    ? payload.biz_reg_no
-                    : null,
-
-            guardian_name:
-                payload.is_minor === "Y" ? payload.guardian_name : null,
-            guardian_tel:
-                payload.is_minor === "Y" ? payload.guardian_tel : null,
-
-            ci_cd: null,
+        const baseDbPayload = {
+            member_idx: member_idx,
+            biz_type: nullIfEmpty(biz_type),
+            is_overseas: is_overseas,
+            is_minor: is_minor,
+            is_foreigner: is_foreigner,
+            bank_name: nullIfEmpty(payload.bank_name),
+            account_holder: nullIfEmpty(payload.account_holder),
+            account_number: nullIfEmpty(payload.account_number),
+            swift_code: nullIfEmpty(payload.swift_code),
+            bank_address: nullIfEmpty(payload.bank_address),
+            invoice_type: nullIfEmpty(payload.invoice_type),
+            is_simple_taxpayer: is_simple_taxpayer,
+            agree_expired_at: calculatedExpiredAt,
+            approval_status: "pending",
+            active_status: "inactive",
+            version: nextVersion,
         };
 
-        // 2. S3 업로드 실행 (DB 트랜잭션 외부)
+        // 3-1. 개인/사업자별 조건부 필드 처리
+        if (isIndividual(biz_type)) {
+            baseDbPayload.user_name = nullIfEmpty(payload.user_name);
+
+            // 외국인이면 외국인등록번호, 아니면 주민등록번호
+            baseDbPayload.ssn = nullIfEmpty(is_foreigner === "Y" ? payload.foreigner_registration_number : payload.ssn);
+
+            // 미성년자/외국인이 아니면 신분증 종류
+            if (is_minor === "N" && is_foreigner === "N") {
+                baseDbPayload.identification_type = nullIfEmpty(payload.identification_type);
+            }
+
+            // 미성년자면 보호자 정보
+            if (is_minor === "Y") {
+                baseDbPayload.guardian_name = nullIfEmpty(payload.guardian_name);
+                baseDbPayload.guardian_tel = nullIfEmpty(payload.guardian_tel);
+            }
+        }
+
+        // 3-2. 사업자(개인/법인)일 경우
+        if (isBizType(biz_type)) {
+            baseDbPayload.biz_name = nullIfEmpty(payload.biz_name);
+            baseDbPayload.biz_reg_no = nullIfEmpty(payload.biz_reg_no);
+        }
+
+        // 3-3. 법인일 경우
+        if (biz_type === "corporate_business") {
+            baseDbPayload.corp_name = nullIfEmpty(payload.corp_name);
+            baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
+        }
+
+        // 4. 파일 처리 (신규 등록이므로 기존 파일 다운로드 로직 없음)
+        const finalAttachments = [];
+
+        // 4-1. S3 업로드
         const s3UploadResults = await Promise.all(
             fileUploads.map(async ({ fieldName, file }) => {
-                if (file.size === 0) return null;
-
                 const buffer = Buffer.from(await file.arrayBuffer());
-                const originalName = file.name
-                    .split(".")
-                    .slice(0, -1)
-                    .join(".");
                 const extension = file.name.split(".").pop();
-
                 const uniqueId = crypto.randomBytes(16).toString("hex");
                 const s3FileName = `${uniqueId}.${extension}`;
-
-                // S3 키 생성
                 const s3Key = `cr_console/payee_documents/${fieldName}/${s3FileName}`;
                 const fileUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${s3Key}`;
 
-                console.log(`S3: Uploading ${fieldName} to ${s3Key}...`);
-
-                // S3 업로드 실행
+                console.log(`S3: Uploading ${fieldName}...`);
                 await uploadFileToS3(buffer, s3Key, file.type);
+                newlyUploadedS3Keys.push(s3Key);
 
-                // 업로드 성공 시 키 저장 (롤백 시 삭제를 위해)
-                uploadedS3Keys.push(s3Key);
+                // 먼데이 전송용 배열에 추가
+                finalAttachments.push({
+                    fieldName: fieldName,
+                    file: buffer,
+                    filename: file.name
+                });
 
-                return {
-                    s3Key,
-                    fileUrl,
-                    file,
-                    fieldName,
-                    extension,
-                    dbFileName: s3FileName,
-                };
+                return { fieldName, s3Key, fileUrl, file, extension, dbFileName: s3FileName };
             })
         );
 
-        // 3. 데이터베이스 연결 및 트랜잭션 시작
+        // 5. 먼데이닷컴 아이템 생성
+        const COL_ID = MONDAY_COLUMN_IDS.PAYEE_LOG;
+        const LABEL_MAP = MONDAY_LABEL.PAYEE_LOG;
+
+        // 5-1. 사업자 구분 라벨 매핑
+        let bizTypeLabel = LABEL_MAP.BIZ_TYPE.INDIVIDUAL;
+        if (biz_type === "sole_proprietor") bizTypeLabel = LABEL_MAP.BIZ_TYPE.SOLE_PROPRIETOR;
+        if (biz_type === "corporate_business") bizTypeLabel = LABEL_MAP.BIZ_TYPE.CORPORATE;
+
+        // 5-2. 발행 유형 라벨 매핑
+        const invoiceTypeLabel = LABEL_MAP.ISSUE_TYPES[payload.invoice_type?.toUpperCase()] || payload.invoice_type;
+
+        const mondayColumnValues = {
+            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
+            [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
+            [COL_ID.CORP_NAME]: baseDbPayload.corp_name || baseDbPayload.biz_name,
+            [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no || baseDbPayload.corp_reg_no,
+            [COL_ID.USER_NAME]: baseDbPayload.user_name,
+            [COL_ID.SSN]: baseDbPayload.ssn,
+            [COL_ID.FOREIGN_REG_NO]: is_foreigner === "Y" ? baseDbPayload.ssn : null,
+            [COL_ID.PHONE]: payload.tel ? { phone: payload.tel, countryShortName: "KR" } : null,
+            [COL_ID.EMAIL]: payload.email ? { email: payload.email, text: payload.email } : null,
+            [COL_ID.GUARDIAN_NAME]: baseDbPayload.guardian_name,
+            [COL_ID.GUARDIAN_PHONE]: baseDbPayload.guardian_tel ? { phone: baseDbPayload.guardian_tel, countryShortName: "KR" } : null,
+            [COL_ID.BANK_NAME]: baseDbPayload.bank_name,
+            [COL_ID.ACCOUNT_HOLDER]: baseDbPayload.account_holder,
+            [COL_ID.ACCOUNT_NUMBER]: baseDbPayload.account_number,
+            [COL_ID.SWIFT_CODE]: baseDbPayload.swift_code,
+            [COL_ID.BANK_ADDRESS]: baseDbPayload.bank_address,
+            [COL_ID.IS_SIMPLE_TAX]: is_simple_taxpayer === 'Y' ? { checked: true } : null,
+            [COL_ID.INVOICE_TYPE]: invoiceTypeLabel ? { labels: [invoiceTypeLabel] } : null,
+            [COL_ID.VERSION]: nextVersion
+        };
+
+        // null 값 제거
+        Object.keys(mondayColumnValues).forEach(key => {
+            if (mondayColumnValues[key] === null || mondayColumnValues[key] === undefined) {
+                delete mondayColumnValues[key];
+            }
+        });
+
+        let mondayItemId = null;
+        try {
+            const itemName = baseDbPayload.user_name || baseDbPayload.biz_name || "신규 수취인 등록"; // todo 이거 아이템이름을 CR 인벤에 있는거 그대로 가져와야되나? 만약 여기 이름을 넣는거라면 그 전에 수취인정보요청부터 연결이 안되는데? 그때는 CR 인벤토리 이름을 사용하잖아.
+            // ★ [신규] Board에 생성하는 게 아니라, Log Board에 생성합니다 (업데이트 로직과 동일하게 유지)
+            mondayItemId = await createMondayItem(MONDAY_BOARD_IDS.PAYEE_LOG, itemName, mondayColumnValues);
+
+            // 5-3. 파일 업로드
+            if (mondayItemId && finalAttachments.length > 0) {
+                const uploadPromises = finalAttachments.map(async ({ fieldName, file, filename }) => {
+                    let targetColId = null;
+                    if (fieldName === 'business_document') targetColId = COL_ID.BIZ_REG_FILE;
+                    else if (fieldName === 'id_document') targetColId = COL_ID.ID_FILE;
+                    else if (fieldName === 'family_relation_certificate') targetColId = COL_ID.RELATION_FILE;
+                    else if (fieldName === 'bank_document') targetColId = COL_ID.BANK_COPY_FILE;
+
+                    if (targetColId) {
+                        await uploadFileToMonday(mondayItemId, targetColId, file, filename);
+                    }
+                });
+                await Promise.allSettled(uploadPromises);
+            }
+        } catch (e) {
+            throw new Error(`먼데이 연동 실패: ${e.message}`);
+        }
+
+        // 6. DB 트랜잭션 시작
+
         connection = await dbConnect();
         await connection.beginTransaction();
 
-        // 3-1. Payee Info 테이블에 기본 정보 저장
-        const payeeResult = await connection.query(
+        // 6-1. Payee 정보 INSERT (신규 등록)
+        const [payeeResult] = await connection.query(
             `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?`,
-            dbPayload
+            baseDbPayload
         );
-        const payee_idx = payeeResult[0].insertId;
+        const payee_idx = payeeResult.insertId;
 
-        if (!payee_idx || payee_idx <= 0) {
-            throw new Error(
-                "수취인 정보 등록 중 참조 ID를 가져올 수 없습니다."
-            );
-        }
-        console.log(`Payee Info saved. IDX: ${payee_idx}`);
+        // 6-2. Log 테이블에 이력 저장 (스냅샷)
+        const logPayload = {
+            ...baseDbPayload,
+            member_idx: member_idx,
+            payee_idx: payee_idx, // 생성된 원본 ID 연결
+            payout_ratio_id: mondayItemId, // 먼데이 ID 추가
+            created_at: new Date(),
+        };
+        // updated_at이나 기타 불필요 필드 제거가 필요하다면 수행 (Insert시엔 보통 무관)
 
-        // 3-2. File Info 테이블에 파일 메타데이터 저장 (S3 업로드 결과를 기반으로)
-        const fileInfoInsertPromises = s3UploadResults
-            .filter((r) => r !== null)
-            .map(async (result) => {
-                const fileInfoPayload = {
+        const [logResult] = await connection.query(
+            `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE_LOG} SET ?`,
+            logPayload
+        );
+        const log_idx = logResult.insertId;
+
+        // 7. 파일 정보 DB 저장 (Master & Log)
+
+        if (s3UploadResults.length > 0) {
+            for (const r of s3UploadResults) {
+                const tag = r.fieldName;
+                const newVersion = 1; // 신규는 무조건 1
+                const parentIdx = 0;  // 신규는 부모 없음
+
+                // A. Payee 테이블용 INSERT
+                const payeeFilePayload = {
                     type: FILE_TYPE_TAG,
                     ref_table_name: TABLE_NAMES.SBN_MEMBER_PAYEE,
                     ref_table_idx: payee_idx,
-                    file_url: result.fileUrl,
-                    file_name: result.dbFileName,
-                    file_realname: result.file.name,
-                    file_ext: result.extension,
-                    file_size: result.file.size.toString(),
+                    file_url: r.fileUrl,
+                    file_name: r.dbFileName,
+                    file_realname: r.file.name,
+                    file_ext: r.extension,
+                    file_size: String(r.file.size),
                     seq: 0,
-                    tag: result.fieldName,
-                    creator_id: payload.member_idx,
+                    tag: tag,
+                    version: newVersion,
+                    parent_idx: parentIdx,
+                    creator_id: member_idx,
                 };
+                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`, payeeFilePayload);
 
-                await connection.query(
-                    `INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`,
-                    fileInfoPayload
-                );
-            });
+                // B. Log 테이블용 스냅샷 INSERT
+                const logFilePayload = {
+                    ...payeeFilePayload,
+                    ref_table_name: TABLE_NAMES.SBN_MEMBER_PAYEE_LOG, // Log 테이블 참조
+                    ref_table_idx: log_idx,                           // Log 테이블 IDX
+                    version: 1,
+                    parent_idx: 0,
+                };
+                await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_FILE_INFO} SET ?`, logFilePayload);
+            }
+        }
+        // 신규 등록이므로 '기존 파일 복사(7-2)' 로직은 필요 없음
 
-        // 모든 파일 메타데이터 DB 저장을 병렬로 실행
-        await Promise.all(fileInfoInsertPromises);
-        console.log("DB: All file info saved.");
-
-        // 4. 모든 DB 작업 성공 시 커밋
         await connection.commit();
-        console.log("Transaction committed successfully.");
 
-        // 5. 성공 응답
         return NextResponse.json(
-            { message: "수취인 정보 및 파일이 성공적으로 등록되었습니다." },
+            { message: "수취인 정보 등록 및 검수 요청이 완료되었습니다.", payout_ratio_id: mondayItemId },
             { status: 200 }
         );
+
     } catch (error) {
-        console.error("Error processing request:", error);
-
-        // 🚨 DB 트랜잭션 실패 처리 (롤백)
         if (connection) {
-            await connection.rollback();
-            console.error("Transaction rolled back.");
+            try { await connection.rollback(); } catch { }
         }
-
-        // 🚨 S3 파일 삭제 처리 (선택 사항: 롤백되었으므로 남아있는 S3 파일 삭제 시도)
-        if (uploadedS3Keys.length > 0) {
-            console.warn("Attempting to clean up orphaned S3 files...");
-            await Promise.all(
-                uploadedS3Keys.map((key) => deleteFileFromS3(key))
-            );
+        // DB 실패 시 S3 파일 삭제
+        if (newlyUploadedS3Keys.length > 0) {
+            try {
+                await Promise.all(newlyUploadedS3Keys.map((key) => deleteFileFromS3(key)));
+            } catch { }
         }
+        console.error("Register Error:", error);
 
-        // 사용자에게 반환할 에러 메시지 구성
         let errorMessage = "서버 오류가 발생했습니다.";
-        if (error.code) {
-            errorMessage = `데이터베이스 오류가 발생했습니다: ${error.message}`;
-        } else if (error.message.includes("수취인 정보 등록 중")) {
-            errorMessage = error.message; // 사용자 정의 에러 메시지
-        } else {
-            errorMessage = `파일 처리 중 오류가 발생했습니다: ${error.message}`;
-        }
+        if (error.message.includes("먼데이")) errorMessage = error.message;
 
         return NextResponse.json(
             { message: errorMessage, error: error.message },
@@ -241,7 +297,7 @@ export async function POST(req) {
         );
     } finally {
         if (connection) {
-            connection.release();
+            try { connection.release(); } catch { }
         }
     }
 }
