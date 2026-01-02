@@ -1,14 +1,15 @@
 export const dynamic = "force-dynamic";
 import dbConnect from "@/lib/dbConnect";
-import { TABLE_NAMES } from "@/constants/dbConstants";
+import { TABLE_NAMES, MONDAY_BOARD_IDS, MONDAY_COLUMN_IDS } from "@/constants/dbConstants";
+import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { NextResponse } from "next/server";
 import { uploadFileToS3, deleteFileFromS3 } from "@/lib/s3-client";
+import { createMondayItem, uploadFileToMonday } from "@/lib/mondayCommon";
 import crypto from "crypto";
 import { cookies } from "next/headers";
+import { toYn, nullIfEmpty, calculateExpirationDate } from "@/utils/formHelpers";
 
-// 임시 상수 (실제 환경에서는 인증 시스템에서 가져와야 함)
-const DUMMY_PAYOUT_RATIO_ID = "DEFAULT_RATIO";
-const FILE_TYPE_TAG = "PAYEE_DOCUMENT"; // 파일 정보 테이블의 type 필드에 사용될 상수
+const FILE_TYPE_TAG = "PAYEE_DOCUMENT";
 
 export async function POST(req) {
     let connection;
