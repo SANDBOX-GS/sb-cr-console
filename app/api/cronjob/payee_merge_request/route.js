@@ -110,14 +110,29 @@ export async function POST(request) {
         for (const req of finalRequests) {
             const { email, tel, logs } = req;
 
+            // 1. CR 이름(또는 ID) 추출
             const crIdsRaw = logs
-                .map((l) => l.board_relation_mkxsn9r6)
+                .map((l) => l[MONDAY_COLUMN_IDS.PAYEE_REQUEST.MIRROR_CR_NAME])
                 .filter((val) => val);
+
+            // 2. 링크 연결을 위한 ID 집합 생성
             const crIdsSet = new Set();
             crIdsRaw.forEach((val) =>
                 val.split(",").forEach((id) => crIdsSet.add(id.trim()))
             );
             const crIdsString = Array.from(crIdsSet).join(",");
+
+            let finalItemName = `${email}`; // todo 기본값 (CR 이름 없을 경우 대비)
+            if (crIdsRaw.length > 0) {
+                const firstRawValue = crIdsRaw[0];
+
+                // 만약 먼데이 미러 컬럼이라 콤마(,)로 여러 개가 들어있다면, 그 중 맨 앞의 것만 사용
+                const firstCrName = firstRawValue.split(',')[0].trim();
+
+                if (firstCrName) {
+                    finalItemName = `${firstCrName}`;
+                }
+            }
 
             const taskIds = logs.map((l) => l.item_id);
             const taskIdsString = taskIds.join(",");
@@ -160,17 +175,17 @@ export async function POST(request) {
 
                 // 먼데이 아이템 생성
                 const mondayItemId = await createMondayItem(
-                    `${email} 요청건`,
+                    finalItemName,
                     mondayColumnValues
                 );
                 console.log(
-                    `✅ Monday Item Created: ${mondayItemId} (${email})`
+                    `✅ Monday Item Created: ${mondayItemId} (${finalItemName})`
                 );
 
                 // DB Insert
                 await connection.execute(
                     `INSERT INTO ${TABLE_NAMES.SBN_PAYEE_REQUEST} 
-                    (item_id, board_relation_mkxsn9r6, board_relation_mkxsa8rp, email, tel, email_state, kakao_state) 
+                    (item_id, ${MONDAY_COLUMN_IDS.PAYEE_REQUEST.MIRROR_CR_NAME}, ${MONDAY_COLUMN_IDS.PAYEE_REQUEST.LINK_TASK_SETTLEMENT}, email, tel, email_state, kakao_state) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
                     [
                         mondayItemId,
