@@ -2,13 +2,13 @@ export const dynamic = "force-dynamic";
 import dbConnect from "@/lib/dbConnect";
 import {
     TABLE_NAMES,
-    NHN_CONFIG,
     MONDAY_API_CONFIG,
     MONDAY_BOARD_IDS,
     MONDAY_COLUMN_IDS,
 } from "@/constants/dbConstants";
 import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { sendNHNEmail, sendNHNKakao } from "@/lib/nhnSender";
+import { getMondayItemName } from "@/lib/mondayCommon";
 
 // todo [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
 const REGISTER_BASE_URL = "https://creator.sandbox.co.kr/register";
@@ -23,93 +23,6 @@ function generateUUID() {
             return v.toString(16);
         }
     );
-}
-
-// ==========================================
-// [추가] 먼데이 CR 인벤토리 이름 가져오기 (Mirror 컬럼)
-// ==========================================
-async function getMondayCrName(itemId) {
-    if (!itemId) return "";
-
-    // [수정 1] text와 value도 같이 요청해서 데이터가 어디에 들어오는지 확인
-    const query = `query ($itemId: [ID!], $columnId: [String!]) {
-        items (ids: $itemId) {
-            column_values (ids: $columnId) {
-                id
-                text
-                # 미러 컬럼일 경우 display_value 가져오기
-                ... on MirrorValue {
-                  display_value
-                }
-                # 혹시 보드 연결 컬럼일 경우 대비
-                ... on BoardRelationValue {
-                  display_value
-                }
-            }
-        }
-    }`;
-
-    // 🚨 [체크 포인트] 상수가 올바르게 로드되었는지 확인
-    const targetColumnId = MONDAY_COLUMN_IDS.PAYEE_REQUEST.MIRROR_CR_NAME;
-    // 만약 undefined라면 상수가 잘못된 것입니다.
-    if (!targetColumnId) {
-        console.error("❌ Error: Column ID Constant is Undefined!");
-        return "";
-    }
-
-    const variables = {
-        itemId: parseInt(itemId),
-        columnId: [targetColumnId],
-    };
-
-    try {
-        const response = await fetch(MONDAY_API_CONFIG.URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: MONDAY_API_CONFIG.TOKEN,
-            },
-            body: JSON.stringify({ query, variables }),
-        });
-
-        const result = await response.json();
-
-        // 🔍 [디버깅 로그] 먼데이 API 원본 응답 확인 (이 로그를 꼭 확인하세요!)
-        console.log(
-            `🔍 Monday Raw Response (Item: ${itemId}):`,
-            JSON.stringify(result, null, 2)
-        );
-
-        if (result.errors) {
-            console.error("❌ Monday API Error:", result.errors);
-            return "";
-        }
-
-        if (result.data && result.data.items.length > 0) {
-            const item = result.data.items[0];
-
-            // 컬럼 데이터가 아예 없는 경우 (컬럼 ID가 틀렸을 때 발생)
-            if (!item.column_values || item.column_values.length === 0) {
-                console.error(
-                    `⚠️ No column values found for ID: ${targetColumnId}. Check if this column exists on the board.`
-                );
-                return "";
-            }
-
-            const colValue = item.column_values[0];
-
-            // [수정 2] display_value가 없으면 text라도 가져오도록 처리
-            const finalName = colValue.display_value || colValue.text || "";
-
-            // 따옴표(")가 포함된 경우 제거 (JSON 파싱 잔여물 등)
-            return finalName.replace(/"/g, "");
-        }
-
-        return "";
-    } catch (e) {
-        console.error(`❌ Monday Fetch Name Error (Item: ${itemId}):`, e);
-        return "";
-    }
 }
 
 // ==========================================
@@ -142,7 +55,7 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue) {
 
     if (itemIds.length === 0) return;
 
-    const columnId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.STATUS; // 'color_mkygz7n5'
+    const columnId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.STATUS;
     const boardId = MONDAY_BOARD_IDS.WORK_SETTLEMENT;
 
     console.log(
@@ -246,8 +159,6 @@ export async function POST(request) {
         const paymentDateStr = `${currentYear}.${String(
             now.getMonth() + 2
         ).padStart(2, "0")}.10 예정`;
-        const writeDateStr = `${currentYear}년 ${currentMonth}월 ${now.getDate()}일`;
-        const writeDetailStr = `${currentYear}년 ${currentMonth}월 귀속 수익`;
 
         let successCount = 0;
 
@@ -261,7 +172,6 @@ export async function POST(request) {
                 kakao_state,
                 board_relation_mkxsa8rp,
             } = target;
-            const nameAsId = email;
 
             let updateUpdates = [];
             let mondayStatusToUpdate = null;
@@ -269,7 +179,6 @@ export async function POST(request) {
             // ------------------------------------------------------------------
             // 🔹 [STEP 0] 공통 데이터 준비 (회원 확인, 이름 확보, 링크 생성)
             // ------------------------------------------------------------------
-            // 이 로직을 if문 밖으로 꺼내야 이메일/카카오톡 어디서든 쓸 수 있습니다.
 
             let targetUUID = "";
             let targetName = ""; // 사용자 실명 (cr_inv_name)
@@ -278,7 +187,7 @@ export async function POST(request) {
             try {
                 // 1. 이미 존재하는 회원인지 확인 (이름도 같이 조회)
                 const [members] = await connection.execute(
-                    `SELECT user_id FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
+                    `SELECT user_id, cr_inv_name FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
                     [email]
                 );
 
@@ -288,9 +197,8 @@ export async function POST(request) {
                     targetName = members[0].cr_inv_name; // DB에 저장된 이름 사용
                 } else {
                     // [CASE B] 신규 회원 -> 먼데이 API로 이름 가져오기 & DB 생성
-
-                    // 1) 먼데이 API 호출 (이름 획득)
-                    targetName = await getMondayCrName(item_id);
+                    const rawName = await getMondayItemName(item_id);
+                    targetName = rawName || email;
 
                     // 2) UUID 생성
                     targetUUID = generateUUID();
@@ -324,7 +232,6 @@ export async function POST(request) {
                     link_url: linkUrl,
                 };
 
-                // nameAsId 대신 실제 targetName 사용해도 되고, 기존 로직 유지하려면 email 사용
                 const sendResult = await sendNHNEmail(email, email, emailParams);
 
                 if (sendResult.success) {
@@ -372,7 +279,7 @@ export async function POST(request) {
             }
 
             // ------------------------------------------------------------------
-            // (D) 먼데이 상태 업데이트 (수취인 정보 + 과업 정산 연결 아이템들)
+            // (D) 먼데이 상태 업데이트
             // ------------------------------------------------------------------
             if (mondayStatusToUpdate) {
                 // 1. 수취인 정보 요청 보드 상태 업데이트
@@ -381,18 +288,17 @@ export async function POST(request) {
                     if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) successCount++;
                 }
 
-                // 2. [추가] 과업 정산 보드 상태 업데이트 (연결된 모든 아이템)
+                // 2. 과업 정산 보드 상태 업데이트 (연결된 모든 아이템)
                 // board_relation_mkxsa8rp 값 예시: "11111, 22222, 33333"
                 if (board_relation_mkxsa8rp) {
                     let settlementLabel = "";
 
                     if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) {
-                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT; // 과업 정산 보드용 라벨
+                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT;
                     } else if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED) {
-                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED; // 과업 정산 보드용 라벨
+                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED;
                     }
 
-                    // 변환된 라벨로 업데이트 요청
                     if (settlementLabel) {
                         await updateWorkSettlementStatus(
                             board_relation_mkxsa8rp,
