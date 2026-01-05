@@ -50,6 +50,7 @@ export default function PayeeInfoViewPage() {
             });
 
             if (!response.ok) {
+                console.log("response", response);
                 throw new Error("수취인 정보를 불러오는 데 실패했습니다.");
             }
 
@@ -254,34 +255,29 @@ export default function PayeeInfoViewPage() {
                                 value: (
                                     <div className="flex gap-1 items-center">
                                         <p>
-                                            {metaData?.expired_status ===
-                                            "valid"
+                                            {metaData?.processed_at !== null ||
+                                            metaData?.processed_at >
+                                                metaData?.updated_at
                                                 ? new Date(
-                                                      metaData?.agree_expired_at
-                                                  ).toLocaleString("ko-KR")
-                                                : metaData?.expired_status ===
-                                                  "expired"
-                                                ? new Date(
-                                                      metaData?.agree_expired_at
+                                                      metaData?.processed_at
                                                   ).toLocaleString("ko-KR")
                                                 : "등록 완료"}
                                         </p>
                                         <span
                                             className={cn(
                                                 "inline-block ml-2 mb-1 text-xs font-medium px-2.5 py-0.5 rounded-full",
-                                                metaData?.expired_status ===
-                                                    "valid"
+                                                metaData?.processed_at !== null
                                                     ? "bg-sky-100 text-sky-600"
-                                                    : metaData?.expired_status ===
+                                                    : metaData?.approval_status ===
                                                       "expired"
                                                     ? "bg-pink-100 text-pink-600"
                                                     : "bg-amber-100 text-amber-600"
                                             )}
                                         >
-                                            {metaData?.expired_status ===
+                                            {metaData?.approval_status ===
                                             "valid"
                                                 ? "승인"
-                                                : metaData?.expired_status ===
+                                                : metaData?.approval_status ===
                                                   "expired"
                                                 ? "수정 필요"
                                                 : "검수 중"}
