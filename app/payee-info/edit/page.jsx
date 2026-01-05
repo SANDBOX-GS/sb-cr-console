@@ -173,7 +173,7 @@ export default function PayeeInfoEditPage() {
         }
 
         // 세무
-        if (!formData?.tax_info?.invoice_type)
+        if (!formData?.biz_type?.invoice_type)
             newErrors.invoice_type = "발행 유형을 선택해 주세요.";
 
         // consent_type은 default 30days 라고 했으니, 비어있을 리가 없어야 합니다.
@@ -262,7 +262,7 @@ export default function PayeeInfoEditPage() {
                     >
                         <h1>내정보 수정</h1>
 
-                        <p className="mt-4 text-base text-slate-500 max-w-lg mx-auto">
+                        <p className="mt-4 text-slate-500 max-w-lg mx-auto">
                             등록된 정보를 수정하거나, 유효기간을 연장해 주세요.
                             <br />
                             등록 요청 시 정산담당자가 영업일 3일 이내 검수를

@@ -40,7 +40,7 @@ export async function GET(req) {
       p.*,
       m.email,
       m.tel
-    FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} AS p
+    FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE_LOG} AS p
     LEFT JOIN ${TABLE_NAMES.SBN_MEMBER} AS m
       ON p.member_idx = m.idx
     WHERE p.member_idx = ?
@@ -67,7 +67,7 @@ export async function GET(req) {
         // 3. 파일 정보 조회
         const [fileRows] = await connection.query(
             `SELECT file_url, tag, file_realname, file_ext FROM ${TABLE_NAMES.SBN_FILE_INFO} WHERE ref_table_name = ? AND ref_table_idx = ? AND type = ?`,
-            [TABLE_NAMES.SBN_MEMBER_PAYEE, payeeIdx, FILE_TYPE_TAG]
+            [TABLE_NAMES.SBN_MEMBER_PAYEE_LOG, payeeIdx, FILE_TYPE_TAG]
         );
 
         const files = fileRows.reduce((acc, file) => {
@@ -110,8 +110,11 @@ export async function GET(req) {
                 : new Date(payeeRow.created_at).toISOString(),
             expired_status: validityStatus,
             agree_expired_at: validityPeriodEnd,
+            approval_status: payeeRow.approval_status,
+            processed_at: payeeRow.precessed_at
+                ? new Date(payeeRow.precessed_at).toISOString()
+                : null,
         };
-
         // 5. 최종 응답 (데이터는 snake_case 그대로)
         return NextResponse.json(
             {

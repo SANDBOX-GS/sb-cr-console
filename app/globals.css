@@ -5,136 +5,149 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
-            format("woff2");
-        font-weight: 100;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
+        format("woff2");
+    font-weight: 100;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
-            format("woff2");
-        font-weight: 200;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
+        format("woff2");
+    font-weight: 200;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
-            format("woff2");
-        font-weight: 300;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
+        format("woff2");
+    font-weight: 300;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
-            format("woff2");
-        font-weight: 400;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
+        format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
-            format("woff2");
-        font-weight: 500;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
+        format("woff2");
+    font-weight: 500;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
-            format("woff2");
-        font-weight: 600;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
+        format("woff2");
+    font-weight: 600;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
-            format("woff2");
-        font-weight: 700;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
+        format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
-            format("woff2");
-        font-weight: 800;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
+        format("woff2");
+    font-weight: 800;
+    font-display: swap;
+}
 
-    @font-face {
-        font-family: "Pretendard";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
-            format("woff2");
-        font-weight: 900;
-        font-display: swap;
-    }
+@font-face {
+    font-family: "Pretendard";
+    src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
+        format("woff2");
+    font-weight: 900;
+    font-display: swap;
 }
 
 @layer base {
-    * {
-        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
-    }
-
     html {
-        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
+        font-family: "Pretendard", system-ui, -apple-system, "Segoe UI", Roboto,
+            "Noto Sans KR", "맑은 고딕", sans-serif;
     }
 
     body {
-        font-family: "Pretendard Std Variable", "Pretendard Std", "Pretendard";
         background-color: #eff6ff;
     }
-
-    h1 {
-        color: #334155;
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 160%;
-    }
-
-    h2 {
-        color: #334155;
-        font-size: 2rem;
-        font-weight: 700;
-        line-height: 160%;
-    }
-
-    h3 {
-        color: #334155;
-        font-size: 1.5rem;
-        font-weight: 700;
-        line-height: 160%;
-    }
-
-    h4 {
-        color: #334155;
-        font-size: 1.25rem;
-        font-weight: 700;
-        line-height: 160%;
-    }
-
+    h1,
+    h2,
+    h3,
+    h4,
     h5 {
         color: #334155;
-        font-size: 1.125rem;
         font-weight: 700;
-        line-height: 160%;
+        line-height: 1.6;
     }
 
     p {
         color: #717182;
-        font-size: 1rem;
         font-weight: 400;
-        line-height: 160%;
+        line-height: 1.6;
+        font-size: 0.8125rem;
+    }
+
+    /* mobile sizes */
+    h1 {
+        font-size: 1.5rem;
+    }
+    h2 {
+        font-size: 1.25rem;
+    }
+    h3 {
+        font-size: 1.125rem;
+    }
+    h4 {
+        font-size: 1rem;
+    }
+    h5 {
+        font-size: 0.875rem;
+    }
+
+    @media (min-width: 768px) {
+        h1 {
+            font-size: 2.5rem;
+        }
+        h2 {
+            font-size: 2rem;
+        }
+        h3 {
+            font-size: 1.5rem;
+        }
+        h4 {
+            font-size: 1.25rem;
+        }
+        h5 {
+            font-size: 1.125rem;
+        }
+        p {
+            font-size: 1rem;
+        }
     }
 }
+
+@media (hover: hover) {
+    button:hover {
+        filter: brightness(0.95);
+    }
+}
+
 .logo-fill {
     clip-path: inset(0 100% 0 0);
     animation: logoFillSnap 2s linear infinite;

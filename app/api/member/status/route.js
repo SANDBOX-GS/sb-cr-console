@@ -71,7 +71,7 @@ export async function GET() {
         );
     } finally {
         if (connection) {
-            connection.end();
+            connection.release();
         }
     }
 }

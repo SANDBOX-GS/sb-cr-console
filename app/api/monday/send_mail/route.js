@@ -105,7 +105,7 @@ export async function POST(request) {
                 status: 500,
             });
         } finally {
-            if (connection) connection.end();
+            if (connection) connection.release();
         }
     } catch (error) {
         console.error("Server Error:", error);
