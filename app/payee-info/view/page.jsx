@@ -109,26 +109,6 @@ export default function PayeeInfoViewPage() {
             </>
         );
     }
-    //   // 🚨 1. Metadata만 갱신하는 함수 정의
-    //   const handleMetadataUpdate = async (newMetadata) => {
-    //     if (!newMetadata) return;
-
-    //     // isPageLoading을 잠시 true로 설정하는 대신, 로딩 상태는 InfoCallToAction에서 관리하므로
-    //     // 여기서는 상태만 빠르게 업데이트합니다.
-
-    //     setValidityStatus(newMetadata.validityStatus || "expired");
-    //     setValidityPeriod({
-    //       end: newMetadata.validityPeriodEnd || null,
-    //     });
-    //     // lastModified도 업데이트 (서버 응답에는 updated_at이 포함되어야 함)
-    //     setLastModified(
-    //       newMetadata.lastModified ? new Date(newMetadata.lastModified) : new Date()
-    //     );
-
-    //     // 이 함수는 PayeeData (originalData, formData)를 건드리지 않으므로,
-    //     // 수정 중인 데이터가 보존됩니다.
-    //   };
-
     /**
      * @param {'30days' | 'once' | null} type
      */
@@ -155,10 +135,6 @@ export default function PayeeInfoViewPage() {
                 toast.success("정보 수집에 성공적으로 동의했습니다.", {
                     duration: 3000,
                 });
-                // 🚨 성공 후 새로운 메타데이터로 상태를 직접 업데이트하거나,
-                // 간단하게 전체 데이터를 다시 불러오도록 (fetchPayeeData) 호출할 수 있습니다.
-                // 여기서는 페이지 새로고침 대신 간단히 상태만 업데이트했다고 가정하고,
-                // InfoCallToAction에서 API 호출 후 데이터를 갱신하는 로직이 있다면 그를 따릅니다.
             } else {
                 const errorMessage =
                     result.message ||
@@ -234,7 +210,7 @@ export default function PayeeInfoViewPage() {
                 >
                     <h1>내정보 관리</h1>
 
-                    <p className="mt-4 text-base text-slate-500 max-w-lg mx-auto">
+                    <p className="mt-4 text-slate-500 max-w-lg mx-auto">
                         유효기간이 만료된 경우 정산 일정이 변동될 수 있습니다.
                         <br /> 정산 정보는 언제든 변경할 수 있습니다.
                     </p>

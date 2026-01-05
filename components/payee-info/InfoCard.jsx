@@ -91,8 +91,10 @@ export const InfoView = ({
 }) => {
     return (
         <div className="flex flex-row gap-2 items-center justify-between">
-            <p className="font-medium text-base text-slate-700">{label}</p>
-            <p className="font-normal text-base text-slate-500">{value}</p>
+            <p className="font-medium text-slate-700">{label}</p>
+            <p className="font-normal text-xs md:text-base text-slate-500">
+                {value}
+            </p>
         </div>
     );
 };

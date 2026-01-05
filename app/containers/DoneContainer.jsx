@@ -66,7 +66,7 @@ export default function DoneContainer() {
                             "검수 완료 후에도 사업자 종류, 계좌 정보 변경 시 재등록이 필요합니다.",
                         ].map((t) => {
                             return (
-                                <li className="list-disc text-slate-500 text-base">
+                                <li className="list-disc text-slate-500 text-xs md:text-base">
                                     {t}
                                 </li>
                             );
