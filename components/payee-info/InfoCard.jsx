@@ -53,7 +53,13 @@ export default function InfoBox({
                         {mode === "view" && (
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
                                 {Info.map((info, index) => (
-                                    <InfoView key={index} {...info} />
+                                    <InfoView
+                                        key={index}
+                                        {...info}
+                                        wrapperClassName={getFieldWrapperClass(
+                                            info
+                                        )}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -90,11 +96,14 @@ export const InfoView = ({
     wrapperClassName,
 }) => {
     return (
-        <div className="flex flex-row gap-2 items-center justify-between">
+        <div
+            className={cn(
+                "flex flex-row gap-2 items-center justify-between",
+                wrapperClassName
+            )}
+        >
             <p className="font-medium text-slate-700">{label}</p>
-            <p className="font-normal text-xs md:text-base text-slate-500">
-                {value}
-            </p>
+            <p className="text-slate-500">{value}</p>
         </div>
     );
 };
@@ -145,7 +154,7 @@ export const InfoEdit = ({
         <div
             className={cn("flex flex-col gap-2 items-start", wrapperClassName)}
         >
-            <p className="font-medium text-base text-slate-700">{label}</p>
+            <p className="font-medium text-slate-700">{label}</p>
 
             {/* FILE */}
             {type === "file" ? (
@@ -197,13 +206,13 @@ export const InfoEdit = ({
                                     ) : (
                                         <div className="rounded-full border-2 border-slate-400 w-4 h-4" />
                                     )}
-                                    <span className="font-medium text-sm">
+                                    <span className="font-medium text-xs md:text-sm">
                                         {option.label}
                                     </span>
                                 </div>
 
                                 {option.description && (
-                                    <p className="text-sm text-sky-600">
+                                    <p className="text-xs md:text-sm text-sky-600">
                                         {option.description}
                                     </p>
                                 )}
@@ -249,7 +258,7 @@ export const InfoEdit = ({
                                 ) : (
                                     <CheckCircle />
                                 )}
-                                <span className="font-medium text-sm">
+                                <span className="font-medium text-xs md:text-sm">
                                     {opt.label}
                                 </span>
                             </motion.button>
