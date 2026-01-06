@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Box } from "@/components/common/Box";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { NOTION_PAGE_ID } from "@/constants/dbConstants";
 import {
     EyeIcon,
     EyeOffIcon,
@@ -19,6 +19,16 @@ import { ShieldProtect } from "@/components/icon/ShieldProtect";
 import { CheckCircleActive } from "@/components/icon/CheckCircleActive";
 import { CheckCircle } from "@/components/icon/CheckCircle";
 import Loading from "../loading";
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+} from "@/components/ui/dialog";
+import NotionModalContents from "@/components/common/NotionModalContents";
+import { ArrowRightIcon } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 
 function PasswordStrengthIndicator({ password }) {
     const getPasswordStrength = (password) => {
@@ -87,7 +97,6 @@ function TermsContent({ content }) {
 export default function App() {
     const { navigate } = useRouter();
     const searchParams = useSearchParams(); // URL 파라미터 가져오기
-
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -385,7 +394,9 @@ export default function App() {
                             className="space-y-3"
                         >
                             <h4 className="mb-4">샌드박스 수취인 계정 등록</h4>
-                            <label className="font-medium">로그인 계정</label>
+                            <label className="font-medium text-sm md:text-base">
+                                로그인 계정
+                            </label>
                             <p className="text-slate-600">
                                 이메일을 수신한 이메일 주소를 입력해 주세요.
                             </p>
@@ -434,7 +445,7 @@ export default function App() {
                             transition={{ delay: 0.4 }}
                             className="space-y-3"
                         >
-                            <label className="font-medium">
+                            <label className="font-medium text-sm md:text-base">
                                 비밀번호 등록 및 계정 활성화
                             </label>
 
@@ -581,7 +592,7 @@ export default function App() {
                                             ) : (
                                                 <CheckCircle />
                                             )}
-                                            <span className="w-full text-sm text-slate-600 cursor-pointer">
+                                            <span className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
                                                 전체 동의
                                             </span>
                                         </label>
@@ -615,28 +626,25 @@ export default function App() {
                                     {expandedAllTerms && (
                                         <>
                                             {/* Individual Agreements */}
-                                            <div className="space-y-2 pl-4">
+                                            <div className="space-y-2 pl-[6px] pr-1">
                                                 {[
                                                     {
                                                         key: "terms",
-                                                        label: "서비스 이용약관(필수)",
+                                                        label: "서비스 이용약관 (필수)",
                                                         required: true,
-                                                        content:
-                                                            TERMS_CONTENT.terms,
+                                                        pageId: NOTION_PAGE_ID.TERMS,
                                                     },
                                                     {
                                                         key: "privacy",
-                                                        label: "개인정보 수집 및 이용에 대한 안내(필수)",
+                                                        label: "개인정보 수집 및 이용 안내 (필수)",
                                                         required: true,
-                                                        content:
-                                                            TERMS_CONTENT.privacy,
+                                                        pageId: NOTION_PAGE_ID.PRIVACY,
                                                     },
                                                     {
                                                         key: "marketing",
-                                                        label: "마케팅 및 혜택 프로모션 알림 동의(선택)",
+                                                        label: "마케팅 및 프로모션 알림 동의 (선택)",
                                                         required: false,
-                                                        content:
-                                                            TERMS_CONTENT.marketing,
+                                                        pageId: NOTION_PAGE_ID.MARKETING,
                                                     },
                                                 ].map((item, index) => (
                                                     <motion.div
@@ -689,7 +697,7 @@ export default function App() {
                                                                     ) : (
                                                                         <CheckCircle />
                                                                     )}
-                                                                    <span className="w-full text-sm text-slate-600 cursor-pointer">
+                                                                    <span className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
                                                                         {
                                                                             item.label
                                                                         }
@@ -713,45 +721,38 @@ export default function App() {
                                                                     }
                                                                     readOnly
                                                                     className="invisible"
-                                                                    onClick={(
-                                                                        e
-                                                                    ) =>
-                                                                        e.stopPropagation()
-                                                                    }
                                                                 />
-                                                                <motion.div
-                                                                    animate={{
-                                                                        rotate:
-                                                                            expandedTerm ===
-                                                                            item.key
-                                                                                ? 180
-                                                                                : 0,
-                                                                    }}
-                                                                    transition={{
-                                                                        duration: 0.2,
-                                                                    }}
-                                                                    onClick={() =>
-                                                                        toggleTermExpansion(
-                                                                            item.key
-                                                                        )
-                                                                    }
-                                                                    className="cursor-pointer w-4 h-4"
-                                                                >
-                                                                    <ChevronDownIcon className="h-4 w-4 text-slate-400" />
-                                                                </motion.div>
+                                                                <Dialog>
+                                                                    <DialogTrigger>
+                                                                        <ExternalLinkIcon
+                                                                            color="#94A3B8"
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                    </DialogTrigger>
+                                                                    <DialogContent
+                                                                        className={
+                                                                            "bg-white"
+                                                                        }
+                                                                    >
+                                                                        <DialogHeader>
+                                                                            <div className="h-5"></div>
+                                                                        </DialogHeader>
+                                                                        <DialogDescription>
+                                                                            <NotionModalContents
+                                                                                title={
+                                                                                    item.label
+                                                                                }
+                                                                                pageId={
+                                                                                    item.pageId
+                                                                                }
+                                                                            />
+                                                                        </DialogDescription>
+                                                                    </DialogContent>
+                                                                </Dialog>
                                                             </div>
                                                         </div>
-
-                                                        <AnimatePresence>
-                                                            {expandedTerm ===
-                                                                item.key && (
-                                                                <TermsContent
-                                                                    content={
-                                                                        item.content
-                                                                    }
-                                                                />
-                                                            )}
-                                                        </AnimatePresence>
                                                     </motion.div>
                                                 ))}
                                             </div>
