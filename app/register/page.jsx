@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import NotionModalContents from "@/components/common/NotionModalContents";
 import { ArrowRightIcon } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 
 function PasswordStrengthIndicator({ password }) {
     const getPasswordStrength = (password) => {
@@ -723,7 +724,12 @@ export default function App() {
                                                                 />
                                                                 <Dialog>
                                                                     <DialogTrigger>
-                                                                        <ArrowRightIcon />
+                                                                        <ExternalLinkIcon
+                                                                            color="#94A3B8"
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
                                                                     </DialogTrigger>
                                                                     <DialogContent
                                                                         className={
