@@ -10,9 +10,6 @@ import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { sendNHNEmail, sendNHNKakao } from "@/lib/nhnSender";
 import { getMondayItemName } from "@/lib/mondayCommon";
 
-// todo [설정] 비밀번호 등록 페이지 기본 URL (나중에 환경변수 등으로 변경 가능)
-const REGISTER_BASE_URL = "https://creator.sandbox.co.kr/register";
-
 // [추가] UUID 생성 함수
 function generateUUID() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
@@ -152,14 +149,6 @@ export async function POST(request) {
             );
         }
 
-        const now = new Date();
-        const currentYear = String(now.getFullYear());
-        const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
-
-        const paymentDateStr = `${currentYear}.${String(
-            now.getMonth() + 2
-        ).padStart(2, "0")}.10 예정`;
-
         let successCount = 0;
 
         for (const target of targets) {
@@ -182,7 +171,6 @@ export async function POST(request) {
 
             let targetUUID = "";
             let targetName = ""; // 사용자 실명 (cr_inv_name)
-            let linkUrl = "";
 
             try {
                 // 1. 이미 존재하는 회원인지 확인 (이름도 같이 조회)
@@ -213,8 +201,6 @@ export async function POST(request) {
                     console.log(`👤 New Member Inserted: ${email} / Name: ${targetName}`);
                 }
 
-                // 2. 링크 생성 (공통 변수)
-                linkUrl = `${REGISTER_BASE_URL}?code=${targetUUID}`;
             } catch (dbErr) {
                 console.error(`❌ Critical Error for ${email}:`, dbErr);
                 // 회원 정보를 못 가져오면 이메일도, 카카오톡도 못 보내므로 스킵
@@ -226,10 +212,8 @@ export async function POST(request) {
             // ------------------------------------------------------------------
             if (email_state === "pending") {
                 const emailParams = {
-                    year: currentYear,
-                    month: currentMonth,
-                    payment_date: paymentDateStr,
-                    link_url: linkUrl,
+                    template_id: 'cr_email_002',
+                    code: targetUUID,
                 };
 
                 const sendResult = await sendNHNEmail(email, email, emailParams);
@@ -252,8 +236,8 @@ export async function POST(request) {
                 if (tel && tel.length > 9) {
 
                     const kakaoParams = {
-                        name: targetName,
-                        url: linkUrl
+                        template_code: 'cr_console_002',
+                        code: targetUUID,
                     };
 
                     const isSent = await sendNHNKakao(tel, kakaoParams);

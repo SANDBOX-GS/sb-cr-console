@@ -80,7 +80,7 @@ export const NHN_CONFIG = {
     AD_URL: `https://email.api.nhncloudservice.com/email/v2.1/appKeys/${process.env.NHN_EMAIL_APP_KEY}/sender/ad-mail`,
     SECRET_KEY: process.env.NHN_EMAIL_SECRET_KEY,
     SENDER_EMAIL: "no-reply@sandbox.co.kr", // 발신자 이메일 (NHN에 등록된 발신자)
-    TEMPLATE_ID: "basic_template_002",
+    TEMPLATE_ID: "basic_template_002", // 파라메타 없을때 기본타입
   },
   KAKAO: {
     URL: `https://api-alimtalk.cloud.toast.com/alimtalk/v2.3/appkeys/${process.env.NHN_KAKAO_APP_KEY}/messages`,
