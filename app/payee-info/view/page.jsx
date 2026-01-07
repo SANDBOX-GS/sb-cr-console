@@ -198,7 +198,6 @@ export default function PayeeInfoViewPage() {
             </Box>
         );
     };
-    console.log("metaData", metaData);
     return (
         <div className="flex flex-col gap-6 w-full">
             <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">

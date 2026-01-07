@@ -47,7 +47,15 @@ function DialogContent({
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 className={cn(
-                    "bg-white data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 md:left-[50%] z-50 grid fixed bottom-0 md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%] gap-4 md:rounded-lg border p-6 rounded-t-3xl md:rounded-xl shadow-sky-900/15 md:shadow-sky-900/15 shadow-[0_-4px_16px] md:shadow-[0_4px_16px] duration-200 outline-none w-full md:max-w-[821px] h-[70%] max-h-[80vh]",
+                    // ✅ 레이아웃
+                    "fixed z-50 bg-white outline-none border shadow-sky-900/15 md:shadow-sky-900/15 overflow-hidden",
+                    // ✅ 모바일: bottom sheet / 데스크탑: center modal
+                    "bottom-0 left-0 w-full rounded-t-3xl p-6",
+                    "md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-[821px]",
+                    // ✅ 높이 전략: '콘텐츠만큼' + '최대 80vh'
+                    "h-auto max-h-[85vh] md:h-auto md:max-h-[85vh]",
+                    // 🔑 핵심: auto + minmax
+                    "grid grid-rows-[auto_minmax(0,1fr)] gap-4",
                     className
                 )}
                 {...props}
@@ -72,7 +80,7 @@ function DialogHeader({ className, ...props }) {
         <div
             data-slot="dialog-header"
             className={cn(
-                "flex flex-col gap-2 text-center sm:text-left",
+                "flex flex-col gap-2 text-center sm:text-left pb-3 font-bold text-slate-700 border-b border-slate-200",
                 className
             )}
             {...props}
@@ -97,7 +105,7 @@ function DialogTitle({ className, ...props }) {
     return (
         <DialogPrimitive.Title
             data-slot="dialog-title"
-            className={cn("text-lg leading-none font-semibold", className)}
+            className={cn("text-sm md:text-base font-semibold", className)}
             {...props}
         />
     );
@@ -109,6 +117,7 @@ function DialogDescription({ className, ...props }) {
             data-slot="dialog-description"
             className={cn(
                 "overflow-y-auto text-muted-foreground text-sm",
+                "flex-1 min-h-0 max-h-[80vh] h-auto",
                 className
             )}
             {...props}

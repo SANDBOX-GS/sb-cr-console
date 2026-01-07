@@ -1,209 +1,242 @@
 import {
-  BUSINESS_TYPE_LABEL,
-  ID_DOCUMENT_TYPE_LABEL,
-  TAX_ISSUE_TYPE_LABEL,
-} from "../constants/payee-data";
-import { empty, getFileName } from "./formatters";
+    BUSINESS_TYPE_LABEL,
+    TAX_ISSUE_TYPE_LABEL,
+    BIZ_TYPES,
+} from "@/constants/payee-data";
+import { IMG_URL } from "@/constants/dbConstants";
 
 export const formatPayeeInfoForView = (apiData) => {
-  if (!apiData?.payeeData) return [];
+    const payeeInfo = apiData.payeeData;
+    const files = apiData.files;
 
-  const row = apiData.payeeData; // DB row (snake_case)
-  const files = apiData.files || {};
-  const metadata = apiData.metadata || {};
+    const sections = [];
+    const bizType = payeeInfo.biz_type;
+    const isIndividual = bizType === BIZ_TYPES.INDIVIDUAL;
+    const isSoleProp = bizType === BIZ_TYPES.SOLE_PROPRIETOR;
+    const isCorp = bizType === BIZ_TYPES.CORPORATE_BUSINESS;
+    const isSimpleTaxpayer = bizType === BIZ_TYPES.SIMPLE_TAXPAYER;
+    const isTaxFreeBiz = bizType === BIZ_TYPES.TAX_FREE_BUSINESS;
 
-  const bizType = row.biz_type;
-  const isIndividual = bizType === "individual";
-  const isSoleProp = bizType === "sole_proprietor";
-  const isCorp = bizType === "corporate_business";
-
-  const isOverseas = row.is_overseas === "Y";
-  const isForeigner = row.is_foreigner === "Y";
-  const isMinor = row.is_minor === "Y";
-
-  // 이름/사업자명 표시
-  const displayName = isIndividual
-    ? row.user_name
-    : row.corp_name || row.biz_name || row.user_name;
-
-  const displayBizLabel = isCorp ? "법인명" : "사업자명";
-  const displayBizRegLabel = isCorp ? "법인등록번호" : "사업자등록번호";
-
-  // 특이사항(해외거주자/외국인/미성년자) 묶기
-  const specialNotesArr = [];
-  if (isOverseas) specialNotesArr.push("해외거주자");
-  if (isForeigner) specialNotesArr.push("외국인");
-  if (isMinor) specialNotesArr.push("미성년자");
-  const specialNotes =
-    specialNotesArr.length > 0 ? specialNotesArr.join(", ") : "해당없음";
-
-  const sections = [];
-
-  // 1) 기본 정보
-  sections.push({
-    label: "기본 정보",
-    id: "basic_info",
-    value: [
-      {
-        label: "사업자 구분",
+    const isOverseas = payeeInfo?.is_overseas === "Y";
+    const isMinor = payeeInfo.is_mino === "Y";
+    const isForeigner = payeeInfo?.is_foreigner === "Y";
+    console.log(files.bank_document.url.split("cr_console")[1]);
+    // 2) 사업자 구분 (+ 발행 유형 + 특이사항)
+    const bizTypeSection = {
         id: "biz_type",
-        value: BUSINESS_TYPE_LABEL[bizType] ?? "-",
-      },
-      {
-        label: isIndividual ? "본명" : displayBizLabel,
-        id: isIndividual ? "user_name" : "biz_name",
-        value: empty(displayName),
-      },
-      {
-        label: "특이사항",
-        id: "special_notes",
-        value: specialNotes,
-      },
-    ],
-  });
+        label: "사업자 구분",
+        value: [
+            {
+                id: "biz_type",
+                label: "사업자 구분",
+                value: BUSINESS_TYPE_LABEL[bizType] || "-",
+                type: "text",
+            },
+        ],
+    };
 
-  // 2) 개인 정보 (개인일 때만)
-  if (isIndividual) {
-    sections.push({
-      label: "개인 정보",
-      id: "personal_info",
-      value: [
-        {
-          label: isForeigner ? "외국인등록번호" : "주민등록번호",
-          id: "ssn",
-          value: empty(row.ssn),
-        },
-        {
-          label: "신분증 종류",
-          id: "identification_type",
-          value: ID_DOCUMENT_TYPE_LABEL[row.identification_type] ?? "-",
-        },
-        {
-          label: "신분증",
-          id: "id_document",
-          value: getFileName(files.id_document),
-        },
-        // 미성년자인 개인일 경우 법정대리인 정보
-        ...(isMinor
-          ? [
-              {
-                label: "법정대리인 본명",
-                id: "guardian_name",
-                value: empty(row.guardian_name),
-              },
-              {
-                label: "법정대리인 연락처",
-                id: "guardian_tel",
-                value: empty(row.guardian_tel),
-              },
-              {
-                label: "가족관계증명서",
-                id: "family_relation_certificate",
-                value: getFileName(files.family_relation_certificate),
-              },
-            ]
-          : []),
-      ],
-    });
-  }
-
-  // 3) 사업자 정보 (개인사업자/법인일 때)
-  if (isSoleProp || isCorp) {
-    sections.push({
-      label: "사업자 정보",
-      id: "business_info",
-      value: [
-        {
-          label: displayBizLabel,
-          id: "biz_name",
-          value: empty(isCorp ? row.corp_name || row.biz_name : row.biz_name),
-        },
-        {
-          label: displayBizRegLabel,
-          id: "biz_reg_no",
-          value: empty(
-            isCorp ? row.corp_reg_no || row.biz_reg_no : row.biz_reg_no
-          ),
-        },
-        {
-          label: isSoleProp ? "사업자등록증" : "법인등록증",
-          id: "business_document",
-          value: getFileName(files.business_document),
-        },
-        ...(isMinor
-          ? [
-              {
-                label: "법정대리인 본명",
-                id: "guardian_name",
-                value: empty(row.guardian_name),
-              },
-              {
-                label: "법정대리인 연락처",
-                id: "guardian_tel",
-                value: empty(row.guardian_tel),
-              },
-              {
-                label: "가족관계증명서",
-                id: "family_relation_certificate",
-                value: getFileName(files.family_relation_certificate),
-              },
-            ]
-          : []),
-      ],
-    });
-  }
-
-  // 4) 계좌 정보
-  sections.push({
-    label: "계좌 정보",
-    id: "account_info",
-    value: [
-      {
-        label: "예금주",
-        id: "account_holder",
-        value: empty(row.account_holder),
-      },
-      {
-        label: "계좌 번호",
-        id: "account_number",
-        value: empty(row.account_number),
-      },
-      {
-        label: "은행명",
-        id: "bank_name",
-        value: empty(row.bank_name),
-      },
-      {
-        label: "통장사본",
-        id: "bank_document",
-        value: getFileName(files.bank_document),
-      },
-    ],
-  });
-  // 5) 세무 정보
-  sections.push({
-    label: "세무 정보",
-    id: "tax_info",
-    value: [
-      {
-        label: "발행 유형",
+    bizTypeSection.value.push({
         id: "invoice_type",
-        value: TAX_ISSUE_TYPE_LABEL[row.invoice_type] ?? "-",
-      },
-      {
-        label: "간이과세 여부",
-        id: "is_simple_taxpayer",
-        value: row.is_simple_taxpayer === "Y" ? "간이과세자" : "일반과세자",
-      },
-      {
-        label: "정보 유효기간",
-        id: "agree_expired_at",
-        value: metadata.agree_expired_at
-          ? new Date(metadata.agree_expired_at).toLocaleDateString("ko-KR")
-          : "-",
-      },
-    ],
-  });
+        label: "발행 유형",
+        value: TAX_ISSUE_TYPE_LABEL[payeeInfo.invoice_type] || "",
+        type: "text",
+    });
+    // 특이사항(해외거주자/외국인/미성년자) 묶기
+    const specialNotesArr = [];
+    if (isOverseas) specialNotesArr.push("해외거주자");
+    if (isForeigner) specialNotesArr.push("외국인");
+    if (isMinor) specialNotesArr.push("미성년자");
+    const specialNotes =
+        specialNotesArr.length > 0 ? specialNotesArr.join(", ") : "해당없음";
 
-  return sections;
+    // 개인 특이사항 체크박스
+    if (isIndividual) {
+        bizTypeSection.value.push({
+            id: "biz_flags",
+            label: "특이사항",
+            type: "checkbox",
+            value: specialNotes || "해당없음",
+        });
+    }
+
+    sections.push(bizTypeSection);
+
+    // 3) 개인 정보 (이름/연락처/이메일은 항상 출력 + readOnly)
+    const personalFields = [
+        {
+            id: "user_name",
+            label: "이름",
+            value: payeeInfo?.user_name || "-",
+            type: "text",
+        },
+        {
+            id: "tel",
+            label: "연락처",
+            value: payeeInfo?.tel || "-",
+            type: "text",
+        },
+        {
+            id: "email",
+            label: "이메일",
+            value: payeeInfo?.email || "-",
+            type: "text",
+        },
+    ];
+
+    // 개인 전용 입력
+    if (isIndividual) {
+        personalFields.push({
+            id: "ssn",
+            label: isForeigner ? "외국인등록번호" : "주민등록번호",
+            value: payeeInfo.ssn || "-",
+            type: "text",
+        });
+
+        if (!isForeigner && !isMinor) {
+            personalFields.push({
+                id: "identification_type",
+                label: "신분증 종류",
+                value: payeeInfo.identification_type || "-",
+                type: "radio",
+            });
+        }
+
+        if (!isMinor) {
+            personalFields.push({
+                id: "id_document",
+                label: isForeigner ? "외국인등록증" : "신분증 사본",
+                value: files.id_document?.name || "-",
+                type: "file",
+                src: {
+                    ext: files.id_document.ext,
+                    name: files.id_document.name,
+                    url: files.id_document.url.split("cr_console")[1],
+                },
+            });
+        }
+
+        if (isMinor) {
+            personalFields.push(
+                {
+                    id: "guardian_name",
+                    label: "법정대리인 본명",
+                    value: payeeInfo.guardian_name || "-",
+                    type: "text",
+                },
+                {
+                    id: "guardian_tel",
+                    label: "법정대리인 연락처",
+                    value: payeeInfo.guardian_tel || "-",
+                    type: "text",
+                },
+                {
+                    id: "family_relation_certificate",
+                    label: "가족관계증명서",
+                    value: files.family_relation_certificate?.name || "-",
+                    type: "file",
+                    src: {
+                        ext: files.family_relation_certificate.ext,
+                        name: files.family_relation_certificate.name,
+                        url: files.bank_document.url.split("cr_console")[1],
+                    },
+                }
+            );
+        }
+    }
+
+    sections.push({
+        id: "personal_info",
+        label: "개인 정보",
+        value: personalFields,
+    });
+
+    // 4) 사업자 정보 (개인사업자/간이/면세/법인)
+    if (isSoleProp || isCorp || isSimpleTaxpayer || isTaxFreeBiz) {
+        sections.push({
+            id: "biz_info",
+            label: "사업자 정보",
+            value: [
+                {
+                    id: "biz_name",
+                    label: "사업자명",
+                    value: payeeInfo.biz_name || "-",
+                    type: "text",
+                },
+                {
+                    id: "biz_reg_no",
+                    label: "사업자등록번호",
+                    value: payeeInfo.biz_reg_no || "-",
+                    type: "text",
+                },
+                {
+                    id: "business_document",
+                    label: "사업자등록증",
+                    value: files.business_document?.name || "-",
+                    type: "file",
+                    src: {
+                        ext: files.business_document.ext,
+                        name: files.business_document.name,
+                        url: files.business_document.url.split("cr_console")[1],
+                    },
+                },
+            ],
+        });
+    }
+
+    // 5) 계좌 정보
+    const accountFields = [
+        {
+            id: "bank_name",
+            label: "은행명",
+            value: payeeInfo?.bank_name || "-",
+            type: "select",
+        },
+        {
+            id: "account_holder",
+            label: "예금주",
+            value: payeeInfo?.account_holder || "-",
+        },
+        {
+            id: "account_number",
+            label: "계좌번호",
+            value: payeeInfo?.account_number || "-",
+            type: "text",
+        },
+        {
+            id: "bank_document",
+            label: "통장 사본",
+            value: files?.bank_document?.name || "-",
+            type: "file",
+            src: {
+                ext: files.bank_document.ext,
+                name: files.bank_document.name,
+                url: files.bank_document.url.split("cr_console")[1],
+            },
+        },
+    ];
+
+    if (isOverseas) {
+        accountFields.push(
+            {
+                id: "swift_code",
+                label: "SWIFT CODE",
+                value: payeeInfo.swift_code || "-",
+                type: "text",
+            },
+            {
+                id: "bank_address",
+                label: "은행 주소",
+                value: payeeInfo.bank_address || "-",
+                type: "text",
+            }
+        );
+    }
+
+    sections.push({
+        id: "account_info",
+        label: "계좌 정보",
+        value: accountFields,
+    });
+    console.log(sections);
+    return sections;
 };

@@ -15,7 +15,7 @@ const NotionRenderer = dynamic(
 
 export default function NotionModalContents({ title, pageId }) {
     const [recordMap, setRecordMap] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const url = useMemo(() => {
@@ -65,7 +65,7 @@ export default function NotionModalContents({ title, pageId }) {
 
     if (loading)
         return (
-            <div className="w-full h-full flex item-center justify-center">
+            <div className="">
                 <Loading />
             </div>
         );

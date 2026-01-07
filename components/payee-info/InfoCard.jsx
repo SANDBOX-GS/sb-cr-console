@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Box } from "../common/Box";
 import { Input } from "../ui/input";
@@ -9,12 +9,32 @@ import { CheckCircle } from "../icon/CheckCircle";
 import { getIn, setIn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import FileUpload from "../ui/file-upload";
+import { Button } from "../common/Button";
+import {
+    Dialog,
+    DialogTrigger,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogOverlay,
+    DialogPortal,
+    DialogDescription,
+    DialogTitle,
+} from "../ui/dialog";
+import { ExternalLinkIcon } from "lucide-react";
+import Image from "next/image";
+import { IMG_URL } from "@/constants/dbConstants";
 
 const FULL_WIDTH_TYPES = new Set(["radio", "checkbox", "file"]);
 const getFieldWrapperClass = (info) => {
     const isFullByType = FULL_WIDTH_TYPES.has(info?.type);
     const isFullByFlag = !!info?.fullWidth; // formatter에서 주는 옵션
     return cn(isFullByType || isFullByFlag ? "md:col-span-2" : "md:col-span-1");
+};
+const getInfoWrapperClass = (info) => {
+    const isFullByFlag = !!info?.fullWidth; // formatter에서 주는 옵션
+    return cn(isFullByFlag ? "md:col-span-2" : "md:col-span-1");
 };
 
 export default function InfoBox({
@@ -56,7 +76,7 @@ export default function InfoBox({
                                     <InfoView
                                         key={index}
                                         {...info}
-                                        wrapperClassName={getFieldWrapperClass(
+                                        wrapperClassName={getInfoWrapperClass(
                                             info
                                         )}
                                     />
@@ -93,17 +113,83 @@ export const InfoView = ({
     label = "본명*",
     id = "real_name",
     value = "홍길동",
+    type = "text",
+    src = "",
     wrapperClassName,
 }) => {
+    const [size, setSize] = useState(null);
     return (
         <div
             className={cn(
-                "flex flex-row gap-2 items-center justify-between",
+                "flex flex-row gap-2 items-center justify-between w-full",
                 wrapperClassName
             )}
         >
-            <p className="font-medium text-slate-700">{label}</p>
-            <p className="text-slate-500">{value}</p>
+            <p className="font-medium text-slate-700 whitespace-nowrap shrink-0">
+                {label}
+            </p>
+            {type === "file" ? (
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <p className="text-slate-500 truncate flex-1 min-w-0 text-right">
+                        {value}
+                    </p>
+                    <Dialog>
+                        <DialogTrigger className="w-auto">
+                            <Button
+                                variant="line"
+                                size="sm"
+                                round="md"
+                                className="shrink-0 shadow-sm flex gap-2 font-normal"
+                            >
+                                미리보기
+                                <ExternalLinkIcon color="#94A3B8" size={16} />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className={"flex flex-col "}>
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {label} : {src.name}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="relative">
+                                {["png", "jpg", "jpeg", "webp"].includes(
+                                    src.ext
+                                ) ? (
+                                    <div className="overflow-hidden flex items-center justify-center">
+                                        <Image
+                                            src={IMG_URL + src.url}
+                                            alt={src.name}
+                                            width={size?.width ?? 192}
+                                            height={size?.height ?? 192}
+                                            style={{
+                                                maxWidth: "768px",
+                                                objectFit: "contain",
+                                                margin: "auto",
+                                            }}
+                                            onLoadingComplete={(img) => {
+                                                setSize({
+                                                    width: img.naturalWidth,
+                                                    height: img.naturalHeight,
+                                                });
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="overflow-hidden flex items-center justify-center">
+                                        <iframe
+                                            src={IMG_URL + src.url}
+                                            title={src.name}
+                                            className="w-full border-none rounded-lg bg-white"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            ) : (
+                <p className="text-slate-500">{value}</p>
+            )}
         </div>
     );
 };
@@ -217,7 +303,7 @@ export const InfoEdit = ({
                                     </p>
                                 )}
                                 {option.detail && (
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-start text-xs text-slate-500">
                                         {option.detail}
                                     </p>
                                 )}
