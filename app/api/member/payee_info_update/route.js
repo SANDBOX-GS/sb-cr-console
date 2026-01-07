@@ -14,6 +14,7 @@ import {
     getFileBufferFromS3,
 } from "@/lib/s3-client";
 import { createMondayItem, uploadFileToMonday } from "@/lib/mondayCommon";
+import { sendSlack } from "@/lib/slackCommon";
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import {
@@ -312,7 +313,7 @@ export async function POST(req) {
                 baseDbPayload.user_name ||
                 baseDbPayload.biz_name ||
                 "수취인정보 수정요청";
-            mondayItemId = await createMondayLogItem(
+            mondayItemId = await createMondayItem(
                 MONDAY_BOARD_IDS.PAYEE_LOG,
                 itemName,
                 mondayColumnValues
@@ -500,6 +501,40 @@ export async function POST(req) {
         }
 
         await connection.commit();
+
+        // 8. 슬랙 알림 발송 (수정 요청 등록 알림)
+        try {
+            // 1. 먼데이닷컴 아이템 바로가기 링크 생성
+            // (도메인이 sandboxnetwork.monday.com 이라고 가정했습니다. 다르면 수정해주세요)
+            const mondayItemUrl = `https://sandboxnetwork.monday.com/boards/${MONDAY_BOARD_IDS.PAYEE_LOG}/pulses/${mondayItemId}`;
+
+            // 2. 파이낸스 그룹 멘션 ID 설정 (User Group ID)
+            // 슬랙 데스크탑 앱 -> 사이드바 '사람' -> '그룹' 탭 -> 그룹 우클릭 -> 'ID 복사' 로 확인 가능
+            // 예: S01234567 (보통 S로 시작함)
+            const FINANCE_GROUP_ID = "S04BAMGF7RP";
+            const mentionTarget = `<!subteam^${FINANCE_GROUP_ID}>`;
+
+            // 3. 메시지 본문 구성
+            const slackTitle = "📝 수취 정보 수정 요청 등록";
+            const slackMessage = "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
+
+            // 4. 발송 실행
+            // (slackCommon.js의 sendSlack 함수는 내부에서 에러를 catch하므로 여기서 await만 하면 됨)
+            await sendSlack({
+                mentionTarget: mentionTarget, // 결과: "@FINANCE 님," 으로 시작됨
+                title: slackTitle,
+                message: slackMessage,
+                fields: [
+                    { title: "요청자 (상호명)", value: baseDbPayload.user_name || baseDbPayload.biz_name || "-" }
+                ],
+                buttonText: "수취 정보 바로가기", // 버튼 텍스트
+                buttonUrl: mondayItemUrl        // 버튼 클릭 시 이동할 링크
+            });
+
+        } catch (slackError) {
+            // 슬랙 발송 실패가 전체 로직(성공 응답)을 막지 않도록 로그만 찍고 넘어감
+            console.error("⚠️ Slack Notification Failed:", slackError);
+        }
 
         return NextResponse.json(
             {
