@@ -1,7 +1,14 @@
 # .dockerignore
+
+.git
+.gitignore
+.dockerignore
+Dockerfile*
+docker-compose*
 .next
 .vscode
 node_modules
 npm-debug.log
 .DS_Store
 .env*
+README.md

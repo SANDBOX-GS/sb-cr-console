@@ -7,7 +7,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 # .env 파일의 환경변수들을 Dockerfile 내 ENV로 설정
 ENV MYSQL_URI="mysql://dummy:dummy@localhost:3306/dummy"
@@ -30,6 +30,10 @@ COPY . .
 
 # Next.js 프로젝트 빌드 실행
 RUN npm run build
+
+# 불필요한 개발 의존성 제거
+# - 이유: 빌드는 끝났으니 실행에 필요한 파일만 남겨서 가볍게 만듦
+RUN npm prune --production
 
 # ===================================================
 # 2단계: 실행 스테이지 (Runner Stage - Prod 모드)
