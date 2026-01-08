@@ -8,8 +8,13 @@ import {
 } from "@/constants/dbConstants";
 import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { NextResponse } from "next/server";
-import { uploadFileToS3, deleteFileFromS3 } from "@/lib/s3-client";
+import {
+    uploadFileToS3,
+    deleteFileFromS3,
+    getFileBufferFromS3,
+} from "@/lib/s3-client";
 import { createMondayItem, uploadFileToMonday } from "@/lib/mondayCommon";
+import { sendSlack } from "@/lib/slackCommon";
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import {
@@ -24,14 +29,28 @@ const isBizType = (bizType) =>
     [
         "sole_proprietor",
         "corporate_business",
-        "simple_tax_payeer",
+        "simple_taxpayer",
         "tax_free_business",
     ].includes(bizType);
 const isIndividual = (bizType) => bizType === "individual";
 
+// URL에서 S3 Key 추출 헬퍼 (DB URL 구조에 따라 수정 필요)
+// 예: https://endpoint/bucket/cr_console/... -> cr_console/...
+const getKeyFromDbUrl = (fullUrl) => {
+    if (!fullUrl) return null;
+    const bucketName = process.env.S3_BUCKET_NAME; // "sandboxnetwork-public-hosting"
+    const splitStr = `/${bucketName}/`;
+
+    const parts = fullUrl.split(splitStr);
+    if (parts.length > 1) {
+        // decodeURIComponent는 URL에 한글 등이 포함되었을 경우를 대비
+        return decodeURIComponent(parts[1]);
+    }
+    return null;
+};
+
 export async function POST(req) {
     let connection;
-    // 트랜잭션 실패 시 S3에 업로드된 파일의 키를 저장할 목록
     const newlyUploadedS3Keys = [];
 
     try {
@@ -61,22 +80,19 @@ export async function POST(req) {
         }
         const member_idx = parseInt(memberIdxCookie.value, 10);
 
-        // 3. DB Payload 구성
-        // [신규 등록] 이므로 버전은 1로 고정
-        const nextVersion = 1;
-
+        // 3. DB Insert/Update용 Payload 구성
         const biz_type = payload.biz_type;
         const is_overseas = toYn(payload.is_overseas) || "N";
         const is_minor = toYn(payload.is_minor) || "N";
         const is_foreigner = toYn(payload.is_foreigner) || "N";
-        const is_simple_taxpayer = toYn(payload.is_simple_taxpayer) || "N";
         const calculatedExpiredAt = calculateExpirationDate(
             payload.consent_type
         );
 
         const baseDbPayload = {
-            member_idx: member_idx,
             biz_type: nullIfEmpty(biz_type),
+            invoice_type: nullIfEmpty(payload.invoice_type),
+            tax: nullIfEmpty(payload.tax),
             is_overseas: is_overseas,
             is_minor: is_minor,
             is_foreigner: is_foreigner,
@@ -85,8 +101,6 @@ export async function POST(req) {
             account_number: nullIfEmpty(payload.account_number),
             swift_code: nullIfEmpty(payload.swift_code),
             bank_address: nullIfEmpty(payload.bank_address),
-            invoice_type: nullIfEmpty(payload.invoice_type),
-            is_simple_taxpayer: is_simple_taxpayer,
             agree_expired_at: calculatedExpiredAt,
             approval_status: "pending",
             active_status: "inactive",
@@ -104,14 +118,14 @@ export async function POST(req) {
                     : payload.ssn
             );
 
-            // 미성년자/외국인이 아니면 신분증 종류
+            // 미성년자/외국인이 아니면 신분증 종류 업데이트
             if (is_minor === "N" && is_foreigner === "N") {
                 baseDbPayload.identification_type = nullIfEmpty(
                     payload.identification_type
                 );
             }
 
-            // 미성년자면 보호자 정보
+            // 미성년자면 보호자 정보 업데이트
             if (is_minor === "Y") {
                 baseDbPayload.guardian_name = nullIfEmpty(
                     payload.guardian_name
@@ -120,22 +134,22 @@ export async function POST(req) {
             }
         }
 
-        // 3-2. 사업자(개인/법인)일 경우
+        // 3-2. 사업자(개인/법인)일 경우에만 업데이트
         if (isBizType(biz_type)) {
             baseDbPayload.biz_name = nullIfEmpty(payload.biz_name);
             baseDbPayload.biz_reg_no = nullIfEmpty(payload.biz_reg_no);
         }
 
-        // 3-3. 법인일 경우
+        // 3-3. 법인일 경우에만 업데이트
         if (biz_type === "corporate_business") {
             baseDbPayload.corp_name = nullIfEmpty(payload.corp_name);
             baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
         }
 
-        // 4. 파일 처리 (신규 등록이므로 기존 파일 다운로드 로직 없음)
+        // 4. 파일 처리 (신규 업로드 + 기존 파일 다운로드 병합)
         const finalAttachments = [];
 
-        // 4-1. S3 업로드
+        // 4-1. 신규 파일 S3 업로드
         const s3UploadResults = await Promise.all(
             fileUploads.map(async ({ fieldName, file }) => {
                 const buffer = Buffer.from(await file.arrayBuffer());
@@ -145,11 +159,10 @@ export async function POST(req) {
                 const s3Key = `cr_console/payee_documents/${fieldName}/${s3FileName}`;
                 const fileUrl = `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${s3Key}`;
 
-                console.log(`S3: Uploading ${fieldName}...`);
                 await uploadFileToS3(buffer, s3Key, file.type);
                 newlyUploadedS3Keys.push(s3Key);
 
-                // 먼데이 전송용 배열에 추가
+                // 신규 파일 추가
                 finalAttachments.push({
                     fieldName: fieldName,
                     file: buffer,
@@ -167,7 +180,52 @@ export async function POST(req) {
             })
         );
 
-        // 5. 먼데이닷컴 아이템 생성
+        // 4-2. 기존 파일(이번에 업로드 안 된 파일) 조회 및 다운로드
+
+        // 관리 대상 태그 목록
+        const TARGET_TAGS = [
+            "business_document",
+            "id_document",
+            "bank_document",
+            "family_relation_certificate",
+        ];
+
+        for (const tag of TARGET_TAGS) {
+            // 이번에 새로 올린 파일 목록에 있다면 패스 (이미 finalAttachments에 있음)
+            if (fileUploads.some((f) => f.fieldName === tag)) continue;
+
+            // 없다면 DB에서 '가장 최신 버전' 파일 정보 조회
+            // ref_table_name, ref_table_idx, tag 기준으로 최신 version 1개만 가져옴
+            const [existingFileRows] = await connection.query(
+                `SELECT file_url, file_realname 
+                     FROM ${TABLE_NAMES.SBN_FILE_INFO}
+                     WHERE ref_table_name = ? 
+                       AND ref_table_idx = ? 
+                       AND tag = ?
+                     ORDER BY version DESC LIMIT 1`,
+                [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, tag]
+            );
+
+            if (existingFileRows.length > 0) {
+                const oldFile = existingFileRows[0];
+                // ★ URL에서 S3 Key 추출
+                const s3Key = getKeyFromDbUrl(oldFile.file_url);
+
+                if (s3Key) {
+                    // ★ S3에서 파일 다운로드 (Buffer)
+                    const fileBuffer = await getFileBufferFromS3(s3Key);
+
+                    if (fileBuffer) {
+                        // ★ 기존 파일 추가
+                        finalAttachments.push({
+                            fieldName: tag,
+                            file: fileBuffer,
+                            filename: oldFile.file_realname, // DB에 저장된 실제 파일명 사용
+                        });
+                    }
+                }
+            }
+        }
         const COL_ID = MONDAY_COLUMN_IDS.PAYEE_LOG;
         const LABEL_MAP = MONDAY_LABEL.PAYEE_LOG;
 
@@ -177,19 +235,23 @@ export async function POST(req) {
             bizTypeLabel = LABEL_MAP.BIZ_TYPE.SOLE_PROPRIETOR;
         if (biz_type === "corporate_business")
             bizTypeLabel = LABEL_MAP.BIZ_TYPE.CORPORATE;
+        if (biz_type === "simple_taxpayer")
+            bizTypeLabel = LABEL_MAP.BIZ_TYPE.SIMPLE_TAXPAYER;
+        if (biz_type === "tax_free_business")
+            bizTypeLabel = LABEL_MAP.BIZ_TYPE.TAX_FREE_BUSINESS;
 
-        // 5-2. 발행 유형 라벨 매핑
+        // 5-2. 발행 유형 드롭다운 매핑 (DB코드 -> 한글 라벨)
+        // (예: payload.invoice_type = 'tax_invoice' -> '세금계산서')
+        // 매칭되는 키가 없으면 값 그대로 사용
         const invoiceTypeLabel =
             LABEL_MAP.ISSUE_TYPES[payload.invoice_type?.toUpperCase()] ||
             payload.invoice_type;
 
         const mondayColumnValues = {
-            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
+            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.UPDATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
-            [COL_ID.CORP_NAME]:
-                baseDbPayload.corp_name || baseDbPayload.biz_name,
-            [COL_ID.BIZ_REG_NO]:
-                baseDbPayload.biz_reg_no || baseDbPayload.corp_reg_no,
+            [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
+            [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
             [COL_ID.USER_NAME]: baseDbPayload.user_name,
             [COL_ID.SSN]: baseDbPayload.ssn,
             [COL_ID.FOREIGN_REG_NO]:
@@ -212,11 +274,11 @@ export async function POST(req) {
             [COL_ID.INVOICE_TYPE]: invoiceTypeLabel
                 ? { labels: [invoiceTypeLabel] }
                 : null,
-            [COL_ID.TAX]: baseDbPayload.tax,
+            [COL_ID.TAX]: Number(baseDbPayload.tax),
             [COL_ID.VERSION]: nextVersion,
         };
 
-        // null 값 제거
+        // null 또는 undefined 값 제거 (API 오류 방지)
         Object.keys(mondayColumnValues).forEach((key) => {
             if (
                 mondayColumnValues[key] === null ||
@@ -231,19 +293,22 @@ export async function POST(req) {
             const itemName =
                 baseDbPayload.user_name ||
                 baseDbPayload.biz_name ||
-                "신규 수취인 등록"; // todo 이거 아이템이름을 CR 인벤에 있는거 그대로 가져와야되나? 만약 여기 이름을 넣는거라면 그 전에 수취인정보요청부터 연결이 안되는데? 그때는 CR 인벤토리 이름을 사용하잖아.
-            // ★ [신규] Board에 생성하는 게 아니라, Log Board에 생성합니다 (업데이트 로직과 동일하게 유지)
+                "수취인정보 수정요청";
             mondayItemId = await createMondayItem(
                 MONDAY_BOARD_IDS.PAYEE_LOG,
                 itemName,
                 mondayColumnValues
             );
+            console.log("업로드완료했음");
 
-            // 5-3. 파일 업로드
+            // 5-3 아이템 생성 후 파일 업로드 실행(finalAttachments 사용)
             if (mondayItemId && finalAttachments.length > 0) {
+                // 병렬 처리 (Promise.all)
                 const uploadPromises = finalAttachments.map(
                     async ({ fieldName, file, filename }) => {
                         let targetColId = null;
+
+                        // fieldName(폼 name)에 따라 먼데이 컬럼 ID 매핑
                         if (fieldName === "business_document")
                             targetColId = COL_ID.BIZ_REG_FILE;
                         else if (fieldName === "id_document")
@@ -263,7 +328,12 @@ export async function POST(req) {
                         }
                     }
                 );
+
+                // 파일 업로드는 실패해도 메인 로직(DB저장)을 막지 않도록 catch 처리 하거나 await
+                console.log("Starting Monday file uploads...");
                 await Promise.allSettled(uploadPromises);
+
+                console.log("await후", uploadPromises);
             }
         } catch (e) {
             throw new Error(`먼데이 연동 실패: ${e.message}`);
