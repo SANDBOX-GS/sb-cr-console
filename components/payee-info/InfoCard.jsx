@@ -151,39 +151,44 @@ export const InfoView = ({
                                     {label} : {src.name}
                                 </DialogTitle>
                             </DialogHeader>
-                            <div className="relative">
-                                {["png", "jpg", "jpeg", "webp"].includes(
-                                    src.ext
-                                ) ? (
-                                    <div className="overflow-hidden flex items-center justify-center">
-                                        <Image
-                                            src={IMG_URL + src.url}
-                                            alt={src.name}
-                                            width={size?.width ?? 192}
-                                            height={size?.height ?? 192}
-                                            style={{
-                                                maxWidth: "768px",
-                                                objectFit: "contain",
-                                                margin: "auto",
-                                            }}
-                                            onLoadingComplete={(img) => {
-                                                setSize({
-                                                    width: img.naturalWidth,
-                                                    height: img.naturalHeight,
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="overflow-hidden flex items-center justify-center">
-                                        <iframe
-                                            src={IMG_URL + src.url}
-                                            title={src.name}
-                                            className="w-full border-none rounded-lg bg-white"
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            <DialogDescription>
+                                <div className="relative">
+                                    {["png", "jpg", "jpeg", "webp"].includes(
+                                        src.ext
+                                    ) ? (
+                                        <div
+                                            className={`overflow-hidden flex items-center justify-center w-full`}
+                                        >
+                                            {console.log(size)}
+                                            <Image
+                                                src={IMG_URL + src.url}
+                                                alt={src.name}
+                                                width={size?.width ?? 200}
+                                                height={size?.height ?? 200}
+                                                style={{
+                                                    maxWidth: "768px",
+                                                    objectFit: "contain",
+                                                    margin: "auto",
+                                                }}
+                                                onLoadingComplete={(img) => {
+                                                    setSize({
+                                                        width: img.naturalWidth,
+                                                        height: img.naturalHeight,
+                                                    });
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-hidden flex items-center justify-center">
+                                            <iframe
+                                                src={IMG_URL + src.url}
+                                                title={src.name}
+                                                className="w-full bg-white border-none rounded-lg bg-white h-[60dvh] md:h-[40dvh]"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </DialogDescription>
                         </DialogContent>
                     </Dialog>
                 </div>

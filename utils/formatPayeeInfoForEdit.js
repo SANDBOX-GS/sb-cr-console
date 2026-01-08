@@ -471,8 +471,8 @@ export const buildEditSections = (formData) => {
 
     // 4) 사업자 정보 (개인사업자/간이/면세/법인)
     if (isSoleProp || isCorp || isSimpleTaxpayer || isTaxFreeBiz) {
-        const displayBizLabel = isCorp ? "법인명" : "상호명";
-        const displayBizRegLabel = isCorp ? "법인등록번호" : "사업자등록번호";
+        const displayBizLabel = "사업자명";
+        const displayBizRegLabel = "사업자등록번호";
 
         sections.push({
             id: "biz_info",

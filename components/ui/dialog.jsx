@@ -48,14 +48,13 @@ function DialogContent({
                 data-slot="dialog-content"
                 className={cn(
                     // ✅ 레이아웃
-                    "fixed z-50 bg-white outline-none border shadow-sky-900/15 md:shadow-sky-900/15 overflow-hidden",
+                    "fixed z-50 bg-white outline-none border shadow-sky-900/15 md:shadow-sky-900/15 overflow-hidden shrink",
                     // ✅ 모바일: bottom sheet / 데스크탑: center modal
                     "bottom-0 left-0 w-full rounded-t-3xl p-6",
                     "md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-[821px]",
-                    // ✅ 높이 전략: '콘텐츠만큼' + '최대 80vh'
-                    "h-auto max-h-[85vh] md:h-auto md:max-h-[85vh]",
-                    // 🔑 핵심: auto + minmax
-                    "grid grid-rows-[auto_minmax(0,1fr)] gap-4",
+                    // ✅ 핵심: 콘텐츠만큼 + 최대만 85vh
+                    // ✅ 내부 배치: flex (grid/1fr 금지)
+                    "flex flex-col gap-4",
                     className
                 )}
                 {...props}
@@ -116,8 +115,8 @@ function DialogDescription({ className, ...props }) {
         <DialogPrimitive.Description
             data-slot="dialog-description"
             className={cn(
-                "overflow-y-auto text-muted-foreground text-sm",
-                "flex-1 min-h-0 max-h-[80vh] h-auto",
+                "flex-1 min-h-0 overflow-y-auto",
+                "h-auto max-h-[calc(85vh-120px)]",
                 className
             )}
             {...props}

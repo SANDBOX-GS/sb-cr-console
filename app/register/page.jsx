@@ -5,6 +5,7 @@ import { Button } from "@/components/common/Button";
 import { Box } from "@/components/common/Box";
 import { Input } from "@/components/ui/input";
 import { NOTION_PAGE_ID } from "@/constants/dbConstants";
+import { cn } from "@/components/ui/utils";
 import {
     EyeIcon,
     EyeOffIcon,
@@ -633,18 +634,23 @@ export default function App() {
                                                         label: "서비스 이용약관 (필수)",
                                                         required: true,
                                                         pageId: NOTION_PAGE_ID.TERMS,
+                                                        customClass:
+                                                            "h-full max-h-[85dvh]",
                                                     },
                                                     {
                                                         key: "privacy",
                                                         label: "개인정보 수집 및 이용 안내 (필수)",
                                                         required: true,
                                                         pageId: NOTION_PAGE_ID.PRIVACY,
+                                                        customClass:
+                                                            "h-full max-h-[85dvh]",
                                                     },
                                                     {
                                                         key: "marketing",
                                                         label: "마케팅 및 프로모션 알림 동의 (선택)",
                                                         required: false,
                                                         pageId: NOTION_PAGE_ID.MARKETING,
+                                                        customClass: "h-auto",
                                                     },
                                                 ].map((item, index) => (
                                                     <motion.div
@@ -732,21 +738,28 @@ export default function App() {
                                                                         />
                                                                     </DialogTrigger>
                                                                     <DialogContent
-                                                                        className={
-                                                                            "bg-white"
-                                                                        }
+                                                                        className={cn(
+                                                                            "bg-white",
+                                                                            item.customClass
+                                                                        )}
                                                                     >
                                                                         <DialogHeader>
-                                                                            <div className="h-5"></div>
+                                                                            <div
+                                                                                className={cn(
+                                                                                    "h-5"
+                                                                                )}
+                                                                            ></div>
                                                                         </DialogHeader>
-                                                                        <NotionModalContents
-                                                                            title={
-                                                                                item.label
-                                                                            }
-                                                                            pageId={
-                                                                                item.pageId
-                                                                            }
-                                                                        />
+                                                                        <DialogDescription>
+                                                                            <NotionModalContents
+                                                                                title={
+                                                                                    item.label
+                                                                                }
+                                                                                pageId={
+                                                                                    item.pageId
+                                                                                }
+                                                                            />
+                                                                        </DialogDescription>
                                                                     </DialogContent>
                                                                 </Dialog>
                                                             </div>

@@ -65,7 +65,7 @@ export default function NotionModalContents({ title, pageId }) {
 
     if (loading)
         return (
-            <div className="">
+            <div className="w-full h-full flex items-center justify-center">
                 <Loading />
             </div>
         );
@@ -73,7 +73,7 @@ export default function NotionModalContents({ title, pageId }) {
     if (!recordMap) return null;
 
     return (
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto w-full">
             {/* title은 DialogHeader에서 쓰면 되고, 여기서는 본문만 렌더해도 됩니다 */}
             <NotionRenderer
                 recordMap={recordMap}

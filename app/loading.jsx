@@ -3,7 +3,7 @@ import { IMG_URL } from "@/constants/dbConstants";
 
 export default function Loading() {
     return (
-        <section className="w-full h-full flex items-center justify-center min-h-[70vh]">
+        <div className="w-full h-full flex items-center justify-center min-h-[50vh]">
             <div
                 className="w-[206px] h-[120px] m-auto relative overflow-hidden shrink-0"
                 aria-label="Loading"
@@ -28,6 +28,6 @@ export default function Loading() {
                     unoptimized
                 />
             </div>
-        </section>
+        </div>
     );
 }
