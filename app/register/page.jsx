@@ -13,7 +13,6 @@ import {
     AlertCircleIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TERMS_CONTENT } from "@/constants/terms-content";
 import { useRouter } from "@/hooks/useRouter";
 import { IconCard } from "@/components/common/IconCard";
 import { ShieldProtect } from "@/components/icon/ShieldProtect";
@@ -28,8 +27,8 @@ import {
     DialogHeader,
 } from "@/components/ui/dialog";
 import NotionModalContents from "@/components/common/NotionModalContents";
-import { ArrowRightIcon } from "lucide-react";
 import { ExternalLinkIcon } from "lucide-react";
+import { toast } from "sonner";
 
 function PasswordStrengthIndicator({ password }) {
     const getPasswordStrength = (password) => {
@@ -270,7 +269,7 @@ export default function App() {
             try {
                 const code = searchParams.get("code");
 
-                const response = await fetch("/api/member/password_register", {
+                const response = await fetch("/api/member/register", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -283,9 +282,7 @@ export default function App() {
                         agreed_to_privacy: formData.agreements.privacy
                             ? "Y"
                             : "N",
-                        agreed_to_third_party: formData.agreements.thirdParty
-                            ? "Y"
-                            : "N",
+                        agreed_to_third_party: "N",
                         agreed_to_marketing: formData.agreements.marketing
                             ? "Y"
                             : "N",
@@ -294,15 +291,15 @@ export default function App() {
 
                 if (response.ok) {
                     navigate("/login", {});
-                    console.log("회원가입 성공!");
+                    toast.success("회원가입 성공!");
                 } else {
                     const errorData = await response.json();
                     console.error("회원가입 실패:", errorData);
-                    alert(errorData.message); // 사용자에게 실패 메시지 표시
+                    toast.error(errorData.message); // 사용자에게 실패 메시지 표시
                 }
             } catch (error) {
                 console.error("API 호출 중 오류 발생:", error);
-                alert("네트워크 오류가 발생했습니다."); // 네트워크 오류 메시지 표시
+                toast.error("네트워크 오류가 발생했습니다."); // 네트워크 오류 메시지 표시
             }
         }
 
@@ -310,7 +307,6 @@ export default function App() {
     };
 
     const handleAgreementChange = (key, checked) => {
-        console.log("Agreement changed:", key, checked);
         if (key === "all") {
             setFormData((prev) => ({
                 ...prev,
@@ -361,7 +357,7 @@ export default function App() {
                 transition={{ duration: 0.6 }}
                 className="text-center mb-12"
             >
-                <h1 className="">
+                <h1>
                     샌드박스 크리에이터
                     <br /> 정산 시스템
                 </h1>
@@ -489,10 +485,10 @@ export default function App() {
                                             <EyeOffIcon className="h-5 w-5" />
                                         )}
                                     </button>
-                                    <PasswordStrengthIndicator
-                                        password={formData.password}
-                                    />
                                 </div>
+                                <PasswordStrengthIndicator
+                                    password={formData.password}
+                                />
 
                                 <AnimatePresence>
                                     {errors.password && (
@@ -550,19 +546,17 @@ export default function App() {
                                         )}
                                     </button>
                                 </div>
-                                <AnimatePresence>
-                                    {errors.confirmPassword && (
-                                        <motion.p
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="text-red-500 text-sm mt-2 flex items-center gap-1"
-                                        >
-                                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                            {errors.confirmPassword}
-                                        </motion.p>
-                                    )}
-                                </AnimatePresence>
+                                {errors.confirmPassword && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="text-red-500 text-sm mt-2 flex items-center gap-1"
+                                    >
+                                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                        {errors.confirmPassword}
+                                    </motion.p>
+                                )}
                             </div>
                         </motion.div>
 

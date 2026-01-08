@@ -48,7 +48,7 @@ export function Footer({ className }) {
                 </a>
                 <a
                     href="/legal/privacy"
-                    className="cursor-pointer hover:text-sky-500 active:text-sky-7000 text-sm text-neutral-600"
+                    className="cursor-pointer hover:text-sky-500 active:text-sky-7000 text-sm text-neutral-700 font-medium"
                 >
                     개인정보처리방침
                 </a>

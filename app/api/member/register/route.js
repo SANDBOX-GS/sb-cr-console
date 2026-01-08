@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import dbConnect from "@/lib/dbConnect";
 import { TABLE_NAMES } from "@/constants/dbConstants";
 import bcrypt from "bcryptjs";
+import { toYn } from "@/utils/formHelpers";
 
 export async function POST(request) {
     const {
@@ -52,35 +53,42 @@ export async function POST(request) {
         }
 
         // 3. 비밀번호 암호화 및 crip_id 업데이트
+        const termsYN = toYn(agreed_to_terms);
+        const privacyYN = toYn(agreed_to_privacy);
+        const marketingYN = toYn(agreed_to_marketing);
+        const thirdPartyYN = "N"; // 정책상 고정이면 그냥 고정
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
+        console.log(hashedPassword);
         // inactive 계정을 활성화하고 비밀번호, user_id, 동의 정보 업데이트
         await connection.execute(
             `UPDATE ${TABLE_NAMES.SBN_MEMBER} SET
-                                   password = ?,
-                                   agreed_to_terms = ?,
-                                   terms_agreed_at = IF(? = 'Y', NOW(), terms_agreed_at),
-                                   agreed_to_privacy = ?,
-                                   privacy_agreed_at = IF(? = 'Y', NOW(), privacy_agreed_at),
-                                   agreed_to_third_party = ?,
-                                   third_party_agreed_at = IF(? = 'Y', NOW(), third_party_agreed_at),
-                                   agreed_to_marketing = ?,
-                                   marketing_agreed_at = IF(? = 'Y', NOW(), marketing_agreed_at),
-                                   active_status = 'active',
-                                   updated_at = NOW()
-             WHERE email = ? AND user_id = ?`,
+                password = ?,
+                agreed_to_terms = ?,
+                terms_agreed_at = IF(? = 'Y', NOW(), terms_agreed_at),
+                agreed_to_privacy = ?,
+                privacy_agreed_at = IF(? = 'Y', NOW(), privacy_agreed_at),
+                agreed_to_third_party = 'N',
+                third_party_agreed_at = IF(? = 'Y', NOW(), third_party_agreed_at),
+                agreed_to_marketing = ?,
+                marketing_agreed_at = IF(? = 'Y', NOW(), marketing_agreed_at),
+                active_status = 'active',
+                updated_at = NOW()
+            WHERE email = ? AND user_id = ?`,
             [
-                hashedPassword,
-                agreed_to_terms,
-                agreed_to_privacy,
-                { agreed_to_third_party: false },
-                agreed_to_marketing,
-                email,
-                code,
+                hashedPassword, // 1
+                termsYN, // 2
+                termsYN, // 3
+                privacyYN, // 4
+                privacyYN, // 5
+                thirdPartyYN, // 6 (항상 N)
+                marketingYN, // 7
+                marketingYN, // 8
+                email, // 9
+                code, // 10
             ]
         );
-
+        console.log(Response);
         return new Response(
             JSON.stringify({ message: "계정이 성공적으로 활성화되었습니다." }),
             {

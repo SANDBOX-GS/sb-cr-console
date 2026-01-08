@@ -118,6 +118,7 @@ export const InfoView = ({
     wrapperClassName,
 }) => {
     const [size, setSize] = useState(null);
+    const h = "h-" + size?.height;
     return (
         <div
             className={cn(
@@ -145,13 +146,17 @@ export const InfoView = ({
                                 <ExternalLinkIcon color="#94A3B8" size={16} />
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className={"flex flex-col "}>
+                        <DialogContent className={cn("flex flex-col")}>
                             <DialogHeader>
                                 <DialogTitle>
                                     {label} : {src.name}
                                 </DialogTitle>
                             </DialogHeader>
-                            <DialogDescription>
+                            <DialogDescription
+                                className={
+                                    "w-full h-full flex items-center justify-center"
+                                }
+                            >
                                 <div className="relative">
                                     {["png", "jpg", "jpeg", "webp"].includes(
                                         src.ext
@@ -159,7 +164,6 @@ export const InfoView = ({
                                         <div
                                             className={`overflow-hidden flex items-center justify-center w-full`}
                                         >
-                                            {console.log(size)}
                                             <Image
                                                 src={IMG_URL + src.url}
                                                 alt={src.name}
@@ -183,7 +187,7 @@ export const InfoView = ({
                                             <iframe
                                                 src={IMG_URL + src.url}
                                                 title={src.name}
-                                                className="w-full bg-white border-none rounded-lg bg-white h-[60dvh] md:h-[40dvh]"
+                                                className="bg-white border-none rounded-lg bg-white w-[750px] h-[38vh]"
                                             />
                                         </div>
                                     )}
