@@ -20,15 +20,15 @@ export function Footer({ className }) {
                 />
                 <div>
                     <div className="flex flex-col md:flex-row md:gap-2 md:flex-wrap">
-                        <p className="text-sm text-neutral-500">
+                        <p className="text-xs md:text-sm text-neutral-500">
                             (주)샌드박스네트워크 서울시 용산구 서빙고로 17
                             센트럴타워 28~29F
                         </p>
-                        <p className="text-sm text-neutral-500">
+                        <p className="text-xs md:text-sm text-neutral-500">
                             사업자등록번호 : 220-88-89136
                         </p>
                     </div>
-                    <p className="text-sm text-neutral-400">
+                    <p className="text-xs md:text-sm text-neutral-400">
                         © 2026. SANDBOX NETWORK Inc. All Rights Reserved
                     </p>
                 </div>

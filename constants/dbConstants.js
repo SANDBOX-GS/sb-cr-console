@@ -6,19 +6,19 @@ export const TABLE_NAMES = {
     SBN_PAYEE_REQUEST: "sb_cr_console_payee_request",
     SBN_PAYEE_REQUEST_LOG: "sb_cr_console_payee_request_log",
     SBN_SEND_LOG: "sb_cr_console_send_log",
-}
+};
 
 export const TABLE_NAMES_TOTAL = {
     SBN_MONDAY_USER_ALL: "monday_user_all",
     SBN_MONDAY_TEAM_ALL: "monday_team_all",
     SBN_INFO_SLACK_USERS: "info_slack_users",
-}
+};
 
 export const COLUMN_NAMES = {
     SBN_MEMBER_PAYEE: {
         USER_ID: "user_id",
     },
-}
+};
 
 // 먼데이닷컴 보드 ID 상수
 export const MONDAY_BOARD_IDS = {
@@ -26,7 +26,7 @@ export const MONDAY_BOARD_IDS = {
     PAYEE_REQUEST: 5024220056, // 외부 CR - 수취인 정보 요청
     PAYEE_LOG: 5024220117, // 외부 CR - 수취인 개인 정보 수정 이력
     WORK_SETTLEMENT: 1930292711, // 과업 정산
-}
+};
 
 // 먼데이닷컴 컬럼 ID 상수 (보드별로 관리)
 export const MONDAY_COLUMN_IDS = {
@@ -72,13 +72,13 @@ export const MONDAY_COLUMN_IDS = {
         BANK_ADDRESS: "long_text_mkxtrjk1", // 은행 주소
         BANK_COPY_FILE: "file_mkxt4x6w", // 통장사본 (파일)
     },
-}
+};
 
 // 먼데이닷컴 API 설정 상수
 export const MONDAY_API_CONFIG = {
     URL: "https://api.monday.com/v2",
     TOKEN: process.env.MONDAY_API_TOKEN, // .env에서 가져옴
-}
+};
 
 // NHN Cloud API 설정
 export const NHN_CONFIG = {
@@ -95,13 +95,14 @@ export const NHN_CONFIG = {
         SENDER_KEY: "025bce653e7eecbdbc0e36d2c857d298fd34b333", // NHN에 등록된 발신 프로필 키
         TEMPLATE_CODE: "cr_console_000",
     },
-}
+};
 
 export const IMG_URL =
-    "https://sandboxnetwork-public-hosting.s3.ap-northeast-2.amazonaws.com/cr_console"
+    "https://sandboxnetwork-public-hosting.s3.ap-northeast-2.amazonaws.com/cr_console";
 
 export const NOTION_PAGE_ID = {
     NOTICE: "1e529436cbac80c78345e0202cb267a9",
     TERMS: "2d329436cbac808b9aa0cae47412bb64",
     PRIVACY: "2d329436cbac80c48fd7f0dc3b286d70",
-}
+    MARKETING: "2df29436cbac80b3bd9dcd5d6bcce922",
+};

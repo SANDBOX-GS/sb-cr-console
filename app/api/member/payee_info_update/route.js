@@ -318,6 +318,7 @@ export async function POST(req) {
                 itemName,
                 mondayColumnValues
             );
+            console.log("업로드완료했음");
 
             // 5-3 아이템 생성 후 파일 업로드 실행(finalAttachments 사용)
             if (mondayItemId && finalAttachments.length > 0) {

@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 export const Button = ({
     variant = "primary",
     size = "lg",
+    round = "full",
     className,
     onClick,
     children,
@@ -28,14 +29,23 @@ export const Button = ({
         lg: "h-12 px-6 text-sm md:text-base",
     };
 
+    const rounded = {
+        full: "rounded-full",
+        xl: "rounded-xl",
+        lg: "rounded-lg",
+        md: "rounded-md",
+        sm: "rounded-sm",
+    };
+
     return (
         <button
             {...props}
             onClick={onClick}
             className={cn(
-                "rounded-full font-semibold transition-all duration-150 flex items-center justify-center shadow-sky-900/20 shadow-[0_4px_8px]",
+                "font-semibold transition-all duration-150 flex items-center justify-center shadow-sky-900/15 shadow-[0_4px_8px]",
                 variantStyles[variant],
                 sizeStyles[size],
+                rounded[round],
                 className
             )}
         >

@@ -9,7 +9,7 @@ export const Box = ({ bg = "white", className, children, ...props }) => {
         <div
             {...props}
             className={cn(
-                "p-5 w-full rounded-xl shadow-sky-900/15 shadow-[0_4px_16px]",
+                "p-4 md:p-5 w-full rounded-xl shadow-sky-900/15 shadow-[0_4px_16px]",
                 bgClasses[bg],
                 className
             )}

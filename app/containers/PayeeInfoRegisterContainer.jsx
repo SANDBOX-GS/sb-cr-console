@@ -351,7 +351,7 @@ export default function PayeeInfoRegisterContainer() {
     };
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-start px-4 py-12">
+        <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">
             <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -362,7 +362,7 @@ export default function PayeeInfoRegisterContainer() {
 
                 <h1>수취 정보 등록</h1>
 
-                <p className="text-lg text-slate-600 max-w-lg">
+                <p className="mt-4 text-slate-500 max-w-lg mx-auto">
                     정산을 위해 필요한 기본 정보를 먼저 등록해 주세요.
                     <br />
                     입력하신 정보는 정산 지급 외 다른 용도로는 사용되지

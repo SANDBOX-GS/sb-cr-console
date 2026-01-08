@@ -739,16 +739,14 @@ export default function App() {
                                                                         <DialogHeader>
                                                                             <div className="h-5"></div>
                                                                         </DialogHeader>
-                                                                        <DialogDescription>
-                                                                            <NotionModalContents
-                                                                                title={
-                                                                                    item.label
-                                                                                }
-                                                                                pageId={
-                                                                                    item.pageId
-                                                                                }
-                                                                            />
-                                                                        </DialogDescription>
+                                                                        <NotionModalContents
+                                                                            title={
+                                                                                item.label
+                                                                            }
+                                                                            pageId={
+                                                                                item.pageId
+                                                                            }
+                                                                        />
                                                                     </DialogContent>
                                                                 </Dialog>
                                                             </div>

@@ -25,7 +25,7 @@ export default function DoneContainer() {
         },
     ];
     return (
-        <div className="flex-1 flex flex-col items-center justify-start px-4 py-12 max-w-[816px] w-full mx-auto gap-6">
+        <div className="w-full flex flex-col gap-6 md:max-w-[816px] mx-auto">
             <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -36,7 +36,7 @@ export default function DoneContainer() {
 
                 <h1>수취 정보 등록</h1>
 
-                <p className="text-lg text-slate-600 max-w-lg">
+                <p className="mt-4 text-slate-500 max-w-lg mx-auto">
                     수취 정보 제출이 완료되었습니다.
                     <br />
                     담당자 검수 후 승인되면 정산 정보가 자동 반영됩니다.

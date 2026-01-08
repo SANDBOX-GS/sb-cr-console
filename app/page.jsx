@@ -38,7 +38,8 @@ const Index = () => {
                     샌드박스 크리에이터
                     <br /> 정산 시스템
                 </h1>
-                <p>
+
+                <p className="mt-4 text-slate-500 max-w-lg mx-auto">
                     크리에이터 정산 시스템에 오신 것을 환영합니다.
                     <br />
                     정산 시스템은 샌드박스와 함께 협업하고 있는
