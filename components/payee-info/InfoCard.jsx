@@ -162,16 +162,20 @@ export const InfoView = ({
                             >
                                 <div className="relative">
                                     {["png", "jpg", "jpeg", "webp"].includes(
-                                        src.ext
+                                        src?.ext
                                     ) ? (
                                         <div
-                                            className={`overflow-hidden flex items-center justify-center w-full`}
+                                            className={`overflow-hidden flex items-center justify-center w-full m-auto max-w-[768px]`}
+                                            style={{
+                                                width: size?.width,
+                                                height: size?.height,
+                                            }}
                                         >
                                             <Image
-                                                src={IMG_URL + src.url}
-                                                alt={src.name}
-                                                width={size?.width ?? 200}
-                                                height={size?.height ?? 200}
+                                                src={IMG_URL + src?.url}
+                                                alt={src?.name}
+                                                layout="fill"
+                                                sizes="100vw"
                                                 style={{
                                                     maxWidth: "768px",
                                                     objectFit: "contain",
