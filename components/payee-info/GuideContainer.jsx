@@ -4,7 +4,7 @@ import { DocumentCheck } from "../icon/DocumentCheck";
 import { DocumentAccount } from "../icon/DocumentAccount";
 import { DocumentReplace } from "../icon/DocumentReplace";
 
-export const GuideContainer = ({ handleStartAccountInfo }) => {
+export const GuideContainer = ({ handleStartRegister }) => {
     return (
         <div className="max-w-[821px] w-full mx-auto">
             <IconCard
@@ -43,7 +43,7 @@ export const GuideContainer = ({ handleStartAccountInfo }) => {
 
             <Button
                 type="button"
-                onClick={handleStartAccountInfo}
+                onClick={handleStartRegister}
                 variant="primary"
                 size="lg"
                 className="w-full"

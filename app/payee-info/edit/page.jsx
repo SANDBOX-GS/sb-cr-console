@@ -13,10 +13,10 @@ import {
     normalizePayeeEditFormData,
 } from "@/utils/formatPayeeInfoForEdit";
 import { formatSSN } from "@/lib/utils";
+import Loading from "@/app/loading";
 
 export default function PayeeInfoEditPage() {
     const { navigate } = useRouter();
-    const [metaData, setMetaData] = useState({});
     const [formData, setFormData] = useState(null);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,13 +80,11 @@ export default function PayeeInfoEditPage() {
             );
 
             setFormData(normalized);
-            setMetaData(data?.metadata || {});
         } catch (error) {
             console.error("Fetch Error:", error);
             toast.error(`정보 로드 오류: ${error.message}`);
 
             setFormData(null);
-            setMetaData({});
         } finally {
             setIsPageLoading(false);
         }
@@ -105,12 +103,7 @@ export default function PayeeInfoEditPage() {
 
     // 로딩 중이거나 인증되지 않았다면 콘텐츠를 보여주지 않음
     if (isLoading || !isLoggedIn) {
-        return (
-            <div className="mx-auto my-auto flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border-[5px] border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                인증 상태 확인 중...
-            </div>
-        );
+        return <Loading />;
     }
     // Handle tab change
     const validateForm = () => {
@@ -296,10 +289,18 @@ export default function PayeeInfoEditPage() {
                             })}
                         <Button
                             className="mx-auto mb-10 mt-4 w-[240px]"
+                            disabled={isSubmitting}
                             variant="secondary"
                             type="submit"
                         >
-                            등록 요청
+                            {isSubmitting ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    처리 중...
+                                </>
+                            ) : (
+                                "등록 요청"
+                            )}
                         </Button>
                     </form>
                 </div>

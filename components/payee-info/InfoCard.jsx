@@ -13,18 +13,21 @@ import { Button } from "../common/Button";
 import {
     Dialog,
     DialogTrigger,
-    DialogClose,
     DialogContent,
-    DialogFooter,
     DialogHeader,
-    DialogOverlay,
-    DialogPortal,
     DialogDescription,
     DialogTitle,
 } from "../ui/dialog";
 import { ExternalLinkIcon } from "lucide-react";
 import Image from "next/image";
 import { IMG_URL } from "@/constants/dbConstants";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
 
 const FULL_WIDTH_TYPES = new Set(["radio", "checkbox", "file"]);
 const getFieldWrapperClass = (info) => {
@@ -247,12 +250,60 @@ export const InfoEdit = ({
     };
     return (
         <div
-            className={cn("flex flex-col gap-2 items-start", wrapperClassName)}
+            className={cn(
+                "flex flex-col gap-2 items-start",
+                type === "checkbox"
+                    ? "bg-slate-50 rounded-lg p-3 border-slate-100 border"
+                    : "",
+                wrapperClassName
+            )}
         >
             <p className="font-medium text-slate-700">{label}</p>
 
             {/* FILE */}
-            {type === "file" ? (
+            {type === "select" ? (
+                <div className="w-full">
+                    <Select
+                        value={currentValue ?? ""}
+                        onValueChange={(value) => updateValue(value)}
+                        disabled={readOnly}
+                    >
+                        <SelectTrigger
+                            className={cn(
+                                "h-12 bg-white/50",
+                                errorKey &&
+                                    errors?.[errorKey] &&
+                                    "border-red-400"
+                            )}
+                        >
+                            <SelectValue
+                                placeholder={placeholder ?? "선택해주세요"}
+                            />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                            {options?.map((opt) => {
+                                const value =
+                                    typeof opt === "string" ? opt : opt.value;
+                                const label =
+                                    typeof opt === "string" ? opt : opt.label;
+
+                                return (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                );
+                            })}
+                        </SelectContent>
+                    </Select>
+
+                    {errorKey && errors?.[errorKey] && (
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors[errorKey]}
+                        </p>
+                    )}
+                </div>
+            ) : type === "file" ? (
                 <div className="w-full">
                     <FileUpload
                         file={currentValue?.file || undefined}

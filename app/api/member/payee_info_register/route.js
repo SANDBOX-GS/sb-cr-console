@@ -89,9 +89,14 @@ export async function POST(req) {
             payload.consent_type
         );
 
+        const baseUserPayload = {
+            tel: nullIfEmpty(payload.tel),
+        };
+
         const baseDbPayload = {
             biz_type: nullIfEmpty(biz_type),
             invoice_type: nullIfEmpty(payload.invoice_type),
+            user_name: nullIfEmpty(payload.user_name),
             tax: nullIfEmpty(payload.tax),
             is_overseas: is_overseas,
             is_minor: is_minor,
@@ -104,7 +109,8 @@ export async function POST(req) {
             agree_expired_at: calculatedExpiredAt,
             approval_status: "pending",
             active_status: "inactive",
-            version: nextVersion,
+            version: 1,
+            member_idx: member_idx,
         };
 
         // 3-1. 개인/사업자별 조건부 필드 처리
@@ -146,7 +152,7 @@ export async function POST(req) {
             baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
         }
 
-        // 4. 파일 처리 (신규 업로드 + 기존 파일 다운로드 병합)
+        // 4. 파일 처리 (신규 업로드)
         const finalAttachments = [];
 
         // 4-1. 신규 파일 S3 업로드
@@ -180,52 +186,6 @@ export async function POST(req) {
             })
         );
 
-        // 4-2. 기존 파일(이번에 업로드 안 된 파일) 조회 및 다운로드
-
-        // 관리 대상 태그 목록
-        const TARGET_TAGS = [
-            "business_document",
-            "id_document",
-            "bank_document",
-            "family_relation_certificate",
-        ];
-
-        for (const tag of TARGET_TAGS) {
-            // 이번에 새로 올린 파일 목록에 있다면 패스 (이미 finalAttachments에 있음)
-            if (fileUploads.some((f) => f.fieldName === tag)) continue;
-
-            // 없다면 DB에서 '가장 최신 버전' 파일 정보 조회
-            // ref_table_name, ref_table_idx, tag 기준으로 최신 version 1개만 가져옴
-            const [existingFileRows] = await connection.query(
-                `SELECT file_url, file_realname 
-                     FROM ${TABLE_NAMES.SBN_FILE_INFO}
-                     WHERE ref_table_name = ? 
-                       AND ref_table_idx = ? 
-                       AND tag = ?
-                     ORDER BY version DESC LIMIT 1`,
-                [TABLE_NAMES.SBN_MEMBER_PAYEE, payee_idx, tag]
-            );
-
-            if (existingFileRows.length > 0) {
-                const oldFile = existingFileRows[0];
-                // ★ URL에서 S3 Key 추출
-                const s3Key = getKeyFromDbUrl(oldFile.file_url);
-
-                if (s3Key) {
-                    // ★ S3에서 파일 다운로드 (Buffer)
-                    const fileBuffer = await getFileBufferFromS3(s3Key);
-
-                    if (fileBuffer) {
-                        // ★ 기존 파일 추가
-                        finalAttachments.push({
-                            fieldName: tag,
-                            file: fileBuffer,
-                            filename: oldFile.file_realname, // DB에 저장된 실제 파일명 사용
-                        });
-                    }
-                }
-            }
-        }
         const COL_ID = MONDAY_COLUMN_IDS.PAYEE_LOG;
         const LABEL_MAP = MONDAY_LABEL.PAYEE_LOG;
 
@@ -248,7 +208,7 @@ export async function POST(req) {
             payload.invoice_type;
 
         const mondayColumnValues = {
-            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.UPDATE },
+            [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
@@ -275,7 +235,7 @@ export async function POST(req) {
                 ? { labels: [invoiceTypeLabel] }
                 : null,
             [COL_ID.TAX]: Number(baseDbPayload.tax),
-            [COL_ID.VERSION]: nextVersion,
+            [COL_ID.VERSION]: 1,
         };
 
         // null 또는 undefined 값 제거 (API 오류 방지)
@@ -343,7 +303,11 @@ export async function POST(req) {
 
         connection = await dbConnect();
         await connection.beginTransaction();
-
+        // 6-0. Member 정보 UPDATE (수정)
+        await connection.query(
+            `UPDATE ${TABLE_NAMES.SBN_MEMBER} SET ?, updated_at = NOW() WHERE idx = ?`,
+            [baseUserPayload, member_idx]
+        );
         // 6-1. Payee 정보 INSERT (신규 등록)
         const [payeeResult] = await connection.query(
             `INSERT INTO ${TABLE_NAMES.SBN_MEMBER_PAYEE} SET ?`,
@@ -372,7 +336,6 @@ export async function POST(req) {
         if (s3UploadResults.length > 0) {
             for (const r of s3UploadResults) {
                 const tag = r.fieldName;
-                const newVersion = 1; // 신규는 무조건 1
                 const parentIdx = 0; // 신규는 부모 없음
 
                 // A. Payee 테이블용 INSERT
@@ -387,7 +350,7 @@ export async function POST(req) {
                     file_size: String(r.file.size),
                     seq: 0,
                     tag: tag,
-                    version: newVersion,
+                    version: 1,
                     parent_idx: parentIdx,
                     creator_id: member_idx,
                 };

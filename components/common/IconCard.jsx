@@ -26,7 +26,9 @@ export const IconCard = ({
                 <div className="flex flex-col gap-4">
                     <h4>{h}</h4>
                     <Box className="text-slate-700 text-left">
-                        <p className="text-slate-700 font-bold">{infoTitle}</p>
+                        <p className="text-slate-700 font-bold text-sm md:text-base">
+                            {infoTitle}
+                        </p>
                         <ul className="px-4 pt-2 text-slate-500">
                             {infoLi.map((li, idx) => (
                                 <li key={idx} className="list-disc">

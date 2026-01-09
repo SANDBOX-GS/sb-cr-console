@@ -11,15 +11,15 @@ const STEPS = [
     },
     {
         id: 2,
-        step: "account",
-        title: "개인 정보",
-        desc: "개인·사업자 정보, 연락처 입력",
+        step: "biz",
+        title: "사업자 구분",
+        desc: "사업자 구분 및 영수증 발행 유형",
     },
     {
         id: 3,
-        step: "tax",
+        step: "payee",
         title: "세무 정보",
-        desc: "발행 유형 및 세무 정보 등록",
+        desc: "개인·사업자 정보, 연락처 입력",
     },
 ];
 
@@ -53,8 +53,8 @@ export const ProgressItem = ({ activeStep = "1" }) => {
                             <div
                                 className={
                                     isActive
-                                        ? "text-slate-700 font-bold text-base"
-                                        : "text-slate-600 font-medium text-base"
+                                        ? "text-slate-700 font-bold text-sm md:text-base"
+                                        : "text-slate-600 font-medium text-sm md:text-base"
                                 }
                             >
                                 {step.title}
