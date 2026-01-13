@@ -268,9 +268,7 @@ export default function PayeeInfoViewPage() {
                                 value: (
                                     <div className="flex gap-1 items-center">
                                         <p>
-                                            {new Date(
-                                                metaData?.agree_expired_at
-                                            ).toLocaleString("ko-KR")}
+                                            {metaData?.agree_expired_at || "-"}
                                         </p>
                                         <span
                                             className={cn(

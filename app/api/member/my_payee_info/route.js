@@ -109,7 +109,10 @@ export async function GET(req) {
                 validityStatus = "valid";
             }
 
-            validityPeriodEnd = expiredDate.toISOString();
+            const year = expiredDate.getFullYear();
+            const month = String(expiredDate.getMonth() + 1).padStart(2, "0");
+            const day = String(expiredDate.getDate()).padStart(2, "0");
+            validityPeriodEnd = `${year}-${month}-${day}`;
         }
 
         const metadata = {
