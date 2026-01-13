@@ -138,7 +138,7 @@ export const InfoView = ({
                         {value}
                     </div>
                     <Dialog>
-                        <DialogTrigger className="w-auto">
+                        <DialogTrigger asChild className="w-auto">
                             <Button
                                 variant="line"
                                 size="sm"
@@ -155,7 +155,7 @@ export const InfoView = ({
                                     {label} : {src.name}
                                 </DialogTitle>
                             </DialogHeader>
-                            <DialogDescription
+                            <DialogDescription asChild
                                 className={
                                     "w-full h-full flex items-center justify-center"
                                 }

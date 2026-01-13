@@ -334,6 +334,7 @@ export default function PayeeInfoViewPage() {
                 {viewData?.map((info) => {
                     return (
                         <motion.div
+                            key={info.id}
                             initial={{ y: 30, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.6 }}
