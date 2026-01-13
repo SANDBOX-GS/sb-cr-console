@@ -57,13 +57,15 @@ export default function PayeeInfoViewPage() {
             const data = await response.json();
             const row = data.payeeData;
 
-            // 1) view model 생성 (InfoCard에서 사용하는 구조)
-            if (row) {
-                setViewData(formatPayeeInfoForView(data));
-                console.log;
-            } else {
-                setViewData([]); // 아무 카드도 없게 만들기
+            if (!row) {
+                toast.info("등록된 정보가 없습니다. 정보를 먼저 등록해주세요.");
+                navigate("/payee-info/register");
+                return;
             }
+
+            // 1) view model 생성 (InfoCard에서 사용하는 구조)
+            setViewData(formatPayeeInfoForView(data));
+
             // 2) 폼 초기값은 edit 모드에서만 사용할 수 있도록 남겨둠
             if (row) {
                 // const normalized = mapPayeeRowToFormData(row);

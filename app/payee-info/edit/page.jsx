@@ -74,6 +74,13 @@ export default function PayeeInfoEditPage() {
 
             const data = await response.json();
             const row = data.payeeData;
+
+            if (!row) {
+                toast.info("등록된 정보가 없습니다. 정보를 먼저 등록해주세요.");
+                navigate("/payee-info/register");
+                return;
+            }
+
             // 1) view model 생성 (InfoCard에서 사용하는 구조)
             const { formData: normalized } = formatPayeeInfoForEdit(
                 data?.payeeData ? data : null

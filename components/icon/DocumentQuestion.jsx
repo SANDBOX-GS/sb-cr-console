@@ -62,7 +62,7 @@ export const DocumentQuestion = ({ className = "" }) => {
                         width="131.217"
                         height="137.647"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
@@ -97,7 +97,7 @@ export const DocumentQuestion = ({ className = "" }) => {
                         width="112.206"
                         height="131.552"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
@@ -155,7 +155,7 @@ export const DocumentQuestion = ({ className = "" }) => {
                         width="73.0825"
                         height="73.0825"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix

@@ -134,9 +134,9 @@ export const InfoView = ({
             </p>
             {type === "file" ? (
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <p className="text-slate-500 truncate flex-1 min-w-0 text-right">
+                    <div className="truncate flex-1 min-w-0 text-right text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">
                         {value}
-                    </p>
+                    </div>
                     <Dialog>
                         <DialogTrigger className="w-auto">
                             <Button
@@ -204,7 +204,7 @@ export const InfoView = ({
                     </Dialog>
                 </div>
             ) : (
-                <p className="text-slate-500">{value}</p>
+                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value}</div>
             )}
         </div>
     );

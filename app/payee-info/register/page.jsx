@@ -35,10 +35,29 @@ export default function PayeeInfoRegisterPage() {
         handleTabChange("biz");
     };
 
-    const fetchBasicData = async () => {
+    const checkAndFetchData = async () => {
         setIsPageLoading(true);
 
         try {
+            // 1. 이미 등록된 수취인 정보가 있는지 확인
+            const checkResponse = await fetch("/api/member/my_payee_info", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+                },
+            });
+
+            if (checkResponse.ok) {
+                const checkData = await checkResponse.json();
+
+                // ★ 이미 데이터가 있다면 View 페이지로 리다이렉트
+                if (checkData.payeeData) {
+                    toast.info("이미 등록된 정보가 있어 상세 페이지로 이동합니다.");
+                    navigate("/payee-info/view");
+                    return; // 여기서 함수 종료 (아래 로직 실행 안 함)
+                }
+            }
+
             const response = await fetch("/api/member/basic", {
                 method: "GET",
                 headers: {
@@ -58,7 +77,6 @@ export default function PayeeInfoRegisterPage() {
         } catch (error) {
             console.error("Fetch Error:", error);
             toast.error(`정보 로드 오류: ${error.message}`);
-
             setFormData(null);
         } finally {
             setIsPageLoading(false);
@@ -117,7 +135,7 @@ export default function PayeeInfoRegisterPage() {
         if (!isLoggedIn) {
             navigate("/login");
         } else {
-            fetchBasicData();
+            checkAndFetchData();
         }
     }, [isLoggedIn, isLoading, navigate]);
 
