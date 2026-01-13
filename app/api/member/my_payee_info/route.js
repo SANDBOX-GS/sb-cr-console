@@ -66,12 +66,16 @@ export async function GET(req) {
 
         // 3. 파일 정보 조회
         const [fileRows] = await connection.query(
-            `SELECT file_url, tag, file_realname, file_ext 
-            FROM ${TABLE_NAMES.SBN_FILE_INFO} 
-            WHERE ref_table_name = ? 
-            AND ref_table_idx = ? 
-            AND type = ? 
-            ORDER BY idx DESC`,
+            `SELECT t1.file_url, t1.tag, t1.file_realname, t1.file_ext
+             FROM ${TABLE_NAMES.SBN_FILE_INFO} t1
+                      INNER JOIN (
+                 SELECT tag, MAX(idx) as max_idx
+                 FROM ${TABLE_NAMES.SBN_FILE_INFO}
+                 WHERE ref_table_name = ?
+                   AND ref_table_idx = ?
+                   AND type = ?
+                 GROUP BY tag
+             ) t2 ON t1.idx = t2.max_idx`,
             [TABLE_NAMES.SBN_MEMBER_PAYEE, payeeIdx, FILE_TYPE_TAG]
         );
 

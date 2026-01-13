@@ -20,7 +20,7 @@ export const formatPayeeInfoForView = (apiData) => {
     const isOverseas = payeeInfo?.is_overseas === "Y";
     const isMinor = payeeInfo.is_minor === "Y";
     const isForeigner = payeeInfo?.is_foreigner === "Y";
-    console.log(files.bank_document.url.split("cr_console")[1]);
+
     // 2) 사업자 구분 (+ 발행 유형 + 특이사항)
     const bizTypeSection = {
         id: "biz_type",
@@ -237,6 +237,6 @@ export const formatPayeeInfoForView = (apiData) => {
         label: "계좌 정보",
         value: accountFields,
     });
-    console.log(sections);
+
     return sections;
 };
