@@ -243,19 +243,19 @@ export default function PayeeInfoViewPage() {
                                         <span
                                             className={cn(
                                                 "inline-block ml-2 mb-1 text-xs font-medium px-2.5 py-0.5 rounded-full",
-                                                metaData?.processed_at !== null
+                                                metaData?.approval_status === "approved"
                                                     ? "bg-sky-100 text-sky-600"
                                                     : metaData?.approval_status ===
-                                                      "expired"
+                                                      "reject"
                                                     ? "bg-pink-100 text-pink-600"
                                                     : "bg-amber-100 text-amber-600"
                                             )}
                                         >
                                             {metaData?.approval_status ===
-                                            "valid"
+                                            "approved"
                                                 ? "승인"
                                                 : metaData?.approval_status ===
-                                                  "expired"
+                                                  "reject"
                                                 ? "수정 필요"
                                                 : "검수 중"}
                                         </span>
