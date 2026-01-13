@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
 import { getIn, setIn } from "@/lib/utils";
-import { ChevronDown, ExternalLinkIcon, FileText, Download } from "lucide-react";
+import { ChevronDown, ExternalLinkIcon } from "lucide-react";
 import FileUpload from "../ui/file-upload";
 import { Button } from "../common/Button";
 import {
@@ -40,19 +40,19 @@ const getInfoWrapperClass = (info) => {
 };
 
 export default function InfoBox({
-    title = "",
-    className = "",
-    children,
-    mode = "edit",
-    Info = [],
-    formData,
-    setFormData,
-    errors = {},
-    setErrors,
-    isToggle = false,
-    isOpen = false,
-    onToggle,
-}) {
+                                    title = "",
+                                    className = "",
+                                    children,
+                                    mode = "edit",
+                                    Info = [],
+                                    formData,
+                                    setFormData,
+                                    errors = {},
+                                    setErrors,
+                                    isToggle = false,
+                                    isOpen = false,
+                                    onToggle,
+                                }) {
     return (
         <div>
             <Box className={cn("flex flex-col gap-4", className)}>
@@ -122,7 +122,6 @@ export const InfoView = ({
     // 1. 파일 데이터 파싱
     const hasFile = type === "file" && src && src.url;
     const fileExt = src?.ext?.toLowerCase() || "";
-    const fileName = src?.name || value || "파일";
 
     // 2. URL 조합
     const fullUrl = hasFile
@@ -131,8 +130,10 @@ export const InfoView = ({
 
     // 3. 파일 타입 판별
     const isImage = ["png", "jpg", "jpeg", "webp", "gif"].includes(fileExt);
-    const isPdf = fileExt === "pdf";
 
+    // 4. 높이 설정
+    const [size, setSize] = useState(null);
+    const h = "h-" + size?.height;
     return (
         <div
             className={cn(
@@ -143,10 +144,10 @@ export const InfoView = ({
             <p className="font-medium text-slate-700 whitespace-nowrap shrink-0">
                 {label}
             </p>
-            {hasFile ? (
+            {type === "file" ? (
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="truncate flex-1 min-w-0 text-right text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">
-                        {fileName}
+                        {value}
                     </div>
                     <Dialog>
                         <DialogTrigger asChild className="w-auto">
@@ -160,91 +161,82 @@ export const InfoView = ({
                                 <ExternalLinkIcon color="#94A3B8" size={16} />
                             </Button>
                         </DialogTrigger>
-
-                        <DialogContent className="sm:max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white">
-
-                            <DialogHeader className="px-6 py-4 border-b bg-white flex flex-row items-center justify-between shrink-0 space-y-0">
-                                <DialogTitle className="truncate pr-4 text-lg font-semibold text-slate-800 flex items-center gap-2">
-                                    <FileText size={20} className="text-slate-400" />
-                                    <span className="truncate">{label}</span>
+                        <DialogContent className={cn("flex flex-col")}>
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {label} : {src.name}
                                 </DialogTitle>
-
-                                {/*<a*/}
-                                {/*    href={fullUrl}*/}
-                                {/*    target="_blank"*/}
-                                {/*    rel="noopener noreferrer"*/}
-                                {/*    className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-md shrink-0"*/}
-                                {/*    download*/}
-                                {/*>*/}
-                                {/*    <Download size={16} />*/}
-                                {/*    <span className="hidden sm:inline">원본 다운로드</span>*/}
-                                {/*</a>*/}
                             </DialogHeader>
-
-                            <div className="flex-1 w-full h-full relative bg-slate-50 overflow-hidden">
-                                <div className="w-full h-full flex items-center justify-center">
+                            <DialogDescription asChild
+                                               className={
+                                                   "w-full h-full flex items-center justify-center"
+                                               }
+                            >
+                                <div className="relative">
                                     {isImage ? (
-                                        <div className="relative w-full h-full">
+                                        <div
+                                            className={`overflow-hidden flex items-center justify-center w-full m-auto max-w-[768px]`}
+                                            style={{
+                                                width: size?.width,
+                                                height: size?.height,
+                                            }}
+                                        >
                                             <Image
-                                                src={fullUrl}
-                                                alt={fileName}
-                                                fill
-                                                className="object-contain"
-                                                priority
+                                                src={IMG_URL + src?.url}
+                                                alt={src?.name}
+                                                layout="fill"
+                                                sizes="100vw"
+                                                style={{
+                                                    maxWidth: "768px",
+                                                    objectFit: "contain",
+                                                    margin: "auto",
+                                                }}
+                                                onLoadingComplete={(img) => {
+                                                    setSize({
+                                                        width: img.naturalWidth,
+                                                        height: img.naturalHeight,
+                                                    });
+                                                }}
                                             />
                                         </div>
-                                    ) : isPdf ? (
-                                        // ★ [핵심] 구글 독스 뷰어로 감싸서 보여주기
-                                        // 이렇게 하면 브라우저 PDF 플러그인 없이도 무조건 보입니다.
-                                        <iframe
-                                            src={`https://docs.google.com/gview?url=${fullUrl}&embedded=true`}
-                                            title={fileName}
-                                            className="w-full h-full border-none bg-white"
-                                        />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center gap-4 text-slate-500">
-                                            <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-2">
-                                                <FileText size={32} className="text-slate-400" />
-                                            </div>
-                                            <p>이 파일 형식은 미리보기를 지원하지 않습니다.</p>
-                                            <Button
-                                                variant="primary"
-                                                onClick={() => window.open(fullUrl, '_blank')}
-                                            >
-                                                파일 다운로드
-                                            </Button>
+                                        <div className="overflow-hidden flex items-center justify-center">
+                                            <iframe
+                                                src={`https://docs.google.com/gview?url=${fullUrl}&embedded=true`}
+                                                title={src.name}
+                                                className="bg-white border-none rounded-lg bg-white w-[750px] h-[38vh]"
+                                            />
                                         </div>
                                     )}
                                 </div>
-                            </div>
-
+                            </DialogDescription>
                         </DialogContent>
                     </Dialog>
                 </div>
             ) : (
-                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value || "-"}</div>
+                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value}</div>
             )}
         </div>
     );
 };
 
 export const InfoEdit = ({
-    id,
-    label,
-    value,
-    type = "text",
-    path,
-    options,
-    errorKey,
-    formData,
-    setFormData,
-    errors,
-    setErrors,
-    readOnly,
-    placeholder,
-    maxLength,
-    wrapperClassName,
-}) => {
+                             id,
+                             label,
+                             value,
+                             type = "text",
+                             path,
+                             options,
+                             errorKey,
+                             formData,
+                             setFormData,
+                             errors,
+                             setErrors,
+                             readOnly,
+                             placeholder,
+                             maxLength,
+                             wrapperClassName,
+                         }) => {
     // 현재 값
     const currentValue = path ? getIn(formData, path, "") : "";
 
@@ -294,8 +286,8 @@ export const InfoEdit = ({
                             className={cn(
                                 "h-12 bg-white/50",
                                 errorKey &&
-                                    errors?.[errorKey] &&
-                                    "border-red-400"
+                                errors?.[errorKey] &&
+                                "border-red-400"
                             )}
                         >
                             <SelectValue
@@ -349,102 +341,102 @@ export const InfoEdit = ({
                     />
                 </div>
             ) : /* radio */ type === "radio" ? (
-                <div className="w-full flex flex-col items-center justify-between gap-4 md:grid md:grid-cols-2 md:gap-5">
-                    {options?.map((option) => {
-                        const checked = currentValue === option.value;
-                        return (
-                            <motion.button
-                                key={option.value}
-                                type="button"
-                                onClick={() => updateValue(option.value)}
-                                className={`
+                    <div className="w-full flex flex-col items-center justify-between gap-4 md:grid md:grid-cols-2 md:gap-5">
+                        {options?.map((option) => {
+                            const checked = currentValue === option.value;
+                            return (
+                                <motion.button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => updateValue(option.value)}
+                                    className={`
                   w-full border border-2 flex flex-col items-start justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
                   ${
-                      checked
-                          ? "border-sky-300 bg-sky-100 text-slate-700 shadow-sm font-medium"
-                          : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800 font-normal"
-                  }
+                                        checked
+                                            ? "border-sky-300 bg-sky-100 text-slate-700 shadow-sm font-medium"
+                                            : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800 font-normal"
+                                    }
                 `}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <div className="flex items-center gap-2 mb-1 w-full">
-                                    {checked ? (
-                                        <div className="rounded-full bg-sky-400 w-4 h-4" />
-                                    ) : (
-                                        <div className="rounded-full border-2 border-slate-400 w-4 h-4" />
-                                    )}
-                                    <span className="font-medium text-xs md:text-sm">
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    <div className="flex items-center gap-2 mb-1 w-full">
+                                        {checked ? (
+                                            <div className="rounded-full bg-sky-400 w-4 h-4" />
+                                        ) : (
+                                            <div className="rounded-full border-2 border-slate-400 w-4 h-4" />
+                                        )}
+                                        <span className="font-medium text-xs md:text-sm">
                                         {option.label}
                                     </span>
-                                </div>
+                                    </div>
 
-                                {option.description && (
-                                    <p className="text-xs md:text-sm text-sky-600">
-                                        {option.description}
-                                    </p>
-                                )}
-                                {option.detail && (
-                                    <p className="text-start text-xs text-slate-500">
-                                        {option.detail}
-                                    </p>
-                                )}
-                            </motion.button>
-                        );
-                    })}
+                                    {option.description && (
+                                        <p className="text-xs md:text-sm text-sky-600">
+                                            {option.description}
+                                        </p>
+                                    )}
+                                    {option.detail && (
+                                        <p className="text-start text-xs text-slate-500">
+                                            {option.detail}
+                                        </p>
+                                    )}
+                                </motion.button>
+                            );
+                        })}
 
-                    {errorKey && errors?.[errorKey] && (
-                        <p className="text-red-500 text-sm">
-                            {errors?.[errorKey]}
-                        </p>
-                    )}
-                </div>
-            ) : /* CHECKBOX MULTI (옵션별 path 토글) */
-            type === "checkbox" ? (
-                <div className="flex flex-wrap gap-3">
-                    {options?.map((opt, idx) => {
-                        const checked = !!getIn(formData, opt.path, false);
+                        {errorKey && errors?.[errorKey] && (
+                            <p className="text-red-500 text-sm">
+                                {errors?.[errorKey]}
+                            </p>
+                        )}
+                    </div>
+                ) : /* CHECKBOX MULTI (옵션별 path 토글) */
+                type === "checkbox" ? (
+                    <div className="flex flex-wrap gap-3">
+                        {options?.map((opt, idx) => {
+                            const checked = !!getIn(formData, opt.path, false);
 
-                        return (
-                            <motion.button
-                                key={opt.path ?? idx}
-                                type="button"
-                                onClick={() => togglePath(opt.path)}
-                                className={`
+                            return (
+                                <motion.button
+                                    key={opt.path ?? idx}
+                                    type="button"
+                                    onClick={() => togglePath(opt.path)}
+                                    className={`
                   flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
                   ${
-                      checked
-                          ? "border-sky-300 bg-sky-100 font-medium"
-                          : "border-slate-200 bg-white text-slate-600 hover:text-slate-800 font-normal"
-                  }
+                                        checked
+                                            ? "border-sky-300 bg-sky-100 font-medium"
+                                            : "border-slate-200 bg-white text-slate-600 hover:text-slate-800 font-normal"
+                                    }
                 `}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                {checked ? (
-                                    <CheckCircleActive />
-                                ) : (
-                                    <CheckCircle />
-                                )}
-                                <span className="font-medium text-xs md:text-sm">
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    {checked ? (
+                                        <CheckCircleActive />
+                                    ) : (
+                                        <CheckCircle />
+                                    )}
+                                    <span className="font-medium text-xs md:text-sm">
                                     {opt.label}
                                 </span>
-                            </motion.button>
-                        );
-                    })}
-                </div>
-            ) : (
-                /* TEXT */
-                <Input
-                    type={type}
-                    className="h-12"
-                    value={currentValue ?? ""}
-                    onChange={(e) => updateValue(e.target.value)}
-                    readOnly={readOnly}
-                    placeholder={placeholder}
-                    maxLength={maxLength}
-                />
-            )}
+                                </motion.button>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    /* TEXT */
+                    <Input
+                        type={type}
+                        className="h-12"
+                        value={currentValue ?? ""}
+                        onChange={(e) => updateValue(e.target.value)}
+                        readOnly={readOnly}
+                        placeholder={placeholder}
+                        maxLength={maxLength}
+                    />
+                )}
         </div>
     );
 };
