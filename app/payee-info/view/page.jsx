@@ -246,7 +246,7 @@ export default function PayeeInfoViewPage() {
                                                 metaData?.approval_status === "approved"
                                                     ? "bg-sky-100 text-sky-600"
                                                     : metaData?.approval_status ===
-                                                      "reject"
+                                                      "rejected"
                                                     ? "bg-pink-100 text-pink-600"
                                                     : "bg-amber-100 text-amber-600"
                                             )}
@@ -255,7 +255,7 @@ export default function PayeeInfoViewPage() {
                                             "approved"
                                                 ? "승인"
                                                 : metaData?.approval_status ===
-                                                  "reject"
+                                                  "rejected"
                                                 ? "수정 필요"
                                                 : "검수 중"}
                                         </span>
