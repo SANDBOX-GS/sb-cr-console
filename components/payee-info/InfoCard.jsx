@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
 import { getIn, setIn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ExternalLinkIcon, FileText, Download } from "lucide-react";
 import FileUpload from "../ui/file-upload";
 import { Button } from "../common/Button";
 import {
@@ -18,7 +18,6 @@ import {
     DialogDescription,
     DialogTitle,
 } from "../ui/dialog";
-import { ExternalLinkIcon } from "lucide-react";
 import Image from "next/image";
 import { IMG_URL } from "@/constants/dbConstants";
 import {
@@ -113,15 +112,27 @@ export default function InfoBox({
 }
 
 export const InfoView = ({
-    label = "본명*",
-    id = "real_name",
-    value = "홍길동",
-    type = "text",
-    src = "",
-    wrapperClassName,
-}) => {
-    const [size, setSize] = useState(null);
-    const h = "h-" + size?.height;
+                             label = "본명*",
+                             id = "real_name",
+                             value = "홍길동",
+                             type = "text",
+                             src = "",
+                             wrapperClassName,
+                         }) => {
+    // 1. 파일 데이터 파싱
+    const hasFile = type === "file" && src && src.url;
+    const fileExt = src?.ext?.toLowerCase() || "";
+    const fileName = src?.name || value || "파일";
+
+    // 2. URL 조합
+    const fullUrl = hasFile
+        ? (src.url.startsWith("http") ? src.url : `${IMG_URL}${src.url}`)
+        : "";
+
+    // 3. 파일 타입 판별
+    const isImage = ["png", "jpg", "jpeg", "webp", "gif"].includes(fileExt);
+    const isPdf = fileExt === "pdf";
+
     return (
         <div
             className={cn(
@@ -132,10 +143,10 @@ export const InfoView = ({
             <p className="font-medium text-slate-700 whitespace-nowrap shrink-0">
                 {label}
             </p>
-            {type === "file" ? (
+            {hasFile ? (
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="truncate flex-1 min-w-0 text-right text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">
-                        {value}
+                        {fileName}
                     </div>
                     <Dialog>
                         <DialogTrigger asChild className="w-auto">
@@ -149,62 +160,69 @@ export const InfoView = ({
                                 <ExternalLinkIcon color="#94A3B8" size={16} />
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className={cn("flex flex-col")}>
-                            <DialogHeader>
-                                <DialogTitle>
-                                    {label} : {src.name}
+
+                        <DialogContent className="sm:max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white">
+
+                            <DialogHeader className="px-6 py-4 border-b bg-white flex flex-row items-center justify-between shrink-0 space-y-0">
+                                <DialogTitle className="truncate pr-4 text-lg font-semibold text-slate-800 flex items-center gap-2">
+                                    <FileText size={20} className="text-slate-400" />
+                                    <span className="truncate">{label}</span>
                                 </DialogTitle>
+
+                                {/*<a*/}
+                                {/*    href={fullUrl}*/}
+                                {/*    target="_blank"*/}
+                                {/*    rel="noopener noreferrer"*/}
+                                {/*    className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-md shrink-0"*/}
+                                {/*    download*/}
+                                {/*>*/}
+                                {/*    <Download size={16} />*/}
+                                {/*    <span className="hidden sm:inline">원본 다운로드</span>*/}
+                                {/*</a>*/}
                             </DialogHeader>
-                            <DialogDescription asChild
-                                className={
-                                    "w-full h-full flex items-center justify-center"
-                                }
-                            >
-                                <div className="relative">
-                                    {["png", "jpg", "jpeg", "webp"].includes(
-                                        src?.ext
-                                    ) ? (
-                                        <div
-                                            className={`overflow-hidden flex items-center justify-center w-full m-auto max-w-[768px]`}
-                                            style={{
-                                                width: size?.width,
-                                                height: size?.height,
-                                            }}
-                                        >
+
+                            <div className="flex-1 w-full h-full relative bg-slate-50 overflow-hidden">
+                                <div className="w-full h-full flex items-center justify-center">
+                                    {isImage ? (
+                                        <div className="relative w-full h-full">
                                             <Image
-                                                src={IMG_URL + src?.url}
-                                                alt={src?.name}
-                                                layout="fill"
-                                                sizes="100vw"
-                                                style={{
-                                                    maxWidth: "768px",
-                                                    objectFit: "contain",
-                                                    margin: "auto",
-                                                }}
-                                                onLoadingComplete={(img) => {
-                                                    setSize({
-                                                        width: img.naturalWidth,
-                                                        height: img.naturalHeight,
-                                                    });
-                                                }}
+                                                src={fullUrl}
+                                                alt={fileName}
+                                                fill
+                                                className="object-contain"
+                                                priority
                                             />
                                         </div>
+                                    ) : isPdf ? (
+                                        // ★ [핵심] 구글 독스 뷰어로 감싸서 보여주기
+                                        // 이렇게 하면 브라우저 PDF 플러그인 없이도 무조건 보입니다.
+                                        <iframe
+                                            src={`https://docs.google.com/gview?url=${fullUrl}&embedded=true`}
+                                            title={fileName}
+                                            className="w-full h-full border-none bg-white"
+                                        />
                                     ) : (
-                                        <div className="overflow-hidden flex items-center justify-center">
-                                            <iframe
-                                                src={IMG_URL + src.url}
-                                                title={src.name}
-                                                className="bg-white border-none rounded-lg bg-white w-[750px] h-[38vh]"
-                                            />
+                                        <div className="flex flex-col items-center justify-center gap-4 text-slate-500">
+                                            <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-2">
+                                                <FileText size={32} className="text-slate-400" />
+                                            </div>
+                                            <p>이 파일 형식은 미리보기를 지원하지 않습니다.</p>
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => window.open(fullUrl, '_blank')}
+                                            >
+                                                파일 다운로드
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
-                            </DialogDescription>
+                            </div>
+
                         </DialogContent>
                     </Dialog>
                 </div>
             ) : (
-                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value}</div>
+                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value || "-"}</div>
             )}
         </div>
     );
