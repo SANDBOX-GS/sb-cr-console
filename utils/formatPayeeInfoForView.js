@@ -18,7 +18,7 @@ export const formatPayeeInfoForView = (apiData) => {
     const isTaxFreeBiz = bizType === BIZ_TYPES.TAX_FREE_BUSINESS;
 
     const isOverseas = payeeInfo?.is_overseas === "Y";
-    const isMinor = payeeInfo.is_mino === "Y";
+    const isMinor = payeeInfo.is_minor === "Y";
     const isForeigner = payeeInfo?.is_foreigner === "Y";
     console.log(files.bank_document.url.split("cr_console")[1]);
     // 2) 사업자 구분 (+ 발행 유형 + 특이사항)
@@ -137,7 +137,7 @@ export const formatPayeeInfoForView = (apiData) => {
                     src: {
                         ext: files.family_relation_certificate.ext,
                         name: files.family_relation_certificate.name,
-                        url: files.bank_document.url.split("cr_console")[1],
+                        url: files.family_relation_certificate.url.split("cr_console")[1],
                     },
                 }
             );
