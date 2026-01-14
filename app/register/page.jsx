@@ -302,7 +302,7 @@ export default function App() {
 
                 if (response.ok) {
                     navigate("/login", {});
-                    toast.success("회원가입 성공!");
+                    toast.success("계정 등록이 완료되었습니다.");
                 } else {
                     const errorData = await response.json();
                     console.error("회원가입 실패:", errorData);
