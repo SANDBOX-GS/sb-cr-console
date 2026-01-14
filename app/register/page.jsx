@@ -117,77 +117,90 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
 
     // 검증 관련 State 추가
-    const [isVerifying, setIsVerifying] = useState(false); // 검증 로딩 상태
-    const [isAccessDenied, setIsAccessDenied] = useState(false); // 접근 차단 상태
+    const [isVerifying, setIsVerifying] = useState(true); // 검증 로딩 상태
 
     // 약관 토글 상태 관리
     const [expandedAllTerms, setExpandedAllTerms] = useState(false);
 
-    // [추가된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
-    //   useEffect(() => {
-    //     const verifyToken = async () => {
-    //       const token = searchParams.get("code");
+// [수정된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
+    // [수정된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
+    useEffect(() => {
+        const verifyToken = async () => {
+            const token = searchParams.get("code");
 
-    //       if (!token) {
-    //         // 토큰이 아예 없으면 접근 차단
-    //         setIsAccessDenied(true);
-    //         setIsVerifying(false);
-    //         return;
-    //       }
+            // 공통 리다이렉트 헬퍼 함수 (메시지와 이동할 경로를 인자로 받음)
+            const handleRedirect = (msg, path) => {
+                toast.warning(msg);
 
-    //       try {
-    //         // 백엔드에 토큰 검증 요청 (API 경로는 실제 환경에 맞춰 수정 필요)
-    //         const response = await fetch("/api/member/check_uuid", {
-    //           method: "POST",
-    //           headers: { "Content-Type": "application/json" },
-    //           body: JSON.stringify({ token: token }),
-    //         });
+                navigate(path);
+            };
 
-    //         if (response.ok) {
-    //           setIsAccessDenied(false);
-    //         } else {
-    //           // DB에 없거나 만료된 경우
-    //           setIsAccessDenied(true);
-    //         }
-    //       } catch (error) {
-    //         console.error("Token verification failed:", error);
-    //         setIsAccessDenied(true);
-    //       } finally {
-    //         setIsVerifying(false);
-    //       }
-    //     };
+            // 1. 토큰(code)이 아예 없는 경우 -> 메인(/)으로 이동
+            if (!token) {
+                handleRedirect("유효하지 않은 접근입니다.", "/");
+                return;
+            }
 
-    //     verifyToken();
-    //   }, [searchParams]);
+            try {
+                const response = await fetch("/api/member/check_code", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code: token }),
+                });
+
+                // 백엔드에서 보내준 에러 메시지를 활용하기 위해 json 파싱
+                const data = await response.json();
+
+                if (response.ok) {
+                    // [200 OK] 정상: 로딩 끄고 가입 폼 등장
+                    setIsVerifying(false);
+                } else if (response.status === 409) {
+                    // [409 Conflict] 이미 가입된 계정 -> 로그인(/login)으로 이동
+                    // 백엔드 메시지: "이미 등록된 계정입니다. 로그인해 주세요."
+                    handleRedirect(data.message, "/login");
+                } else {
+                    // [404 Not Found] 유효하지 않은 코드 -> 메인(/)으로 이동
+                    // 백엔드 메시지: "접속 코드가 유효하지 않습니다..."
+                    handleRedirect(data.message || "유효하지 않은 링크입니다.", "/");
+                }
+            } catch (error) {
+                console.error("Token verification failed:", error);
+                // 서버 에러 등 예외 발생 시 -> 메인(/)으로 이동
+                handleRedirect("서버 오류가 발생했습니다. 관리자에게 문의해주세요.", "/");
+            }
+        };
+
+        verifyToken();
+    }, [searchParams, navigate]);
 
     // [화면 1] 검증 중일 때 로딩 화면
     if (isVerifying) {
         return <Loading/>;
     }
     // [화면 2] 접근 권한이 없을 때 에러 화면
-    if (isAccessDenied) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <div className="text-center max-w-md">
-                    <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4"/>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                        유효하지 않은 접근입니다
-                    </h2>
-                    <p className="text-gray-600 mb-6">
-                        잘못된 링크이거나 유효기간이 만료된 주소입니다.
-                        <br/>
-                        관리자에게 문의해 주세요.
-                    </p>
-                    <Button
-                        onClick={() => navigate("/login")} // 혹은 메인으로 이동
-                        className="bg-slate-800 text-white"
-                    >
-                        메인으로 돌아가기
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+    // if (isAccessDenied) {
+    //     return (
+    //         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    //             <div className="text-center max-w-md">
+    //                 <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4"/>
+    //                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
+    //                     유효하지 않은 접근입니다
+    //                 </h2>
+    //                 <p className="text-gray-600 mb-6">
+    //                     잘못된 링크이거나 유효기간이 만료된 주소입니다.
+    //                     <br/>
+    //                     관리자에게 문의해 주세요.
+    //                 </p>
+    //                 <Button
+    //                     onClick={() => navigate("/login")} // 혹은 메인으로 이동
+    //                     className="bg-slate-800 text-white"
+    //                 >
+    //                     메인으로 돌아가기
+    //                 </Button>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
