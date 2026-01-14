@@ -1,23 +1,23 @@
 "use client";
-import { useState, useEffect, use } from "react";
-import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/common/Button";
-import { Box } from "@/components/common/Box";
-import { Input } from "@/components/ui/input";
-import { NOTION_PAGE_ID } from "@/constants/dbConstants";
-import { cn } from "@/components/ui/utils";
+import {useState, useEffect, use} from "react";
+import {useSearchParams} from "next/navigation";
+import {Button} from "@/components/common/Button";
+import {Box} from "@/components/common/Box";
+import {Input} from "@/components/ui/input";
+import {NOTION_PAGE_ID} from "@/constants/dbConstants";
+import {cn} from "@/components/ui/utils";
 import {
     EyeIcon,
     EyeOffIcon,
     ChevronDownIcon,
     AlertCircleIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "@/hooks/useRouter";
-import { IconCard } from "@/components/common/IconCard";
-import { ShieldProtect } from "@/components/icon/ShieldProtect";
-import { CheckCircleActive } from "@/components/icon/CheckCircleActive";
-import { CheckCircle } from "@/components/icon/CheckCircle";
+import {motion, AnimatePresence} from "framer-motion";
+import {useRouter} from "@/hooks/useRouter";
+import {IconCard} from "@/components/common/IconCard";
+import {ShieldProtect} from "@/components/icon/ShieldProtect";
+import {CheckCircleActive} from "@/components/icon/CheckCircleActive";
+import {CheckCircle} from "@/components/icon/CheckCircle";
 import Loading from "../loading";
 import {
     Dialog,
@@ -25,14 +25,15 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
+    DialogTitle
 } from "@/components/ui/dialog";
 import NotionModalContents from "@/components/common/NotionModalContents";
-import { ExternalLinkIcon } from "lucide-react";
-import { toast } from "sonner";
+import {ExternalLinkIcon} from "lucide-react";
+import {toast} from "sonner";
 
-function PasswordStrengthIndicator({ password }) {
+function PasswordStrengthIndicator({password}) {
     const getPasswordStrength = (password) => {
-        if (!password) return { score: 0, text: "", color: "bg-gray-200" };
+        if (!password) return {score: 0, text: "", color: "bg-gray-200"};
 
         let score = 0;
         const checks = {
@@ -45,10 +46,10 @@ function PasswordStrengthIndicator({ password }) {
 
         score = Object.values(checks).filter(Boolean).length;
 
-        if (score <= 2) return { score, text: "약함", color: "bg-red-400" };
-        if (score <= 3) return { score, text: "보통", color: "bg-yellow-400" };
-        if (score <= 4) return { score, text: "강함", color: "bg-sky-400" };
-        return { score, text: "매우 강함", color: "bg-green-400" };
+        if (score <= 2) return {score, text: "약함", color: "bg-red-400"};
+        if (score <= 3) return {score, text: "보통", color: "bg-yellow-400"};
+        if (score <= 4) return {score, text: "강함", color: "bg-sky-400"};
+        return {score, text: "매우 강함", color: "bg-green-400"};
     };
 
     const strength = getPasswordStrength(password);
@@ -57,17 +58,17 @@ function PasswordStrengthIndicator({ password }) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{opacity: 0, y: -10}}
+            animate={{opacity: 1, y: 0}}
             className="mt-2 space-y-2"
         >
             <div className="flex items-center gap-2">
                 <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
                     <motion.div
                         className={`h-full ${strength.color} rounded-full`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(strength.score / 5) * 100}%` }}
-                        transition={{ duration: 0.3 }}
+                        initial={{width: 0}}
+                        animate={{width: `${(strength.score / 5) * 100}%`}}
+                        transition={{duration: 0.3}}
                     />
                 </div>
                 <span className="text-xs text-slate-600">{strength.text}</span>
@@ -76,13 +77,13 @@ function PasswordStrengthIndicator({ password }) {
     );
 }
 
-function TermsContent({ content }) {
+function TermsContent({content}) {
     return (
         <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{opacity: 0, height: 0}}
+            animate={{opacity: 1, height: "auto"}}
+            exit={{opacity: 0, height: 0}}
+            transition={{duration: 0.3}}
             className="overflow-hidden"
         >
             <div className="bg-slate-50/80 rounded-lg p-4 mt-3 max-h-60 overflow-y-auto">
@@ -95,7 +96,7 @@ function TermsContent({ content }) {
 }
 
 export default function App() {
-    const { navigate } = useRouter();
+    const {navigate} = useRouter();
     const searchParams = useSearchParams(); // URL 파라미터 가져오기
     const [formData, setFormData] = useState({
         email: "",
@@ -161,20 +162,20 @@ export default function App() {
 
     // [화면 1] 검증 중일 때 로딩 화면
     if (isVerifying) {
-        return <Loading />;
+        return <Loading/>;
     }
     // [화면 2] 접근 권한이 없을 때 에러 화면
     if (isAccessDenied) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
                 <div className="text-center max-w-md">
-                    <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                    <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4"/>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">
                         유효하지 않은 접근입니다
                     </h2>
                     <p className="text-gray-600 mb-6">
                         잘못된 링크이거나 유효기간이 만료된 주소입니다.
-                        <br />
+                        <br/>
                         관리자에게 문의해 주세요.
                     </p>
                     <Button
@@ -316,7 +317,7 @@ export default function App() {
                 },
             }));
         } else {
-            const newAgreements = { ...formData.agreements, [key]: checked };
+            const newAgreements = {...formData.agreements, [key]: checked};
             const allRequired =
                 newAgreements.terms &&
                 newAgreements.privacy &&
@@ -336,7 +337,7 @@ export default function App() {
                 formData.agreements.privacy ||
                 formData.agreements.thirdParty)
         ) {
-            setErrors((prev) => ({ ...prev, agreements: undefined }));
+            setErrors((prev) => ({...prev, agreements: undefined}));
         }
     };
 
@@ -349,14 +350,14 @@ export default function App() {
     return (
         <div className="flex-1 flex flex-col items-center justify-start w-full max-w-[816px] mx-auto">
             <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
+                initial={{y: 30, opacity: 0}}
+                animate={{y: 0, opacity: 1}}
+                transition={{duration: 0.6}}
                 className="text-center mb-12"
             >
                 <h1>
                     샌드박스 크리에이터
-                    <br /> 정산 시스템
+                    <br/> 정산 시스템
                 </h1>
             </motion.div>
             <IconCard
@@ -372,9 +373,9 @@ export default function App() {
                 icon={ShieldProtect}
             />
             <motion.form
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                initial={{y: 30, opacity: 0}}
+                animate={{y: 0, opacity: 1}}
+                transition={{duration: 0.6, delay: 0.2}}
                 onSubmit={handleSubmit}
                 className="w-full"
             >
@@ -382,9 +383,9 @@ export default function App() {
                     <div className="space-y-8 relative">
                         {/* Email Section */}
                         <motion.div
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
+                            initial={{x: -20, opacity: 0}}
+                            animate={{x: 0, opacity: 1}}
+                            transition={{delay: 0.3}}
                             className="space-y-3"
                         >
                             <h4 className="mb-4">샌드박스 수취인 계정 등록</h4>
@@ -419,9 +420,9 @@ export default function App() {
                                 <AnimatePresence>
                                     {errors.email && (
                                         <motion.p
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
+                                            initial={{opacity: 0, y: -10}}
+                                            animate={{opacity: 1, y: 0}}
+                                            exit={{opacity: 0, y: -10}}
                                             className="text-red-500 text-sm mt-2 flex items-center gap-1"
                                         >
                                             <span className="w-1 h-1 bg-red-500 rounded-full"></span>
@@ -434,9 +435,9 @@ export default function App() {
 
                         {/* Password Section */}
                         <motion.div
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.4 }}
+                            initial={{x: -20, opacity: 0}}
+                            animate={{x: 0, opacity: 1}}
+                            transition={{delay: 0.4}}
                             className="space-y-3"
                         >
                             <label className="font-medium text-sm md:text-base">
@@ -477,9 +478,9 @@ export default function App() {
                                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
                                     >
                                         {showPassword ? (
-                                            <EyeIcon className="h-5 w-5" />
+                                            <EyeIcon className="h-5 w-5"/>
                                         ) : (
-                                            <EyeOffIcon className="h-5 w-5" />
+                                            <EyeOffIcon className="h-5 w-5"/>
                                         )}
                                     </button>
                                 </div>
@@ -490,9 +491,9 @@ export default function App() {
                                 <AnimatePresence>
                                     {errors.password && (
                                         <motion.p
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
+                                            initial={{opacity: 0, y: -10}}
+                                            animate={{opacity: 1, y: 0}}
+                                            exit={{opacity: 0, y: -10}}
                                             className="text-red-500 text-sm mt-2 flex items-center gap-1"
                                         >
                                             <span className="w-1 h-1 bg-red-500 rounded-full"></span>
@@ -537,17 +538,17 @@ export default function App() {
                                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200"
                                     >
                                         {showConfirmPassword ? (
-                                            <EyeIcon className="h-5 w-5" />
+                                            <EyeIcon className="h-5 w-5"/>
                                         ) : (
-                                            <EyeOffIcon className="h-5 w-5" />
+                                            <EyeOffIcon className="h-5 w-5"/>
                                         )}
                                     </button>
                                 </div>
                                 {errors.confirmPassword && (
                                     <motion.p
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
+                                        initial={{opacity: 0, y: -10}}
+                                        animate={{opacity: 1, y: 0}}
+                                        exit={{opacity: 0, y: -10}}
                                         className="text-red-500 text-sm mt-2 flex items-center gap-1"
                                     >
                                         <span className="w-1 h-1 bg-red-500 rounded-full"></span>
@@ -559,14 +560,15 @@ export default function App() {
 
                         {/* Agreements Section */}
                         <motion.div
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 }}
+                            initial={{x: -20, opacity: 0}}
+                            animate={{x: 0, opacity: 1}}
+                            transition={{delay: 0.5}}
                             className="space-y-3"
                         >
                             <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                                 {/* All Agreement */}
-                                <div className="flex items-center justify-between p-3 bg-white/80 rounded-lg border border-slate-200/50 hover:border-slate-300/50 transition-all duration-200">
+                                <div
+                                    className="flex items-center justify-between p-3 bg-white/80 rounded-lg border border-slate-200/50 hover:border-slate-300/50 transition-all duration-200">
                                     <div className="flex items-center space-x-3 w-full">
                                         <label
                                             className="flex items-center space-x-2 cursor-pointer w-full"
@@ -580,9 +582,9 @@ export default function App() {
                                         >
                                             {formData.agreements.all ===
                                             true ? (
-                                                <CheckCircleActive />
+                                                <CheckCircleActive/>
                                             ) : (
-                                                <CheckCircle />
+                                                <CheckCircle/>
                                             )}
                                             <span className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
                                                 전체 동의
@@ -601,11 +603,11 @@ export default function App() {
                                                 // expandedAllTerms 상태에 따라 회전
                                                 rotate: expandedAllTerms ? 180 : 0,
                                             }}
-                                            transition={{ duration: 0.2 }}
+                                            transition={{duration: 0.2}}
                                             onClick={toggleAllTerms}
                                             className="cursor-pointer w-4 h-4"
                                         >
-                                            <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                                            <ChevronDownIcon className="h-4 w-4 text-slate-400"/>
                                         </motion.div>
                                     </div>
                                 </div>
@@ -657,7 +659,8 @@ export default function App() {
                                                         }}
                                                         className="space-y-2"
                                                     >
-                                                        <div className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
+                                                        <div
+                                                            className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
                                                             <div className="flex items-center space-x-3 w-full">
                                                                 <label
                                                                     className="flex items-center space-x-2 cursor-pointer w-full"
@@ -671,20 +674,21 @@ export default function App() {
                                                                                 .agreements[
                                                                                 item
                                                                                     .key
-                                                                            ]
+                                                                                ]
                                                                         )
                                                                     }
                                                                 >
                                                                     {formData
                                                                         .agreements[
                                                                         item.key
-                                                                    ] ===
+                                                                        ] ===
                                                                     true ? (
-                                                                        <CheckCircleActive />
+                                                                        <CheckCircleActive/>
                                                                     ) : (
-                                                                        <CheckCircle />
+                                                                        <CheckCircle/>
                                                                     )}
-                                                                    <span className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
+                                                                    <span
+                                                                        className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
                                                                         {
                                                                             item.label
                                                                         }
@@ -698,7 +702,7 @@ export default function App() {
                                                                             .agreements[
                                                                             item
                                                                                 .key
-                                                                        ]
+                                                                            ]
                                                                     }
                                                                     readOnly
                                                                     className="invisible"
@@ -719,13 +723,13 @@ export default function App() {
                                                                         )}
                                                                     >
                                                                         <DialogHeader>
-                                                                            <div
-                                                                                className={cn(
-                                                                                    "h-5"
-                                                                                )}
-                                                                            ></div>
+                                                                            {/* ▼ [추가] 제목을 넣어주되, sr-only로 화면에서는 숨깁니다. */}
+                                                                            <DialogTitle className="sr-only">
+                                                                                {item.label}
+                                                                            </DialogTitle>
+                                                                            <div className={cn("h-5")}></div>
                                                                         </DialogHeader>
-                                                                        <DialogDescription>
+                                                                        <DialogDescription asChild>
                                                                             <NotionModalContents
                                                                                 title={
                                                                                     item.label
@@ -773,9 +777,9 @@ export default function App() {
                 </Box>
                 {/* Submit Button */}
                 <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 }}
+                    initial={{y: 20, opacity: 0}}
+                    animate={{y: 0, opacity: 1}}
+                    transition={{delay: 0.6}}
                 >
                     <Button
                         type="submit"
@@ -786,13 +790,13 @@ export default function App() {
                             {isLoading ? (
                                 <motion.div
                                     key="loading"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
+                                    exit={{opacity: 0}}
                                     className="flex items-center gap-2"
                                 >
                                     <motion.div
-                                        animate={{ rotate: 360 }}
+                                        animate={{rotate: 360}}
                                         transition={{
                                             duration: 1,
                                             repeat: Infinity,
@@ -805,9 +809,9 @@ export default function App() {
                             ) : (
                                 <motion.span
                                     key="submit"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
+                                    exit={{opacity: 0}}
                                 >
                                     계정 등록
                                 </motion.span>
