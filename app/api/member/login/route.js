@@ -21,7 +21,7 @@ export async function POST(request) {
 
         if (rows.length === 0) {
             return NextResponse.json(
-                { message: "이메일 또는 비밀번호가 일치하지 않습니다." },
+                { message: "존재하지 않는 이메일입니다. 다시 확인해 주세요." },
                 { status: 401 }
             );
         }
@@ -41,7 +41,7 @@ export async function POST(request) {
 
         if (!passwordMatch) {
             return NextResponse.json(
-                { message: "이메일 또는 비밀번호가 일치하지 않습니다." },
+                { message: "비밀번호가 일치하지 않습니다. 다시 확인해 주세요." },
                 { status: 401 }
             );
         }

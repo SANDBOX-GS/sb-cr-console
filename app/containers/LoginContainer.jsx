@@ -77,7 +77,7 @@ export default function LoginClient() {
                         });
                     }
                 } else {
-                    toast.error(`로그인 실패: ${data.message}`);
+                    toast.error(`${data.message}`);
                     console.error("Login failed:", data);
                 }
             } catch (error) {
