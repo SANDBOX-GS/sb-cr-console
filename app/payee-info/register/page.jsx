@@ -264,7 +264,6 @@ export default function PayeeInfoRegisterPage() {
 
         try {
             const submitFormData = buildSubmitFormData(formData); // ✅
-            console.log("submitFormData", submitFormData);
             const response = await fetch("/api/member/payee_info_register", {
                 method: "POST",
                 body: submitFormData,

@@ -12,7 +12,7 @@ export const metadata = {
     description:
         "샌드박스의 협업 파트너와 함께하는 크리에이터 정산 시스템입니다.",
     icons: {
-        icon: "/public/logo.svg",
+        icon: "/logo.svg",
     },
 };
 

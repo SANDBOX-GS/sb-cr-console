@@ -573,7 +573,7 @@ export default function App() {
                                     <div className="flex items-center space-x-3 w-full">
                                         <label
                                             className="flex items-center space-x-2 cursor-pointer w-full"
-                                            htmlFor={formData.agreements.all}
+                                            htmlFor="agreement-all"
                                             onClick={(e) =>
                                                 handleAgreementChange(
                                                     "all",
@@ -592,7 +592,7 @@ export default function App() {
                                             </span>
                                         </label>
                                         <input
-                                            id={formData.agreements.all}
+                                            id="agreement-all"
                                             type="checkbox"
                                             checked={!!formData.agreements.all}
                                             readOnly
@@ -668,13 +668,7 @@ export default function App() {
                                                             <div className="flex items-center space-x-3 w-full">
                                                                 <label
                                                                     className="flex items-center space-x-2 cursor-pointer w-full"
-                                                                    htmlFor={
-                                                                        formData
-                                                                            .agreements[
-                                                                            item
-                                                                                .key
-                                                                        ]
-                                                                    }
+                                                                    htmlFor={`agreement-${item.key}`}
                                                                     onClick={(
                                                                         e
                                                                     ) =>
@@ -704,13 +698,7 @@ export default function App() {
                                                                     </span>
                                                                 </label>
                                                                 <input
-                                                                    id={
-                                                                        formData
-                                                                            .agreements[
-                                                                            item
-                                                                                .key
-                                                                        ]
-                                                                    }
+                                                                    id={`agreement-${item.key}`}
                                                                     type="checkbox"
                                                                     checked={
                                                                         !!formData

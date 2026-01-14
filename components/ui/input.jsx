@@ -3,7 +3,6 @@ import * as React from "react";
 import { cn } from "./utils";
 
 function Input({ className, value, type = "text", readOnly, ...props }) {
-    console.log(value, readOnly);
     return (
         <input
             type={type}
