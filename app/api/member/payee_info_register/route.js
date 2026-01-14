@@ -377,6 +377,35 @@ export async function POST(req) {
 
         await connection.commit();
 
+        // 8. 슬랙 알림 발송 (신규 등록 알림)
+        try {
+            // 1. 먼데이닷컴 아이템 바로가기 링크 생성
+            const mondayItemUrl = `https://sandboxnetwork.monday.com/boards/${MONDAY_BOARD_IDS.PAYEE_LOG}/pulses/${mondayItemId}`;
+
+            // 2. 파이낸스 그룹 멘션 ID (업데이트 API와 동일)
+            const FINANCE_GROUP_ID = "S04BAMGF7RP";
+            const mentionTarget = `<!subteam^${FINANCE_GROUP_ID}>`;
+
+            // 3. 메시지 본문 구성 (신규 등록 멘트로 변경)
+            const slackTitle = "🆕 수취 정보 신규 등록";
+            const slackMessage = "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
+
+            // 4. 발송 실행
+            await sendSlack({
+                mentionTarget: mentionTarget,
+                title: slackTitle,
+                message: slackMessage,
+                fields: [
+                    { title: "요청자 (상호명)", value: baseDbPayload.user_name || baseDbPayload.biz_name || "-" }
+                ],
+                buttonText: "수취 정보 바로가기",
+                buttonUrl: mondayItemUrl
+            });
+
+        } catch (slackError) {
+            console.error("⚠️ Slack Notification Failed:", slackError);
+        }
+
         return NextResponse.json(
             {
                 message: "수취인 정보 등록 및 검수 요청이 완료되었습니다.",
