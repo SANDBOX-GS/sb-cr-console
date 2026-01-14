@@ -20,9 +20,9 @@ export const CheckIcon = ({ className = "" }) => {
                     <path
                         d="M27.1221 40.6158L36.0548 48.6603C36.8931 49.4152 38.1801 49.3649 38.9569 48.5469L52.8782 33.8867"
                         stroke="white"
-                        stroke-width="5.20325"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                        strokeWidth="5.20325"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                     />
                 </g>
                 <defs>
@@ -33,7 +33,7 @@ export const CheckIcon = ({ className = "" }) => {
                         width="61.6582"
                         height="61.6582"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
@@ -68,7 +68,7 @@ export const CheckIcon = ({ className = "" }) => {
                         width="39.2842"
                         height="28.8369"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix
