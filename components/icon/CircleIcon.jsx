@@ -19,7 +19,7 @@ export const CircleIcon = ({ className = "" }) => {
                         width="40.3252"
                         height="40.3252"
                         filterUnits="userSpaceOnUse"
-                        colorInterpolation-filters="sRGB"
+                        colorInterpolationFilters="sRGB"
                     >
                         <feFlood floodOpacity="0" result="BackgroundImageFix" />
                         <feColorMatrix

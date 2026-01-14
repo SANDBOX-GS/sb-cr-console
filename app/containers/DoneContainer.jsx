@@ -64,9 +64,9 @@ export default function DoneContainer() {
                             "제출된 정보는 담당자 검수 후 승인됩니다.",
                             "정보가 정확하지 않은 경우 재등록 요청이 있을 수 있습니다.",
                             "검수 완료 후에도 사업자 종류, 계좌 정보 변경 시 재등록이 필요합니다.",
-                        ].map((t) => {
+                        ].map((t, index) => {
                             return (
-                                <li className="list-disc text-slate-500 text-xs md:text-base">
+                                <li key={index} className="list-disc text-slate-500 text-xs md:text-base">
                                     {t}
                                 </li>
                             );
