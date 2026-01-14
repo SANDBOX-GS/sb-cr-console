@@ -120,12 +120,7 @@ export default function App() {
     const [isAccessDenied, setIsAccessDenied] = useState(false); // 접근 차단 상태
 
     // 약관 토글 상태 관리
-    const [expandedTerm, setExpandedTerm] = useState(null);
     const [expandedAllTerms, setExpandedAllTerms] = useState(false);
-
-    useEffect(() => {
-        if (expandedTerm === "all") setExpandedAllTerms(!expandedAllTerms);
-    }, [expandedTerm]);
 
     // [추가된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
     //   useEffect(() => {
@@ -257,12 +252,14 @@ export default function App() {
         // Required agreements validation
         if (
             !formData.agreements.terms ||
-            !formData.agreements.privacy ||
-            !formData.agreements.thirdParty
+            !formData.agreements.privacy
+            // !formData.agreements.thirdParty // (만약 thirdParty가 필수가 아니라면 제거, 필수라면 유지)
         ) {
             newErrors.agreements = "필수 항목에 동의해 주세요.";
-        }
 
+            // ★ 핵심: 에러가 있으면 약관 토글을 강제로 엽니다.
+            setExpandedAllTerms(true);
+        }
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
@@ -343,11 +340,11 @@ export default function App() {
         }
     };
 
-    const toggleTermExpansion = (termKey) => {
-        setExpandedTerm(expandedTerm === termKey ? null : termKey);
+    const toggleAllTerms = (e) => {
+        e.preventDefault(); // 기본 동작 방지
+        e.stopPropagation(); // 이벤트 버블링 방지
+        setExpandedAllTerms((prev) => !prev); // true <-> false 반전
     };
-
-    const toggelAllTerms = () => {};
 
     return (
         <div className="flex-1 flex flex-col items-center justify-start w-full max-w-[816px] mx-auto">
@@ -601,15 +598,11 @@ export default function App() {
                                         />
                                         <motion.div
                                             animate={{
-                                                rotate:
-                                                    expandedTerm === "all"
-                                                        ? 180
-                                                        : 0,
+                                                // expandedAllTerms 상태에 따라 회전
+                                                rotate: expandedAllTerms ? 180 : 0,
                                             }}
                                             transition={{ duration: 0.2 }}
-                                            onClick={() =>
-                                                toggleTermExpansion("all")
-                                            }
+                                            onClick={toggleAllTerms}
                                             className="cursor-pointer w-4 h-4"
                                         >
                                             <ChevronDownIcon className="h-4 w-4 text-slate-400" />
