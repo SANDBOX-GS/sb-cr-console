@@ -27,7 +27,7 @@ export async function POST(request) {
         // 이메일이 존재하지 않는 경우
         if (rows.length === 0) {
             return new Response(
-                JSON.stringify({ message: "이메일이 존재하지 않습니다." }),
+                JSON.stringify({ message: "초대 링크와 이메일이 일치하지 않습니다. 링크를 받은 이메일 주소로 등록해 주세요." }),
                 { status: 404, headers: { "Content-Type": "application/json" } }
             );
         }
