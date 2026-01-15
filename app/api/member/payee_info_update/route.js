@@ -129,11 +129,7 @@ export async function POST(req) {
             baseDbPayload.user_name = nullIfEmpty(payload.user_name);
 
             // 외국인이면 외국인등록번호, 아니면 주민등록번호
-            baseDbPayload.ssn = nullIfEmpty(
-                is_foreigner === "Y"
-                    ? payload.foreigner_registration_number
-                    : payload.ssn
-            );
+            baseDbPayload.ssn = nullIfEmpty(payload.ssn);
 
             // 미성년자/외국인이 아니면 신분증 종류 업데이트
             if (is_minor === "N" && is_foreigner === "N") {
@@ -272,9 +268,12 @@ export async function POST(req) {
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
             [COL_ID.USER_NAME]: baseDbPayload.user_name,
-            [COL_ID.SSN]: baseDbPayload.ssn,
-            [COL_ID.FOREIGN_REG_NO]:
-                is_foreigner === "Y" ? baseDbPayload.ssn : null,
+
+            // 내국인(N) -> 주민번호 컬럼(COL_ID.SSN)에 값, 외국인번호는 null
+            // 외국인(Y) -> 주민번호 컬럼은 null, 외국인번호 컬럼(COL_ID.FOREIGN_REG_NO)에 값
+            [COL_ID.SSN]: is_foreigner === "N" ? baseDbPayload.ssn : null,
+            [COL_ID.FOREIGN_REG_NO]: is_foreigner === "Y" ? baseDbPayload.ssn : null,
+
             [COL_ID.PHONE]: payload.tel
                 ? { phone: payload.tel, countryShortName: "KR" }
                 : null,
