@@ -103,9 +103,15 @@ export async function GET(req) {
             const diffTime = expiredDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            if (diffDays <= 1 && diffDays >= 0) {
+            if (diffDays < 0) {
+                // diffDays < 0 : 어제까지였다 (오늘 기준 지남) -> 만료
+                validityStatus = "expired";
+            } else if (diffDays <= 7) {
+                // 0 <= diffDays <= 7 : 오늘 포함 7일 이내 -> 만료임박
+                // (오늘 당일도 0이므로 여기 포함됨)
                 validityStatus = "expiring_soon";
-            } else if (diffDays > 1) {
+            } else {
+                // diffDays > 7 : 8일 이상 남음 -> 유효
                 validityStatus = "valid";
             }
 
