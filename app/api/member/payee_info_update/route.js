@@ -147,16 +147,10 @@ export async function POST(req) {
             }
         }
 
-        // 3-2. 사업자(개인/법인)일 경우에만 업데이트
+        // 3-2. 사업자(개인/법인) 통합 처리
         if (isBizType(biz_type)) {
             baseDbPayload.biz_name = nullIfEmpty(payload.biz_name);
             baseDbPayload.biz_reg_no = nullIfEmpty(payload.biz_reg_no);
-        }
-
-        // 3-3. 법인일 경우에만 업데이트
-        if (biz_type === "corporate_business") {
-            baseDbPayload.corp_name = nullIfEmpty(payload.corp_name);
-            baseDbPayload.corp_reg_no = nullIfEmpty(payload.corp_reg_no);
         }
 
         // 4. 파일 처리 (신규 업로드 + 기존 파일 다운로드 병합)
