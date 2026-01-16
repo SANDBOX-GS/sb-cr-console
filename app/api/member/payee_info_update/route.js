@@ -84,8 +84,11 @@ export async function POST(req) {
         connection = await dbConnect();
 
         const [currentPayeeRows] = await connection.query(
-            `SELECT idx, version FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} 
-             WHERE member_idx = ? ORDER BY created_at DESC LIMIT 1`,
+            `SELECT p.idx, p.version, m.email, m.tel
+             FROM ${TABLE_NAMES.SBN_MEMBER_PAYEE} p
+             LEFT JOIN ${TABLE_NAMES.SBN_MEMBER} m ON p.member_idx = m.idx
+             WHERE p.member_idx = ?
+             ORDER BY p.created_at DESC LIMIT 1`,
             [member_idx]
         );
 
@@ -98,6 +101,8 @@ export async function POST(req) {
         const nextVersion = currentVersion + 1; // ★ 다음 버전 계산 (예: 1 -> 2)
 
         // 3. DB Insert/Update용 Payload 구성
+        const dbEmail = currentPayeeRows[0].email;
+        const dbTel = currentPayeeRows[0].tel;
         const biz_type = payload.biz_type;
         const is_overseas = toYn(payload.is_overseas) || "N";
         const is_minor = toYn(payload.is_minor) || "N";
@@ -256,6 +261,10 @@ export async function POST(req) {
             LABEL_MAP.ISSUE_TYPES[payload.invoice_type?.toUpperCase()] ||
             payload.invoice_type;
 
+        // 사용할 이메일/전화번호 결정 (입력값 우선, 없으면 DB값)
+        const emailToUse = payload.email || dbEmail;
+        const phoneToUse = payload.tel || dbTel;
+
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.UPDATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
@@ -267,12 +276,11 @@ export async function POST(req) {
             // 외국인(Y) -> 주민번호 컬럼은 null, 외국인번호 컬럼(COL_ID.FOREIGN_REG_NO)에 값
             [COL_ID.SSN]: is_foreigner === "N" ? baseDbPayload.ssn : null,
             [COL_ID.FOREIGN_REG_NO]: is_foreigner === "Y" ? baseDbPayload.ssn : null,
-
-            [COL_ID.PHONE]: payload.tel
-                ? { phone: payload.tel, countryShortName: "KR" }
+            [COL_ID.PHONE]: phoneToUse
+                ? { phone: phoneToUse, countryShortName: "KR" }
                 : null,
-            [COL_ID.EMAIL]: payload.email
-                ? { email: payload.email, text: payload.email }
+            [COL_ID.EMAIL]: emailToUse
+                ? { email: emailToUse, text: emailToUse }
                 : null,
             [COL_ID.GUARDIAN_NAME]: baseDbPayload.guardian_name,
             [COL_ID.GUARDIAN_PHONE]: baseDbPayload.guardian_tel
