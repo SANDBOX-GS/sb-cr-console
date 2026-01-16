@@ -144,8 +144,8 @@ export default function App() {
             try {
                 const response = await fetch("/api/member/check_code", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ code: token }),
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({code: token}),
                 });
 
                 // 백엔드에서 보내준 에러 메시지를 활용하기 위해 json 파싱
@@ -636,16 +636,14 @@ export default function App() {
                                                         label: "서비스 이용약관 (필수)",
                                                         required: true,
                                                         pageId: NOTION_PAGE_ID.TERMS,
-                                                        customClass:
-                                                            "h-full max-h-[85dvh]",
+                                                        customClass: "h-full max-h-[85dvh]",
                                                     },
                                                     {
                                                         key: "privacy",
                                                         label: "개인정보 수집 및 이용 안내 (필수)",
                                                         required: true,
                                                         pageId: NOTION_PAGE_ID.PRIVACY,
-                                                        customClass:
-                                                            "h-full max-h-[85dvh]",
+                                                        customClass: "h-full max-h-[85dvh]",
                                                     },
                                                     {
                                                         key: "marketing",
@@ -654,137 +652,139 @@ export default function App() {
                                                         pageId: NOTION_PAGE_ID.MARKETING,
                                                         customClass: "h-auto",
                                                     },
-                                                ].map((item, index) => (
-                                                    <motion.div
-                                                        key={item.key}
-                                                        initial={{
-                                                            opacity: 0,
-                                                            x: -10,
-                                                        }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            x: 0,
-                                                        }}
-                                                        transition={{
-                                                            delay:
-                                                                0.6 +
-                                                                index * 0.1,
-                                                        }}
-                                                        className="space-y-2"
-                                                    >
-                                                        <div
-                                                            className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
-                                                            <div className="flex items-center space-x-3 w-full">
-                                                                <label
-                                                                    className="flex items-center space-x-2 cursor-pointer w-full"
-                                                                    htmlFor={`agreement-${item.key}`}
-                                                                    onClick={(
-                                                                        e
-                                                                    ) =>
-                                                                        handleAgreementChange(
-                                                                            item.key,
-                                                                            !formData
-                                                                                .agreements[
-                                                                                item
-                                                                                    .key
-                                                                                ]
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {formData
-                                                                        .agreements[
-                                                                        item.key
-                                                                        ] ===
-                                                                    true ? (
-                                                                        <CheckCircleActive/>
-                                                                    ) : (
-                                                                        <CheckCircle/>
-                                                                    )}
-                                                                    <span
-                                                                        className="w-full text-xs md:text-sm text-slate-600 cursor-pointer">
-                                                                        {
-                                                                            item.label
-                                                                        }
-                                                                    </span>
-                                                                </label>
-                                                                <input
-                                                                    id={`agreement-${item.key}`}
-                                                                    type="checkbox"
-                                                                    checked={
-                                                                        !!formData
-                                                                            .agreements[
-                                                                            item
-                                                                                .key
-                                                                            ]
-                                                                    }
-                                                                    readOnly
-                                                                    className="invisible"
-                                                                />
-                                                                <Dialog>
-                                                                    <DialogTrigger>
-                                                                        <ExternalLinkIcon
-                                                                            color="#94A3B8"
-                                                                            size={
-                                                                                16
+                                                ].map((item, index) => {
+                                                    // 에러 상태인지 판단하는 변수 선언
+                                                    // 1. 전체 에러가 있고 2. 필수 항목이며 3. 체크가 안 된 경우
+                                                    const isError = errors.agreements && item.required && !formData.agreements[item.key];
+
+                                                        return (
+                                                            <motion.div
+                                                                key={item.key}
+                                                                initial={{
+                                                                    opacity: 0,
+                                                                    x: -10,
+                                                                }}
+                                                                animate={{
+                                                                    opacity: 1,
+                                                                    x: 0,
+                                                                }}
+                                                                transition={{
+                                                                    delay:
+                                                                        0.6 +
+                                                                        index * 0.1,
+                                                                }}
+                                                                className="space-y-2"
+                                                            >
+                                                                <div
+                                                                    className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
+                                                                    <div className="flex items-center space-x-3 w-full">
+                                                                        <label
+                                                                            className="flex items-center space-x-2 cursor-pointer w-full"
+                                                                            htmlFor={`agreement-${item.key}`}
+                                                                            onClick={() =>
+                                                                                handleAgreementChange(
+                                                                                    item.key,
+                                                                                    !formData.agreements[item.key]
+                                                                                )
                                                                             }
-                                                                        />
-                                                                    </DialogTrigger>
-                                                                    <DialogContent
-                                                                        className={cn(
-                                                                            "bg-white",
-                                                                            item.customClass
-                                                                        )}
-                                                                    >
-                                                                        <DialogHeader>
-                                                                            {/* ▼ [추가] 제목을 넣어주되, sr-only로 화면에서는 숨깁니다. */}
-                                                                            <DialogTitle className="sr-only">
+                                                                        >
+                                                                            {formData.agreements[item.key] === true ? (
+                                                                                <CheckCircleActive/>
+                                                                            ) : (
+                                                                                <CheckCircle/>
+                                                                            )}
+                                                                            <span
+                                                                                className={cn(
+                                                                                    "w-full text-xs md:text-sm cursor-pointer transition-colors duration-200",
+                                                                                    isError
+                                                                                        ? "text-red-500 font-medium"  // 에러 시 빨간색 + 굵게
+                                                                                        : "text-slate-600"            // 평소 회색
+                                                                                )}
+                                                                            >
                                                                                 {item.label}
-                                                                            </DialogTitle>
-                                                                            <div className={cn("h-5")}></div>
-                                                                        </DialogHeader>
-                                                                        <DialogDescription asChild>
-                                                                            <NotionModalContents
-                                                                                title={
-                                                                                    item.label
-                                                                                }
-                                                                                pageId={
-                                                                                    item.pageId
-                                                                                }
-                                                                            />
-                                                                        </DialogDescription>
-                                                                    </DialogContent>
-                                                                </Dialog>
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                ))}
+                                                                            </span>
+                                                                        </label>
+                                                                        <input
+                                                                            id={`agreement-${item.key}`}
+                                                                            type="checkbox"
+                                                                            checked={
+                                                                                !!formData
+                                                                                    .agreements[
+                                                                                    item
+                                                                                        .key
+                                                                                    ]
+                                                                            }
+                                                                            readOnly
+                                                                            className="invisible"
+                                                                        />
+                                                                        <Dialog>
+                                                                            <DialogTrigger>
+                                                                                <ExternalLinkIcon
+                                                                                    color="#94A3B8"
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            </DialogTrigger>
+                                                                            <DialogContent
+                                                                                className={cn(
+                                                                                    "bg-white",
+                                                                                    item.customClass
+                                                                                )}
+                                                                            >
+                                                                                <DialogHeader>
+                                                                                    {/* ▼ [추가] 제목을 넣어주되, sr-only로 화면에서는 숨깁니다. */}
+                                                                                    <DialogTitle className="sr-only">
+                                                                                        {item.label}
+                                                                                    </DialogTitle>
+                                                                                    <div className={cn("h-5")}></div>
+                                                                                </DialogHeader>
+                                                                                <DialogDescription asChild>
+                                                                                    <NotionModalContents
+                                                                                        title={
+                                                                                            item.label
+                                                                                        }
+                                                                                        pageId={
+                                                                                            item.pageId
+                                                                                        }
+                                                                                    />
+                                                                                </DialogDescription>
+                                                                            </DialogContent>
+                                                                        </Dialog>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        )
+                                                    })}
                                             </div>
-                                            <AnimatePresence>
-                                                {errors.agreements && (
-                                                    <motion.p
-                                                        initial={{
-                                                            opacity: 0,
-                                                            y: -10,
-                                                        }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            y: 0,
-                                                        }}
-                                                        exit={{
-                                                            opacity: 0,
-                                                            y: -10,
-                                                        }}
-                                                        className="text-red-500 text-sm flex items-center gap-1"
-                                                    >
-                                                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                                        {errors.agreements}
-                                                    </motion.p>
-                                                )}
-                                            </AnimatePresence>
                                         </>
                                     )}
                                 </AnimatePresence>
                             </div>
+
+                            <AnimatePresence>
+                                {errors.agreements && (
+                                    <motion.p
+                                        initial={{
+                                            opacity: 0,
+                                            y: -10,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+                                        exit={{
+                                            opacity: 0,
+                                            y: -10,
+                                        }}
+                                        className="text-red-500 text-sm flex items-center gap-1"
+                                    >
+                                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                        {errors.agreements}
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+
                         </motion.div>
                     </div>
                 </Box>
