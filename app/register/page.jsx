@@ -555,7 +555,7 @@ export default function App() {
                                                                         {formData.agreements[item.key] === true ? (
                                                                             <CheckCircleActive/>
                                                                         ) : (
-                                                                            <CheckCircle/>
+                                                                            <CheckCircle color={isError ? "#ef4444" : "#94A3B8"} />
                                                                         )}
                                                                         <span
                                                                             className={cn(
@@ -624,22 +624,20 @@ export default function App() {
                                         </>
                                     )}
                                 </AnimatePresence>
+                                <AnimatePresence>
+                                    {errors.agreements && (
+                                        <motion.p
+                                            initial={{opacity: 0, y: -10}}
+                                            animate={{opacity: 1, y: 0}}
+                                            exit={{opacity: 0, y: -10}}
+                                            className="text-red-500 text-sm flex items-center gap-1"
+                                        >
+                                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                                            {errors.agreements}
+                                        </motion.p>
+                                    )}
+                                </AnimatePresence>
                             </div>
-
-                            <AnimatePresence>
-                                {errors.agreements && (
-                                    <motion.p
-                                        initial={{opacity: 0, y: -10}}
-                                        animate={{opacity: 1, y: 0}}
-                                        exit={{opacity: 0, y: -10}}
-                                        className="text-red-500 text-sm flex items-center gap-1"
-                                    >
-                                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                                        {errors.agreements}
-                                    </motion.p>
-                                )}
-                            </AnimatePresence>
-
                         </motion.div>
                     </div>
                 </Box>

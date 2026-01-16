@@ -50,11 +50,11 @@ export default function PayeeInfoRegisterPage() {
             if (checkResponse.ok) {
                 const checkData = await checkResponse.json();
 
-                // ★ 이미 데이터가 있다면 View 페이지로 리다이렉트
+                // 이미 데이터가 있다면 View 페이지로 리다이렉트
                 if (checkData.payeeData) {
                     toast.info("이미 등록된 정보가 있어 상세 페이지로 이동합니다.");
                     navigate("/payee-info/view");
-                    return; // 여기서 함수 종료 (아래 로직 실행 안 함)
+                    return;
                 }
             }
 
@@ -207,13 +207,9 @@ export default function PayeeInfoRegisterPage() {
         if (!formData?.biz_type?.invoice_type)
             newErrors.invoice_type = "발행 유형을 선택해 주세요.";
 
-        // consent_type은 default 30days 라고 했으니, 비어있을 리가 없어야 합니다.
-
         const hasFileOrUrl = (fileObj) => {
             return !!(fileObj?.file instanceof File) || !!fileObj?.url;
         };
-
-        // ... 기존 validate 로직 이후 적당한 위치에 추가
 
         // ✅ 파일 필수 체크 (권장)
         if (bizType === "individual") {
