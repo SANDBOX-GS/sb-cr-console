@@ -19,7 +19,7 @@ import NotionModalContents from "@/components/common/NotionModalContents";
 import {ExternalLinkIcon} from "lucide-react";
 import {toast} from "sonner";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndecator";
-import {validateEmail, handleRedirect, validatePassword} from "@/lib/utils";
+import {validateEmail, validatePassword} from "@/lib/utils";
 
 export default function App() {
     const {navigate} = useRouter();
@@ -47,6 +47,13 @@ export default function App() {
 
     // 약관 토글 상태 관리
     const [expandedAllTerms, setExpandedAllTerms] = useState(false);
+
+    // 리다이렉트 헬퍼 함수 (메시지와 이동할 경로를 인자로 받음)
+    const handleRedirect = (msg, path) => {
+        toast.warning(msg);
+
+        navigate(path);
+    };
 
     // [수정된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
     useEffect(() => {
