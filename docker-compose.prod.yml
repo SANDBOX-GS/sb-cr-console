@@ -6,6 +6,9 @@ services:
   sb-cr-console-prod:
     container_name: sb-cr-console-prod
     image: rkdfydrn1990/sb-cr-console:latest
+    environment:
+      - TZ=Asia/Seoul  # 시스템 타임존 설정
+      - NODE_ENV=production
 
     ports:
       - "8009:3000" # 호스트(AWS 서버):컨테이너
