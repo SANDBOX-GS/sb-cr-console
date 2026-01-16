@@ -11,6 +11,7 @@ import { Box } from "@/components/common/Box";
 import Image from "next/image";
 import { IMG_URL } from "@/constants/dbConstants";
 import { toast } from "sonner";
+import { validateEmail } from "@/lib/utils";
 
 export default function LoginClient() {
     const { navigate } = useRouter();
@@ -24,11 +25,6 @@ export default function LoginClient() {
     const [errors, setErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    const validateEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
