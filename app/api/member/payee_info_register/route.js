@@ -80,7 +80,16 @@ export async function POST(req) {
         }
         const member_idx = parseInt(memberIdxCookie.value, 10);
 
+        connection = await dbConnect();
+
+        const [memberRows] = await connection.query(
+            `SELECT email, tel FROM ${TABLE_NAMES.SBN_MEMBER} WHERE idx = ?`,
+            [member_idx]
+        );
+
         // 3. DB Insert/Update용 Payload 구성
+        const dbEmail = memberRows[0]?.email;
+        const dbTel = memberRows[0]?.tel;
         const biz_type = payload.biz_type;
         const is_overseas = toYn(payload.is_overseas) || "N";
         const is_minor = toYn(payload.is_minor) || "N";
@@ -207,6 +216,9 @@ export async function POST(req) {
             LABEL_MAP.ISSUE_TYPES[payload.invoice_type?.toUpperCase()] ||
             payload.invoice_type;
 
+        const emailToUse = payload.email || dbEmail;
+        const phoneToUse = payload.tel || dbTel;
+
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
@@ -216,11 +228,11 @@ export async function POST(req) {
             [COL_ID.SSN]: baseDbPayload.ssn,
             [COL_ID.FOREIGN_REG_NO]:
                 is_foreigner === "Y" ? baseDbPayload.ssn : null,
-            [COL_ID.PHONE]: payload.tel
-                ? { phone: payload.tel, countryShortName: "KR" }
+            [COL_ID.PHONE]: phoneToUse
+                ? { phone: phoneToUse, countryShortName: "KR" }
                 : null,
-            [COL_ID.EMAIL]: payload.email
-                ? { email: payload.email, text: payload.email }
+            [COL_ID.EMAIL]: emailToUse
+                ? { email: emailToUse, text: emailToUse }
                 : null,
             [COL_ID.GUARDIAN_NAME]: baseDbPayload.guardian_name,
             [COL_ID.GUARDIAN_PHONE]: baseDbPayload.guardian_tel
