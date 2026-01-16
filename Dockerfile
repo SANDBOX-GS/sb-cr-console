@@ -4,8 +4,13 @@
 # 1단계: 빌더 이미지 (Builder Stage)
 # ===================================================
 FROM node:20-alpine AS builder
-
 WORKDIR /app
+
+# 타임존 데이터 설치 및 환경 변수 설정
+# 1001번 유저(nextjs)로 바꾸기 전에 root 권한으로 설치해야 합니다.
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Seoul
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
