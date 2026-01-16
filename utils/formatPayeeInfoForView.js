@@ -1,7 +1,7 @@
 import {
     BUSINESS_TYPE_LABEL,
     TAX_ISSUE_TYPE_LABEL,
-    BIZ_TYPES,
+    BIZ_TYPES, ID_DOCUMENT_TYPES, ID_DOCUMENT_TYPE_LABEL
 } from "@/constants/payee-data";
 import { IMG_URL } from "@/constants/dbConstants";
 
@@ -96,7 +96,7 @@ export const formatPayeeInfoForView = (apiData) => {
             personalFields.push({
                 id: "identification_type",
                 label: "신분증 종류",
-                value: payeeInfo.identification_type || "-",
+                value: ID_DOCUMENT_TYPE_LABEL[payeeInfo.identification_type] || "-",
                 type: "radio",
             });
         }

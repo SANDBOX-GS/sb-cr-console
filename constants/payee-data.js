@@ -13,15 +13,15 @@ export const BUSINESS_TYPE_LABEL = {
   tax_free_business: "면세 사업자",
 }
 
-export const ID_DOCUMENT_TYPE_LABEL = [
+export const ID_DOCUMENT_TYPE_LABEL =
   {
     resident_card: "주민등록증",
     drivers_license: "운전면허증",
     passport: "여권",
     resident_register: "주민등록등본",
     forigner_card: "외국인등록증",
-  },
-]
+  }
+
 export const TAX_ISSUE_TYPE_LABEL = {
   tax_invoice: "세금계산서",
   electronic_invoice: "전자계산서",
