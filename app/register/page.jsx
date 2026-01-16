@@ -1,17 +1,12 @@
 "use client";
-import {useState, useEffect, use} from "react";
+import {useState, useEffect} from "react";
 import {useSearchParams} from "next/navigation";
 import {Button} from "@/components/common/Button";
 import {Box} from "@/components/common/Box";
 import {Input} from "@/components/ui/input";
 import {NOTION_PAGE_ID} from "@/constants/dbConstants";
 import {cn} from "@/components/ui/utils";
-import {
-    EyeIcon,
-    EyeOffIcon,
-    ChevronDownIcon,
-    AlertCircleIcon,
-} from "lucide-react";
+import {EyeIcon, EyeOffIcon, ChevronDownIcon} from "lucide-react";
 import {motion, AnimatePresence} from "framer-motion";
 import {useRouter} from "@/hooks/useRouter";
 import {IconCard} from "@/components/common/IconCard";
@@ -19,81 +14,12 @@ import {ShieldProtect} from "@/components/icon/ShieldProtect";
 import {CheckCircleActive} from "@/components/icon/CheckCircleActive";
 import {CheckCircle} from "@/components/icon/CheckCircle";
 import Loading from "../loading";
-import {
-    Dialog,
-    DialogTrigger,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog";
+import {Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import NotionModalContents from "@/components/common/NotionModalContents";
 import {ExternalLinkIcon} from "lucide-react";
 import {toast} from "sonner";
-
-function PasswordStrengthIndicator({password}) {
-    const getPasswordStrength = (password) => {
-        if (!password) return {score: 0, text: "", color: "bg-gray-200"};
-
-        let score = 0;
-        const checks = {
-            length: password.length >= 8,
-            lowercase: /[a-z]/.test(password),
-            uppercase: /[A-Z]/.test(password),
-            number: /\d/.test(password),
-            special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-        };
-
-        score = Object.values(checks).filter(Boolean).length;
-
-        if (score <= 2) return {score, text: "약함", color: "bg-red-400"};
-        if (score <= 3) return {score, text: "보통", color: "bg-yellow-400"};
-        if (score <= 4) return {score, text: "강함", color: "bg-sky-400"};
-        return {score, text: "매우 강함", color: "bg-green-400"};
-    };
-
-    const strength = getPasswordStrength(password);
-
-    if (!password) return null;
-
-    return (
-        <motion.div
-            initial={{opacity: 0, y: -10}}
-            animate={{opacity: 1, y: 0}}
-            className="mt-2 space-y-2"
-        >
-            <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                    <motion.div
-                        className={`h-full ${strength.color} rounded-full`}
-                        initial={{width: 0}}
-                        animate={{width: `${(strength.score / 5) * 100}%`}}
-                        transition={{duration: 0.3}}
-                    />
-                </div>
-                <span className="text-xs text-slate-600">{strength.text}</span>
-            </div>
-        </motion.div>
-    );
-}
-
-function TermsContent({content}) {
-    return (
-        <motion.div
-            initial={{opacity: 0, height: 0}}
-            animate={{opacity: 1, height: "auto"}}
-            exit={{opacity: 0, height: 0}}
-            transition={{duration: 0.3}}
-            className="overflow-hidden"
-        >
-            <div className="bg-slate-50/80 rounded-lg p-4 mt-3 max-h-60 overflow-y-auto">
-                <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {content}
-                </div>
-            </div>
-        </motion.div>
-    );
-}
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndecator";
+import {validateEmail, handleRedirect, validatePassword} from "@/lib/utils";
 
 export default function App() {
     const {navigate} = useRouter();
@@ -116,24 +42,16 @@ export default function App() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 검증 관련 State 추가
+    // 검증 관련 State
     const [isVerifying, setIsVerifying] = useState(true); // 검증 로딩 상태
 
     // 약관 토글 상태 관리
     const [expandedAllTerms, setExpandedAllTerms] = useState(false);
 
-// [수정된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
     // [수정된 로직] 컴포넌트 마운트 시 URL 파라미터 검증
     useEffect(() => {
         const verifyToken = async () => {
             const token = searchParams.get("code");
-
-            // 공통 리다이렉트 헬퍼 함수 (메시지와 이동할 경로를 인자로 받음)
-            const handleRedirect = (msg, path) => {
-                toast.warning(msg);
-
-                navigate(path);
-            };
 
             // 1. 토큰(code)이 아예 없는 경우 -> 메인(/)으로 이동
             if (!token) {
@@ -177,61 +95,6 @@ export default function App() {
     if (isVerifying) {
         return <Loading/>;
     }
-    // [화면 2] 접근 권한이 없을 때 에러 화면
-    // if (isAccessDenied) {
-    //     return (
-    //         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    //             <div className="text-center max-w-md">
-    //                 <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4"/>
-    //                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
-    //                     유효하지 않은 접근입니다
-    //                 </h2>
-    //                 <p className="text-gray-600 mb-6">
-    //                     잘못된 링크이거나 유효기간이 만료된 주소입니다.
-    //                     <br/>
-    //                     관리자에게 문의해 주세요.
-    //                 </p>
-    //                 <Button
-    //                     onClick={() => navigate("/login")} // 혹은 메인으로 이동
-    //                     className="bg-slate-800 text-white"
-    //                 >
-    //                     메인으로 돌아가기
-    //                 </Button>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-    const validateEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    const validatePassword = (password) => {
-        if (password.length < 8) {
-            return "비밀번호는 최소 8자 이상이어야 합니다.";
-        }
-        if (password.length > 16) {
-            return "비밀번호는 16자 이하여야 합니다.";
-        }
-
-        const hasLower = /[a-z]/.test(password);
-        const hasUpper = /[A-Z]/.test(password);
-        const hasNumber = /\d/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-        if (!hasLower && !hasUpper) {
-            return "비밀번호에는 최소 하나의 영문이 포함되어야 합니다.";
-        }
-        if (!hasNumber) {
-            return "비밀번호에는 최소 하나의 숫자가 포함되어야 합니다.";
-        }
-        if (!hasSpecial) {
-            return "비밀번호에는 최소 하나의 특수문자가 포함되어야 합니다.";
-        }
-
-        return null;
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -271,7 +134,7 @@ export default function App() {
         ) {
             newErrors.agreements = "필수 항목에 동의해 주세요.";
 
-            // ★ 핵심: 에러가 있으면 약관 토글을 강제로 엽니다.
+            // 에러가 있으면 약관 토글을 강제로 엽니다.
             setExpandedAllTerms(true);
         }
         setErrors(newErrors);
@@ -290,13 +153,9 @@ export default function App() {
                         email: formData.email,
                         password: formData.password,
                         agreed_to_terms: formData.agreements.terms ? "Y" : "N",
-                        agreed_to_privacy: formData.agreements.privacy
-                            ? "Y"
-                            : "N",
+                        agreed_to_privacy: formData.agreements.privacy ? "Y" : "N",
                         agreed_to_third_party: "N",
-                        agreed_to_marketing: formData.agreements.marketing
-                            ? "Y"
-                            : "N",
+                        agreed_to_marketing: formData.agreements.marketing ? "Y" : "N",
                     }),
                 });
 
@@ -518,9 +377,7 @@ export default function App() {
                                 <div className="relative">
                                     <Input
                                         type={
-                                            showConfirmPassword
-                                                ? "text"
-                                                : "password"
+                                            showConfirmPassword ? "text" : "password"
                                         }
                                         placeholder="비밀번호 확인"
                                         value={formData.confirmPassword}
@@ -657,105 +514,105 @@ export default function App() {
                                                     // 1. 전체 에러가 있고 2. 필수 항목이며 3. 체크가 안 된 경우
                                                     const isError = errors.agreements && item.required && !formData.agreements[item.key];
 
-                                                        return (
-                                                            <motion.div
-                                                                key={item.key}
-                                                                initial={{
-                                                                    opacity: 0,
-                                                                    x: -10,
-                                                                }}
-                                                                animate={{
-                                                                    opacity: 1,
-                                                                    x: 0,
-                                                                }}
-                                                                transition={{
-                                                                    delay:
-                                                                        0.6 +
-                                                                        index * 0.1,
-                                                                }}
-                                                                className="space-y-2"
-                                                            >
-                                                                <div
-                                                                    className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
-                                                                    <div className="flex items-center space-x-3 w-full">
-                                                                        <label
-                                                                            className="flex items-center space-x-2 cursor-pointer w-full"
-                                                                            htmlFor={`agreement-${item.key}`}
-                                                                            onClick={() =>
-                                                                                handleAgreementChange(
-                                                                                    item.key,
-                                                                                    !formData.agreements[item.key]
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            {formData.agreements[item.key] === true ? (
-                                                                                <CheckCircleActive/>
-                                                                            ) : (
-                                                                                <CheckCircle/>
+                                                    return (
+                                                        <motion.div
+                                                            key={item.key}
+                                                            initial={{
+                                                                opacity: 0,
+                                                                x: -10,
+                                                            }}
+                                                            animate={{
+                                                                opacity: 1,
+                                                                x: 0,
+                                                            }}
+                                                            transition={{
+                                                                delay:
+                                                                    0.6 +
+                                                                    index * 0.1,
+                                                            }}
+                                                            className="space-y-2"
+                                                        >
+                                                            <div
+                                                                className="flex items-center justify-between p-2 hover:bg-white/50 rounded-lg transition-all duration-200 cursor-pointer">
+                                                                <div className="flex items-center space-x-3 w-full">
+                                                                    <label
+                                                                        className="flex items-center space-x-2 cursor-pointer w-full"
+                                                                        htmlFor={`agreement-${item.key}`}
+                                                                        onClick={() =>
+                                                                            handleAgreementChange(
+                                                                                item.key,
+                                                                                !formData.agreements[item.key]
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {formData.agreements[item.key] === true ? (
+                                                                            <CheckCircleActive/>
+                                                                        ) : (
+                                                                            <CheckCircle/>
+                                                                        )}
+                                                                        <span
+                                                                            className={cn(
+                                                                                "w-full text-xs md:text-sm cursor-pointer transition-colors duration-200",
+                                                                                isError
+                                                                                    ? "text-red-500 font-medium"  // 에러 시 빨간색 + 굵게
+                                                                                    : "text-slate-600"            // 평소 회색
                                                                             )}
-                                                                            <span
-                                                                                className={cn(
-                                                                                    "w-full text-xs md:text-sm cursor-pointer transition-colors duration-200",
-                                                                                    isError
-                                                                                        ? "text-red-500 font-medium"  // 에러 시 빨간색 + 굵게
-                                                                                        : "text-slate-600"            // 평소 회색
-                                                                                )}
-                                                                            >
+                                                                        >
                                                                                 {item.label}
                                                                             </span>
-                                                                        </label>
-                                                                        <input
-                                                                            id={`agreement-${item.key}`}
-                                                                            type="checkbox"
-                                                                            checked={
-                                                                                !!formData
-                                                                                    .agreements[
-                                                                                    item
-                                                                                        .key
-                                                                                    ]
-                                                                            }
-                                                                            readOnly
-                                                                            className="invisible"
-                                                                        />
-                                                                        <Dialog>
-                                                                            <DialogTrigger>
-                                                                                <ExternalLinkIcon
-                                                                                    color="#94A3B8"
-                                                                                    size={
-                                                                                        16
+                                                                    </label>
+                                                                    <input
+                                                                        id={`agreement-${item.key}`}
+                                                                        type="checkbox"
+                                                                        checked={
+                                                                            !!formData
+                                                                                .agreements[
+                                                                                item
+                                                                                    .key
+                                                                                ]
+                                                                        }
+                                                                        readOnly
+                                                                        className="invisible"
+                                                                    />
+                                                                    <Dialog>
+                                                                        <DialogTrigger>
+                                                                            <ExternalLinkIcon
+                                                                                color="#94A3B8"
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                        </DialogTrigger>
+                                                                        <DialogContent
+                                                                            className={cn(
+                                                                                "bg-white",
+                                                                                item.customClass
+                                                                            )}
+                                                                        >
+                                                                            <DialogHeader>
+                                                                                {/* 제목을 넣어주되, sr-only로 화면에서는 숨깁니다. */}
+                                                                                <DialogTitle className="sr-only">
+                                                                                    {item.label}
+                                                                                </DialogTitle>
+                                                                                <div className={cn("h-5")}></div>
+                                                                            </DialogHeader>
+                                                                            <DialogDescription asChild>
+                                                                                <NotionModalContents
+                                                                                    title={
+                                                                                        item.label
+                                                                                    }
+                                                                                    pageId={
+                                                                                        item.pageId
                                                                                     }
                                                                                 />
-                                                                            </DialogTrigger>
-                                                                            <DialogContent
-                                                                                className={cn(
-                                                                                    "bg-white",
-                                                                                    item.customClass
-                                                                                )}
-                                                                            >
-                                                                                <DialogHeader>
-                                                                                    {/* ▼ [추가] 제목을 넣어주되, sr-only로 화면에서는 숨깁니다. */}
-                                                                                    <DialogTitle className="sr-only">
-                                                                                        {item.label}
-                                                                                    </DialogTitle>
-                                                                                    <div className={cn("h-5")}></div>
-                                                                                </DialogHeader>
-                                                                                <DialogDescription asChild>
-                                                                                    <NotionModalContents
-                                                                                        title={
-                                                                                            item.label
-                                                                                        }
-                                                                                        pageId={
-                                                                                            item.pageId
-                                                                                        }
-                                                                                    />
-                                                                                </DialogDescription>
-                                                                            </DialogContent>
-                                                                        </Dialog>
-                                                                    </div>
+                                                                            </DialogDescription>
+                                                                        </DialogContent>
+                                                                    </Dialog>
                                                                 </div>
-                                                            </motion.div>
-                                                        )
-                                                    })}
+                                                            </div>
+                                                        </motion.div>
+                                                    )
+                                                })}
                                             </div>
                                         </>
                                     )}
@@ -765,18 +622,9 @@ export default function App() {
                             <AnimatePresence>
                                 {errors.agreements && (
                                     <motion.p
-                                        initial={{
-                                            opacity: 0,
-                                            y: -10,
-                                        }}
-                                        animate={{
-                                            opacity: 1,
-                                            y: 0,
-                                        }}
-                                        exit={{
-                                            opacity: 0,
-                                            y: -10,
-                                        }}
+                                        initial={{opacity: 0, y: -10}}
+                                        animate={{opacity: 1, y: 0}}
+                                        exit={{opacity: 0, y: -10}}
                                         className="text-red-500 text-sm flex items-center gap-1"
                                     >
                                         <span className="w-1 h-1 bg-red-500 rounded-full"></span>
