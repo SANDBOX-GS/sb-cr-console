@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { motion } from "framer-motion";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
-import { getIn, setIn } from "@/lib/utils";
+import { getIn, setIn, formatBizRegNo } from "@/lib/utils";
 import { ChevronDown, ExternalLinkIcon } from "lucide-react";
 import FileUpload from "../ui/file-upload";
 import { Button } from "../common/Button";
@@ -262,6 +262,17 @@ export const InfoEdit = ({
         setFormData((prev) => setIn(prev, p, !cur));
         clearError();
     };
+
+    const isBizRegNo = id === "biz_reg_no" || path?.includes("biz_reg_no");
+
+    // 3. 핸들러 (로그 추가 버전)
+    const handleBizRegChange = (e) => {
+        const rawValue = e.target.value;
+        const formatted = formatBizRegNo(rawValue);
+
+        updateValue(formatted);
+    };
+
     return (
         <div
             className={cn(
@@ -431,10 +442,10 @@ export const InfoEdit = ({
                         type={type}
                         className="h-12"
                         value={currentValue ?? ""}
-                        onChange={(e) => updateValue(e.target.value)}
+                        onChange={isBizRegNo ? handleBizRegChange : (e) => updateValue(e.target.value)}
                         readOnly={readOnly}
                         placeholder={placeholder}
-                        maxLength={maxLength}
+                        maxLength={isBizRegNo ? 12 : maxLength}
                     />
                 )}
         </div>
