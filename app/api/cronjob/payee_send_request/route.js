@@ -124,29 +124,72 @@ export async function POST(request) {
             let targetUUID = "";
             let targetName = "";
 
-            try {
-                const [members] = await connection.execute(
-                    `SELECT user_id, cr_inv_name FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
-                    [email]
-                );
+            // 기본값: 신규 요청용 (002)
+            let emailTemplateId = 'cr_email_002';
+            let kakaoTemplateId = 'cr_console_002';
+            let shouldSend = true; // 발송 할지 말지 결정하는 플래그
+            let expiredDateStr = null; // 003 템플릿에 넣을 만료일자 변수
 
-                if (members.length > 0) {
-                    targetUUID = members[0].user_id;
-                    targetName = members[0].cr_inv_name;
+            try {
+                const joinQuery = `
+                    SELECT 
+                        m.user_id, 
+                        m.cr_inv_name, 
+                        p.agree_expired_at 
+                    FROM ${TABLE_NAMES.SBN_MEMBER} m
+                    LEFT JOIN ${TABLE_NAMES.SBN_MEMBER_PAYEE} p 
+                        ON m.idx = p.member_idx
+                    WHERE m.email = ?
+                    ORDER BY p.idx DESC 
+                    LIMIT 1
+                `;
+
+                const [rows] = await connection.execute(joinQuery, [email]);
+
+                if (rows.length > 0) {
+                    // [CASE A] 이미 존재하는 회원
+                    targetUUID = rows[0].user_id;
+                    targetName = rows[0].cr_inv_name;
+
+                    const expiredAt = rows[0].agree_expired_at;
+
+                    if (expiredAt) {
+                        const today = new Date();
+                        const expDate = new Date(expiredAt);
+
+                        if (expDate >= today) {
+                            // 1. 유효기간이 아직 남음 -> 발송 스킵 (이미 등록된 회원)
+                            shouldSend = false;
+                        } else {
+                            // 2. 유효기간 만료됨 -> 갱신 요청 템플릿(003) 변경
+                            emailTemplateId = 'cr_email_003';
+                            kakaoTemplateId = 'cr_console_003';
+                            shouldSend = true;
+
+                            // 만료일자 포맷팅 (YYYY-MM-DD)
+                            expiredDateStr = expDate.toISOString().split('T')[0];
+                        }
+                    } else {
+                        // 3. 회원은 있는데 Payee 정보(유효기간)가 없음 -> 신규(002)로 발송
+                        // console.log(`ℹ️ Member exists but No Payee Info. Sending 002. (${email})`);
+                        // defaults (002, true) 유지
+                    }
                 } else {
-                    // 신규 회원이면 첫 번째 아이템의 먼데이 이름을 가져옴
+                    // [CASE B] 아예 신규 회원 -> DB 생성 및 002 발송
                     const rawName = await getMondayItemName(representative.item_id);
                     targetName = rawName || email;
                     targetUUID = generateUUID();
 
                     await connection.execute(
-                        `INSERT INTO ${TABLE_NAMES.SBN_MEMBER} (user_id, email, cr_inv_name, active_status) VALUES (?, ?, ?, 'inactive')`,
+                        `INSERT INTO ${TABLE_NAMES.SBN_MEMBER} 
+                        (user_id, email, cr_inv_name, active_status) 
+                        VALUES (?, ?, ?, 'inactive')`,
                         [targetUUID, email, targetName]
                     );
-                    console.log(`👤 New Member Inserted: ${email} / Name: ${targetName}`);
+                    console.log(`👤 New Member Inserted: ${email}`);
                 }
             } catch (dbErr) {
-                console.error(`❌ Member Error for ${email}:`, dbErr);
+                console.error(`❌ DB Check Error for ${email}:`, dbErr);
                 continue; // 치명적 에러 시 해당 그룹 스킵
             }
 
@@ -163,19 +206,35 @@ export async function POST(request) {
             // (A) 이메일 발송 - 그룹당 1회
             // ------------------------------------------------------------------
             if (needEmail) {
-                const emailParams = { template_id: 'cr_email_002', code: targetUUID };
-                const sendResult = await sendNHNEmail(email, email, emailParams);
+                if (shouldSend) {
+                    // 기본 파라미터
+                    const emailParams = {
+                        template_id: emailTemplateId,
+                        code: targetUUID
+                    };
 
-                if (sendResult.success) {
-                    emailResultStatus = 'success';
-                    mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT;
-                    console.log(`📧 Email Sent (Group): ${email} (Items: ${groupItems.length})`);
-                    successEmailCount++;
+                    // 만료일자 변수가 있으면(003일 경우) 파라미터에 추가
+                    if (expiredDateStr) {
+                        emailParams.expired_date = expiredDateStr;
+                    }
+                    const sendResult = await sendNHNEmail(email, email, emailParams);
+
+                    if (sendResult.success) {
+                        emailResultStatus = 'success';
+                        mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT;
+                        console.log(`📧 Email Sent: ${email} [${emailTemplateId}]`);
+                        successEmailCount++;
+                    } else {
+                        emailResultStatus = 'fail';
+                        emailErrorMsg = sendResult.message || "API Error";
+                        mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED;
+                        console.error(`📧 Email Fail: ${email}`);
+                    }
                 } else {
-                    emailResultStatus = 'fail';
-                    emailErrorMsg = sendResult.message || "Unknown API Error";
-                    mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED;
-                    console.error(`📧 Email Fail: ${email} / Reason: ${emailErrorMsg}`);
+                    // [스킵 처리] 이미 유효한 회원이므로 '성공'으로 간주하여 DB 업데이트 처리
+                    emailResultStatus = 'skipped';
+                    mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT; // 먼데이는 '완료' 처리
+                    console.log(`⏭️ Email Skipped (Already Valid): ${email}`);
                 }
             }
 
@@ -183,18 +242,31 @@ export async function POST(request) {
             // (B) 알림톡 발송 - 그룹당 1회
             // ------------------------------------------------------------------
             if (needKakao) {
-                if (tel && tel.length > 9) {
-                    const kakaoParams = { template_code: 'cr_console_002', code: targetUUID };
+                if (shouldSend && tel && tel.length > 9) {
+                    // 기본 파라미터
+                    const kakaoParams = {
+                        template_code: kakaoTemplateId,
+                        code: targetUUID
+                    };
+
+                    // 만료일자 변수가 있으면(003일 경우) 파라미터에 추가
+                    if (expiredDateStr) {
+                        kakaoParams.expired_date = expiredDateStr;
+                    }
                     const kakaoResult = await sendNHNKakao(tel, kakaoParams);
 
                     if (kakaoResult.success) {
                         kakaoResultStatus = 'success';
-                        console.log(`💬 Kakao Sent (Group): ${tel}`);
+                        console.log(`💬 Kakao Sent: ${tel} [${kakaoTemplateId}]`);
                     } else {
                         kakaoResultStatus = 'fail';
-                        kakaoErrorMsg = kakaoResult.message || "Unknown Kakao API Error";
-                        console.error(`💬 Kakao Fail: ${tel} / Reason: ${kakaoErrorMsg}`);
+                        kakaoErrorMsg = kakaoResult.message || "API Error";
+                        console.error(`💬 Kakao Fail: ${tel}`);
                     }
+                } else if (!shouldSend) {
+                    // [스킵 처리]
+                    kakaoResultStatus = 'skipped';
+                    console.log(`⏭️ Kakao Skipped (Already Valid): ${tel}`);
                 }
             }
 
