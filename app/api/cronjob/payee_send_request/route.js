@@ -30,7 +30,7 @@ async function updateMondayStatus(itemId, labelValue) {
 // ==========================================
 // 1-2. [추가] 과업 정산 보드 상태 업데이트 (반복문 처리)
 // ==========================================
-async function updateWorkSettlementStatus(itemIdsStr, labelValue, timestampStr) {
+async function updateWorkSettlementStatus(itemIdsStr, labelValue, logMessage) { // 인자명도 알기 쉽게 변경
     if (!itemIdsStr) return;
 
     // 콤마(,)로 구분된 ID들을 배열로 변환 및 공백 제거
@@ -46,14 +46,13 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue, timestampStr) 
     const logColId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.SEND_LOG;
 
     console.log(
-        `🔄 Updating Work Settlement Items: [${itemIds.join(
-            ", "
-        )}] -> ${labelValue}`
+        `🔄 Updating Work Settlement Items: [${itemIds.join(", ")}] -> ${labelValue}`
     );
 
     // 연결된 모든 정산 아이템 업데이트 (병렬 처리)
     await Promise.all(
         itemIds.map(async (id) => {
+            // 1. 상태값 변경
             await changeMondayColumnValue(
                 boardId,
                 id,
@@ -62,15 +61,13 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue, timestampStr) 
                 "Work Settlement"
             );
 
-            // 2. 발송 시각 로그 남기기 (추가된 로직)
-            if (timestampStr) {
-                // 예: "2024-05-20 14:30 발송 완료" 형태로 저장
-                const logMessage = `${timestampStr} 발송 완료`;
+            // 2. 발송 로그 남기기
+            if (logMessage) {
                 await changeMondayColumnValue(
                     boardId,
                     id,
                     logColId,
-                    logMessage,
+                    logMessage, // 그대로 사용
                     "Work Settlement Log"
                 );
             }
