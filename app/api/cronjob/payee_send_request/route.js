@@ -9,7 +9,7 @@ import { MONDAY_LABEL } from "@/constants/mondayLabel";
 import { sendNHNEmail, sendNHNKakao } from "@/lib/nhnSender";
 import { getMondayItemName, changeMondayColumnValue, getLinkedItemId, getMondayAssigneeSlackTag } from "@/lib/mondayCommon";
 import { sendSlack } from "@/lib/slackCommon";
-import { generateUUID } from "@/lib/utils"
+import { generateUUID, getCurrentKSTString } from "@/lib/utils"
 
 // ==========================================
 // 1-1. [기존] 수취인 정보 요청 보드 상태 업데이트
@@ -30,7 +30,7 @@ async function updateMondayStatus(itemId, labelValue) {
 // ==========================================
 // 1-2. [추가] 과업 정산 보드 상태 업데이트 (반복문 처리)
 // ==========================================
-async function updateWorkSettlementStatus(itemIdsStr, labelValue) {
+async function updateWorkSettlementStatus(itemIdsStr, labelValue, timestampStr) {
     if (!itemIdsStr) return;
 
     // 콤마(,)로 구분된 ID들을 배열로 변환 및 공백 제거
@@ -41,8 +41,9 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue) {
 
     if (itemIds.length === 0) return;
 
-    const columnId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.STATUS;
     const boardId = MONDAY_BOARD_IDS.WORK_SETTLEMENT;
+    const columnId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.STATUS;
+    const logColId = MONDAY_COLUMN_IDS.WORK_SETTLEMENT.SEND_LOG;
 
     console.log(
         `🔄 Updating Work Settlement Items: [${itemIds.join(
@@ -60,6 +61,19 @@ async function updateWorkSettlementStatus(itemIdsStr, labelValue) {
                 labelValue,
                 "Work Settlement"
             );
+
+            // 2. 발송 시각 로그 남기기 (추가된 로직)
+            if (timestampStr) {
+                // 예: "2024-05-20 14:30 발송 완료" 형태로 저장
+                const logMessage = `${timestampStr} 발송 완료`;
+                await changeMondayColumnValue(
+                    boardId,
+                    id,
+                    logColId,
+                    logMessage,
+                    "Work Settlement Log"
+                );
+            }
         })
     );
 }
@@ -314,6 +328,8 @@ export async function POST(request) {
             // ------------------------------------------------------------------
             // (D) 결과 일괄 반영 - 그룹 내 모든 아이템 순회
             // ------------------------------------------------------------------
+            const sentTimeStr = getCurrentKSTString();
+
             for (const item of groupItems) {
                 const { idx, item_id, board_relation_mkxsa8rp } = item;
                 const updateUpdates = [];
@@ -355,14 +371,24 @@ export async function POST(request) {
                     // Work Settlement 보드 (연결된 정산 건들)
                     if (board_relation_mkxsa8rp) {
                         let settlementLabel = "";
+                        let logText = "";
+
                         if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) {
+                            // [성공]
                             settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT;
+                            logText = `발송시각: ${sentTimeStr}`;
                         } else if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED) {
+                            // [실패]
                             settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED;
+
+                            // 에러 메시지 결정 (이메일 에러가 있으면 이메일 우선, 없으면 알림톡 에러)
+                            const reason = emailErrorMsg || kakaoErrorMsg || "알 수 없는 오류";
+                            logText = `발송시각: ${sentTimeStr} (${reason})`;
                         }
 
+                        // 라벨과 로그 메시지를 함께 전달
                         if (settlementLabel) {
-                            await updateWorkSettlementStatus(board_relation_mkxsa8rp, settlementLabel);
+                            await updateWorkSettlementStatus(board_relation_mkxsa8rp, settlementLabel, logText);
                         }
                     }
                 }

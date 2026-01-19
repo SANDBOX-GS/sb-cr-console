@@ -45,6 +45,7 @@ export const MONDAY_COLUMN_IDS = {
     },
     WORK_SETTLEMENT: {
         STATUS: "color_mkygz7n5", // 상태 컬럼 ('Label')
+        SEND_LOG: "long_text_mkznp975", // 알림 처리로그
         PM: "multiple_person1", // 사람 컬럼(사람, 팀)
     },
     PAYEE_LOG: {
