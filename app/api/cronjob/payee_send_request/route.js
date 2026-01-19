@@ -89,261 +89,222 @@ export async function POST(request) {
             );
         }
 
-        let successCount = 0;
+        // ============================================================
+        // [변경 핵심] 이메일 기준으로 데이터 그룹화 (중복 발송 방지)
+        // ============================================================
+        const groups = {};
 
-        for (const target of targets) {
-            const {
-                idx,
-                item_id,
-                email,
-                tel,
-                email_state,
-                kakao_state,
-                board_relation_mkxsa8rp,
-            } = target;
+        targets.forEach((target) => {
+            const key = target.email; // 이메일을 기준으로 묶음
+            if (!groups[key]) {
+                groups[key] = [];
+            }
+            groups[key].push(target);
+        });
 
-            let updateUpdates = [];
-            let mondayStatusToUpdate = null;
+        let successEmailCount = 0;
+        let processedGroups = 0;
 
-            // 발송 로그 적재용
-            let logEmailState = null;
-            let logEmailErr = null;
-            let logKakaoState = null;
-            let logKakaoErr = null;
+        // 그룹별 순회 (발송은 그룹당 1번만 수행)
+        for (const emailKey of Object.keys(groups)) {
+            const groupItems = groups[emailKey];
 
-            // ------------------------------------------------------------------
-            // [공통] 담당자 멘션 타겟 관리 (Lazy Loading)
-            // ------------------------------------------------------------------
-            let mentionTarget = null;
+            // 대표 정보 추출 (첫 번째 아이템 기준)
+            // 같은 그룹이면 email과 tel은 동일하다고 가정 (이전 로직에서 이미 정제됨)
+            const representative = groupItems[0];
+            const { email, tel } = representative;
 
-            // 실패 시에만 호출하여 담당자 태그를 가져오는 헬퍼 함수
-            const fetchMentionTarget = async () => {
-                if (mentionTarget) return; // 이미 가져왔으면 패스
-
-                try {
-                    let linkedWorkItemId = null;
-
-                    // 1. DB값 우선 사용 (API 호출 절약)
-                    if (board_relation_mkxsa8rp) {
-                        const ids = board_relation_mkxsa8rp.split(',').map(s => s.trim());
-                        if (ids.length > 0 && ids[0]) linkedWorkItemId = ids[0];
-                    }
-
-                    // 2. DB에 없으면 먼데이 API로 조회
-                    if (!linkedWorkItemId) {
-                        linkedWorkItemId = await getLinkedItemId(item_id, MONDAY_COLUMN_IDS.PAYEE_REQUEST.LINK_TASK_SETTLEMENT);
-                    }
-
-                    // 3. 담당자(PM) 슬랙 태그 조회
-                    if (linkedWorkItemId) {
-                        mentionTarget = await getMondayAssigneeSlackTag(linkedWorkItemId);
-                    }
-                } catch (e) {
-                    console.error("⚠️ Slack Mention Target Lookup Failed:", e);
-                }
-            };
+            // 상태 체크: 그룹 내 아이템 중 하나라도 pending이면 발송 시도
+            const needEmail = groupItems.some(t => t.email_state === 'pending');
+            const needKakao = groupItems.some(t => t.kakao_state === 'pending');
 
             // ------------------------------------------------------------------
-            // 🔹 [STEP 0] 공통 데이터 준비 (회원 확인, 이름 확보, 링크 생성)
+            // 🔹 [STEP 0] 공통 데이터 준비 (회원 확인, 이름 확보, UUID) - 1회 수행
             // ------------------------------------------------------------------
-
             let targetUUID = "";
-            let targetName = ""; // 사용자 실명 (cr_inv_name)
+            let targetName = "";
 
             try {
-                // 1. 이미 존재하는 회원인지 확인 (이름도 같이 조회)
                 const [members] = await connection.execute(
                     `SELECT user_id, cr_inv_name FROM ${TABLE_NAMES.SBN_MEMBER} WHERE email = ?`,
                     [email]
                 );
 
                 if (members.length > 0) {
-                    // [CASE A] 이미 존재하는 회원 -> DB 정보 사용
                     targetUUID = members[0].user_id;
-                    targetName = members[0].cr_inv_name; // DB에 저장된 이름 사용
+                    targetName = members[0].cr_inv_name;
                 } else {
-                    // [CASE B] 신규 회원 -> 먼데이 API로 이름 가져오기 & DB 생성
-                    const rawName = await getMondayItemName(item_id);
+                    // 신규 회원이면 첫 번째 아이템의 먼데이 이름을 가져옴
+                    const rawName = await getMondayItemName(representative.item_id);
                     targetName = rawName || email;
-
-                    // 2) UUID 생성
                     targetUUID = generateUUID();
 
-                    // 3) DB Insert
                     await connection.execute(
-                        `INSERT INTO ${TABLE_NAMES.SBN_MEMBER}
-                             (user_id, email, cr_inv_name, active_status)
-                         VALUES (?, ?, ?, 'inactive')`,
+                        `INSERT INTO ${TABLE_NAMES.SBN_MEMBER} (user_id, email, cr_inv_name, active_status) VALUES (?, ?, ?, 'inactive')`,
                         [targetUUID, email, targetName]
                     );
                     console.log(`👤 New Member Inserted: ${email} / Name: ${targetName}`);
                 }
-
             } catch (dbErr) {
-                console.error(`❌ Critical Error for ${email}:`, dbErr);
-                // 회원 정보를 못 가져오면 이메일도, 카카오톡도 못 보내므로 스킵
-                continue;
+                console.error(`❌ Member Error for ${email}:`, dbErr);
+                continue; // 치명적 에러 시 해당 그룹 스킵
             }
 
             // ------------------------------------------------------------------
-            // (A) 이메일 발송
+            // [변수 준비] 발송 결과 저장
             // ------------------------------------------------------------------
-            if (email_state === "pending") {
-                const emailParams = {
-                    template_id: 'cr_email_002',
-                    code: targetUUID,
-                };
+            let emailResultStatus = null; // 'success' | 'fail' | null
+            let kakaoResultStatus = null; // 'success' | 'fail' | null
+            let emailErrorMsg = null;
+            let kakaoErrorMsg = null;
+            let mondayStatusToUpdate = null;
 
+            // ------------------------------------------------------------------
+            // (A) 이메일 발송 - 그룹당 1회
+            // ------------------------------------------------------------------
+            if (needEmail) {
+                const emailParams = { template_id: 'cr_email_002', code: targetUUID };
                 const sendResult = await sendNHNEmail(email, email, emailParams);
 
                 if (sendResult.success) {
-                    updateUpdates.push("email_state = 'success'");
+                    emailResultStatus = 'success';
                     mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT;
-
-                    logEmailState = 'success';
-
-                    console.log(`📧 Email Sent: ${email}`);
+                    console.log(`📧 Email Sent (Group): ${email} (Items: ${groupItems.length})`);
+                    successEmailCount++;
                 } else {
-                    updateUpdates.push("email_state = 'fail'");
+                    emailResultStatus = 'fail';
+                    emailErrorMsg = sendResult.message || "Unknown API Error";
                     mondayStatusToUpdate = MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED;
-
-                    const reason = sendResult.message || "Unknown API Error";
-
-                    logEmailState = 'fail';
-                    logEmailErr = reason;
-
-                    console.error(`📧 Email Fail: ${email} / Reason: ${reason}`);
-
-                    // [실패 처리] 담당자 조회 및 슬랙 전송
-                    await fetchMentionTarget();
-
-                    await sendSlack({
-                        mentionTarget: mentionTarget,
-                        title: "📧 이메일 발송 실패",
-                        message: "외부 CR 정산용 메일주소에 오류가 있습니다. 메일주소에 오류가 있거나, 수취인 메일에 문제가 있을 수 있으니 담당 부서(BDG 혹은 ADN)와 확인하시어 [알림 발송용 이메일] 컬럼 정보에 추가/보완 후 다시 [이메일/알림톡 발송 요청] 버튼을 클릭해주세요.",
-                        fields: [
-                            { title: "대상 이메일", value: email },
-                        ],
-                        buttonText: "먼데이 아이템 바로가기",
-                        buttonUrl: `https://sandboxnetwork.monday.com/boards/${MONDAY_BOARD_IDS.PAYEE_REQUEST}/pulses/${item_id}`
-                    });
+                    console.error(`📧 Email Fail: ${email} / Reason: ${emailErrorMsg}`);
                 }
             }
 
             // ------------------------------------------------------------------
-            // (B) 알림톡 발송
+            // (B) 알림톡 발송 - 그룹당 1회
             // ------------------------------------------------------------------
-            if (kakao_state === "pending") {
+            if (needKakao) {
                 if (tel && tel.length > 9) {
-
-                    const kakaoParams = {
-                        template_code: 'cr_console_002',
-                        code: targetUUID,
-                    };
-
+                    const kakaoParams = { template_code: 'cr_console_002', code: targetUUID };
                     const kakaoResult = await sendNHNKakao(tel, kakaoParams);
 
                     if (kakaoResult.success) {
-                        updateUpdates.push("kakao_state = 'success'");
-
-                        logKakaoState = 'success';
-
-                        console.log(`💬 Kakao Sent: ${tel}`);
+                        kakaoResultStatus = 'success';
+                        console.log(`💬 Kakao Sent (Group): ${tel}`);
                     } else {
-                        updateUpdates.push("kakao_state = 'fail'");
-
-                        // [추가] 실패 사유 로깅
-                        const reason = kakaoResult.message || "Unknown Kakao API Error";
-
-                        logKakaoState = 'fail';
-                        logKakaoErr = reason;
-
-                        console.error(`💬 Kakao Fail: ${tel} / Reason: ${reason}`);
-
-                        // [실패 처리] 담당자 조회 및 슬랙 전송
-                        await fetchMentionTarget();
-
-                        await sendSlack({
-                            mentionTarget: mentionTarget,
-                            title: "💬 알림톡 발송 실패",
-                            message: "외부 CR 정산용 연락처에 오류가 있습니다. 담당 부서(BDG 혹은 ADN)와 확인하시어 [알림톡 발송용 번호] 컬럼 정보에 추가/보완 후 다시 [이메일/알림톡 발송 요청] 버튼을 클릭해주세요.",
-                            fields: [
-                                { title: "대상 번호", value: tel },
-                            ],
-                            buttonText: "먼데이 아이템 바로가기",
-                            buttonUrl: `https://sandboxnetwork.monday.com/boards/${MONDAY_BOARD_IDS.PAYEE_REQUEST}/pulses/${item_id}`
-                        });
+                        kakaoResultStatus = 'fail';
+                        kakaoErrorMsg = kakaoResult.message || "Unknown Kakao API Error";
+                        console.error(`💬 Kakao Fail: ${tel} / Reason: ${kakaoErrorMsg}`);
                     }
                 }
             }
 
             // ------------------------------------------------------------------
-            // (C) DB 상태 업데이트
+            // (C) 실패 시 슬랙 알림 - 그룹당 1회 (대표 아이템 기준)
             // ------------------------------------------------------------------
-            if (updateUpdates.length > 0) {
-                const updateSql = `UPDATE ${
-                    TABLE_NAMES.SBN_PAYEE_REQUEST
-                } SET ${updateUpdates.join(", ")} WHERE idx = ?`;
-                await connection.execute(updateSql, [idx]);
+            if (emailResultStatus === 'fail' || kakaoResultStatus === 'fail') {
+                const failedItem = representative; // 슬랙 알림용 대표 아이템
+                let mentionTarget = null;
 
-                // 발송 로그 테이블(SBN_SEND_LOG) 적재
-                // 이메일 또는 카카오톡 시도가 있었을 경우에만 저장
-                if (logEmailState || logKakaoState) {
+                try {
+                    let linkedWorkItemId = null;
+                    if (failedItem.board_relation_mkxsa8rp) {
+                        const ids = failedItem.board_relation_mkxsa8rp.split(',').map(s => s.trim());
+                        if (ids.length > 0 && ids[0]) linkedWorkItemId = ids[0];
+                    }
+                    if (!linkedWorkItemId) {
+                        linkedWorkItemId = await getLinkedItemId(failedItem.item_id, MONDAY_COLUMN_IDS.PAYEE_REQUEST.LINK_TASK_SETTLEMENT);
+                    }
+                    if (linkedWorkItemId) {
+                        mentionTarget = await getMondayAssigneeSlackTag(linkedWorkItemId);
+                    }
+
+                    const failType = emailResultStatus === 'fail' ? "📧 이메일 발송 실패" : "💬 알림톡 발송 실패";
+                    const failMsg = emailResultStatus === 'fail'
+                        ? "외부 CR 정산용 메일주소에 오류가 있습니다."
+                        : "외부 CR 정산용 연락처에 오류가 있습니다.";
+
+                    await sendSlack({
+                        mentionTarget: mentionTarget,
+                        title: failType,
+                        message: `${failMsg} 담당 부서와 확인 후 정보를 수정해주세요. (영향받은 건수: ${groupItems.length}건)`,
+                        fields: [
+                            { title: "대상", value: `${email} / ${tel || '-'}` },
+                            { title: "오류 내용", value: emailErrorMsg || kakaoErrorMsg }
+                        ],
+                        buttonText: "먼데이 아이템 확인",
+                        buttonUrl: `https://sandboxnetwork.monday.com/boards/${MONDAY_BOARD_IDS.PAYEE_REQUEST}/pulses/${failedItem.item_id}`
+                    });
+                } catch (e) {
+                    console.error("⚠️ Slack Alert Logic Failed:", e);
+                }
+            }
+
+            // ------------------------------------------------------------------
+            // (D) 결과 일괄 반영 - 그룹 내 모든 아이템 순회
+            // ------------------------------------------------------------------
+            for (const item of groupItems) {
+                const { idx, item_id, board_relation_mkxsa8rp } = item;
+                const updateUpdates = [];
+
+                // 1. DB 업데이트 쿼리 생성
+                if (emailResultStatus && item.email_state === 'pending') {
+                    updateUpdates.push(`email_state = '${emailResultStatus}'`);
+                }
+                if (kakaoResultStatus && item.kakao_state === 'pending') {
+                    updateUpdates.push(`kakao_state = '${kakaoResultStatus}'`);
+                }
+
+                if (updateUpdates.length > 0) {
+                    // 1-1. SBN_PAYEE_REQUEST 테이블 업데이트
+                    const updateSql = `UPDATE ${TABLE_NAMES.SBN_PAYEE_REQUEST} SET ${updateUpdates.join(", ")} WHERE idx = ?`;
+                    await connection.execute(updateSql, [idx]);
+
+                    // 1-2. SBN_SEND_LOG 테이블 적재 (로그는 개별적으로 남김)
                     const logPayload = {
                         ref_table_name: TABLE_NAMES.SBN_PAYEE_REQUEST,
                         ref_table_idx: idx,
                         email: email || null,
-                        email_state: logEmailState,
-                        email_err: logEmailErr,
+                        email_state: emailResultStatus,
+                        email_err: emailErrorMsg,
                         tel: tel || null,
-                        kakao_state: logKakaoState,
-                        kakao_err: logKakaoErr
+                        kakao_state: kakaoResultStatus,
+                        kakao_err: kakaoErrorMsg
                     };
-
-                    await connection.query(
-                        `INSERT INTO ${TABLE_NAMES.SBN_SEND_LOG} SET ?`,
-                        logPayload
-                    );
-                    console.log(`📝 Send Log Inserted (IDX: ${idx})`);
-                }
-            }
-
-            // ------------------------------------------------------------------
-            // (D) 먼데이 상태 업데이트
-            // ------------------------------------------------------------------
-            if (mondayStatusToUpdate) {
-                // 1. 수취인 정보 요청 보드 상태 업데이트
-                if (item_id) {
-                    await updateMondayStatus(item_id, mondayStatusToUpdate);
-                    if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) successCount++;
+                    await connection.query(`INSERT INTO ${TABLE_NAMES.SBN_SEND_LOG} SET ?`, logPayload);
                 }
 
-                // 2. 과업 정산 보드 상태 업데이트 (연결된 모든 아이템)
-                // board_relation_mkxsa8rp 값 예시: "11111, 22222, 33333"
-                if (board_relation_mkxsa8rp) {
-                    let settlementLabel = "";
-
-                    if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) {
-                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT;
-                    } else if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED) {
-                        settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED;
+                // 2. 먼데이 상태 업데이트
+                if (mondayStatusToUpdate) {
+                    // Payee Request 보드
+                    if (item_id) {
+                        await updateMondayStatus(item_id, mondayStatusToUpdate);
                     }
 
-                    if (settlementLabel) {
-                        await updateWorkSettlementStatus(
-                            board_relation_mkxsa8rp,
-                            settlementLabel
-                        );
+                    // Work Settlement 보드 (연결된 정산 건들)
+                    if (board_relation_mkxsa8rp) {
+                        let settlementLabel = "";
+                        if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.SENT) {
+                            settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.SENT;
+                        } else if (mondayStatusToUpdate === MONDAY_LABEL.PAYEE_REQUEST.REQUEST_STATE.FAILED) {
+                            settlementLabel = MONDAY_LABEL.WORK_SETTLEMENT.SEND_STATE.FAILED;
+                        }
+
+                        if (settlementLabel) {
+                            await updateWorkSettlementStatus(board_relation_mkxsa8rp, settlementLabel);
+                        }
                     }
                 }
             }
+
+            processedGroups++;
         }
 
         return new Response(
             JSON.stringify({
                 message: "Notification Job Completed",
-                processed_count: targets.length,
-                success_email_count: successCount,
+                processed_groups: processedGroups,
+                total_targets: targets.length,
+                success_groups: successEmailCount,
             }),
             { status: 200 }
         );
