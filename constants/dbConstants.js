@@ -104,6 +104,7 @@ export const IMG_URL =
 export const NOTION_PAGE_ID = {
     NOTICE: "1e529436cbac80c78345e0202cb267a9",
     TERMS: "2d329436cbac808b9aa0cae47412bb64",
-    PRIVACY: "2d329436cbac80c48fd7f0dc3b286d70",
+    PRIVACY: "2e929436cbac8005bb97dabf8e5f9259",
     MARKETING: "2df29436cbac80b3bd9dcd5d6bcce922",
+    UNIQUE: "2e929436cbac804d947ffaab72297a45",
 };

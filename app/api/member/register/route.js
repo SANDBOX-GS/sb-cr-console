@@ -11,6 +11,7 @@ export async function POST(request) {
         password,
         agreed_to_terms,
         agreed_to_privacy,
+        agreed_to_unique,
         agreed_to_marketing,
     } = await request.json();
     let connection;
@@ -56,7 +57,7 @@ export async function POST(request) {
         const termsYN = toYn(agreed_to_terms);
         const privacyYN = toYn(agreed_to_privacy);
         const marketingYN = toYn(agreed_to_marketing);
-        const thirdPartyYN = "N"; // 정책상 고정이면 그냥 고정
+        const uniqueYN = toYn(agreed_to_unique);
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         console.log(hashedPassword);
@@ -68,8 +69,8 @@ export async function POST(request) {
                 terms_agreed_at = IF(? = 'Y', NOW(), terms_agreed_at),
                 agreed_to_privacy = ?,
                 privacy_agreed_at = IF(? = 'Y', NOW(), privacy_agreed_at),
-                agreed_to_third_party = 'N',
-                third_party_agreed_at = IF(? = 'Y', NOW(), third_party_agreed_at),
+                agreed_to_unique = ?,
+                unique_agreed_at = IF(? = 'Y', NOW(), unique_agreed_at),
                 agreed_to_marketing = ?,
                 marketing_agreed_at = IF(? = 'Y', NOW(), marketing_agreed_at),
                 active_status = 'active',
@@ -81,7 +82,8 @@ export async function POST(request) {
                 termsYN, // 3
                 privacyYN, // 4
                 privacyYN, // 5
-                thirdPartyYN, // 6 (항상 N)
+                uniqueYN, // 6
+                uniqueYN, // 6
                 marketingYN, // 7
                 marketingYN, // 8
                 email, // 9

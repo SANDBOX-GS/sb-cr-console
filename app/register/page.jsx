@@ -32,7 +32,7 @@ export default function App() {
             all: false,
             terms: false,
             privacy: false,
-            thirdParty: false,
+            unique: false,
             marketing: false,
         },
     });
@@ -136,8 +136,8 @@ export default function App() {
         // Required agreements validation
         if (
             !formData.agreements.terms ||
-            !formData.agreements.privacy
-            // !formData.agreements.thirdParty // (만약 thirdParty가 필수가 아니라면 제거, 필수라면 유지)
+            !formData.agreements.privacy ||
+            !formData.agreements.unique
         ) {
             newErrors.agreements = "필수 항목에 동의해 주세요.";
 
@@ -161,7 +161,7 @@ export default function App() {
                         password: formData.password,
                         agreed_to_terms: formData.agreements.terms ? "Y" : "N",
                         agreed_to_privacy: formData.agreements.privacy ? "Y" : "N",
-                        agreed_to_third_party: "N",
+                        agreed_to_unique: formData.agreements.unique ? "Y" : "N",
                         agreed_to_marketing: formData.agreements.marketing ? "Y" : "N",
                     }),
                 });
@@ -184,39 +184,42 @@ export default function App() {
     };
 
     const handleAgreementChange = (key, checked) => {
-        if (key === "all") {
-            setFormData((prev) => ({
-                ...prev,
-                agreements: {
-                    all: checked,
-                    terms: checked,
-                    privacy: checked,
-                    thirdParty: checked,
-                    marketing: checked,
-                },
-            }));
-        } else {
-            const newAgreements = {...formData.agreements, [key]: checked};
-            const allRequired =
-                newAgreements.terms &&
-                newAgreements.privacy &&
-                newAgreements.thirdParty;
-            newAgreements.all = allRequired && newAgreements.marketing;
+        let nextAgreements = { ...formData.agreements };
 
-            setFormData((prev) => ({
-                ...prev,
-                agreements: newAgreements,
-            }));
+        // 1. 변경된 체크박스 상태를 미리 계산
+        if (key === "all") {
+            nextAgreements = {
+                all: checked,
+                terms: checked,
+                privacy: checked,
+                unique: checked,
+                marketing: checked,
+            };
+        } else {
+            nextAgreements[key] = checked;
+
+            const allRequired =
+                nextAgreements.terms &&
+                nextAgreements.privacy &&
+                nextAgreements.unique;
+
+            nextAgreements.all = allRequired && nextAgreements.marketing;
         }
 
-        // Clear agreement errors when user checks required items
+        // 2. 상태 업데이트
+        setFormData((prev) => ({
+            ...prev,
+            agreements: nextAgreements,
+        }));
+
+        // 3. 필수 항목 3개가 모두 체크되었을 때만 에러 메시지 제거
         if (
             errors.agreements &&
-            (formData.agreements.terms ||
-                formData.agreements.privacy ||
-                formData.agreements.thirdParty)
+            nextAgreements.terms &&   // 이용약관
+            nextAgreements.privacy && // 개인정보
+            nextAgreements.unique     // 고유식별정보 (추가됨)
         ) {
-            setErrors((prev) => ({...prev, agreements: undefined}));
+            setErrors((prev) => ({ ...prev, agreements: undefined }));
         }
     };
 
@@ -510,8 +513,15 @@ export default function App() {
                                                         customClass: "h-full max-h-[85dvh]",
                                                     },
                                                     {
+                                                        key: "unique",
+                                                        label: "고유식별정보 수집 및 이용 안내 (필수)",
+                                                        required: true,
+                                                        pageId: NOTION_PAGE_ID.UNIQUE,
+                                                        customClass: "h-full max-h-[85dvh]",
+                                                    },
+                                                    {
                                                         key: "marketing",
-                                                        label: "마케팅 및 프로모션 알림 동의 (선택)",
+                                                        label: "광고 및 이벤트 목적의 알림 동의 (선택)",
                                                         required: false,
                                                         pageId: NOTION_PAGE_ID.MARKETING,
                                                         customClass: "h-auto",
