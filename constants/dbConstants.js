@@ -52,6 +52,7 @@ export const MONDAY_COLUMN_IDS = {
         VERSION: "numeric_mkz4a4sa", // 업데이트 버전
         CREATED_TYPE: "color_mkxjtezh", // 액션 구분 (상태)
         BIZ_TYPE_STATUS: "color_mkxtxram", // 사업자 구분 (상태)
+        SPECIAL_NOTES: "dropdown_mkxtbsr7", // 특이사항 (드롭다운)
         INVOICE_TYPE: "dropdown_mkxtyexm", // 발행 유형 (드롭다운)
         TAX: "numeric_mkz5jt0b", // 과세율 (숫자)
         CORP_NAME: "long_text_mkxt6ds1", // 법인명

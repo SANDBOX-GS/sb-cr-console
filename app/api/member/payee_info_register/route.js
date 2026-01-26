@@ -209,6 +209,14 @@ export async function POST(req) {
         if (biz_type === "tax_free_business")
             bizTypeLabel = LABEL_MAP.BIZ_TYPE.TAX_FREE_BUSINESS;
 
+        // 5-1-1. 특이사항 드롭다운 매핑
+        let specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.NONE;
+        if (is_minor === "Y") specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.MINOR;
+        if (is_foreigner === "Y")
+            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.FOREIGNER;
+        if (is_overseas === "Y")
+            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.OVERSEAS;
+
         // 5-2. 발행 유형 드롭다운 매핑 (DB코드 -> 한글 라벨)
         // (예: payload.invoice_type = 'tax_invoice' -> '세금계산서')
         // 매칭되는 키가 없으면 값 그대로 사용
@@ -222,6 +230,9 @@ export async function POST(req) {
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
+            [COL_ID.SPECIAL_NOTES]: specialNotesLabel
+                ? { labels: [specialNotesLabel] }
+                : null,
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
             [COL_ID.USER_NAME]: baseDbPayload.user_name,
@@ -400,7 +411,8 @@ export async function POST(req) {
 
             // 3. 메시지 본문 구성 (신규 등록 멘트로 변경)
             const slackTitle = "🆕 수취 정보 신규 등록";
-            const slackMessage = "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
+            const slackMessage =
+                "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
 
             // 4. 발송 실행
             await sendSlack({
@@ -408,12 +420,17 @@ export async function POST(req) {
                 title: slackTitle,
                 message: slackMessage,
                 fields: [
-                    { title: "요청자 (상호명)", value: baseDbPayload.user_name || baseDbPayload.biz_name || "-" }
+                    {
+                        title: "요청자 (상호명)",
+                        value:
+                            baseDbPayload.user_name ||
+                            baseDbPayload.biz_name ||
+                            "-",
+                    },
                 ],
                 buttonText: "수취 정보 바로가기",
-                buttonUrl: mondayItemUrl
+                buttonUrl: mondayItemUrl,
             });
-
         } catch (slackError) {
             console.error("⚠️ Slack Notification Failed:", slackError);
         }
