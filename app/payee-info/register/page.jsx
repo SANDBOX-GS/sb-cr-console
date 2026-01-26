@@ -288,13 +288,12 @@ export default function PayeeInfoRegisterPage() {
                         transition={{ duration: 0.6 }}
                         className="text-center mb-12"
                     >
-                        <h1>내정보 수정</h1>
+                        <h1>수취 정보 등록</h1>
 
                         <p className="mt-4 text-slate-500 max-w-lg mx-auto">
-                            등록된 정보를 수정하거나, 유효기간을 연장해 주세요.
+                            정산을 위해 필요한 기본 정보를 먼저 등록해 주세요.
                             <br />
-                            등록 요청 시 정산담당자가 영업일 3일 이내 검수를
-                            진행합니다.
+                            입력하신 정보는 정산 외 다른 용도로는 사용되지 않습니다.
                         </p>
                     </motion.div>
                     <form onSubmit={handleSubmit}>

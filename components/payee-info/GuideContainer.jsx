@@ -36,7 +36,18 @@ export const GuideContainer = ({ handleStartRegister }) => {
                 ]}
                 desc={[
                     "※ 반영 전 정보로 정산이 완료된 경우 세무 처리에 어려움이 생길 수 있습니다.",
-                    "※ 변경 전 정보는 개인정보처리방침에 따라 파기되며, 수정한 정보는 암호화되어 안전하게 보호됩니다.",
+                    <span key="privacy-desc">
+                        ※ 변경 전 정보는{" "}
+                        <a
+                            href="/legal/privacy" /* 실제 URL 입력 */
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-gray-900 transition-colors cursor-pointer"
+                        >
+                            개인정보처리방침
+                        </a>
+                        에 따라 파기되며, 수정한 정보는 암호화되어 안전하게 보호됩니다.
+                    </span>,
                 ]}
                 icon={DocumentReplace}
             />
