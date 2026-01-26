@@ -200,6 +200,7 @@ export const buildRegisterBizSections = (formData) => {
         description: it.description,
         detail: it.detail,
         taxRatio: it.taxRatio,
+        taxBadge: it.taxBadge,
     }));
 
     bizTypeSection.value.push({
@@ -313,6 +314,7 @@ export const buildRegisterPayeeSections = (formData, basic) => {
                 path: "personal_info.identification_type",
                 errorKey: "identification_type",
                 options: ID_DOCUMENT_TYPES,
+                fullWidth: true,
             });
         }
 
@@ -447,6 +449,7 @@ export const buildRegisterPayeeSections = (formData, basic) => {
                 type: "text",
                 path: "account_info.swift_code",
                 errorKey: "swift_code",
+                fullWidth: true,
             },
             {
                 id: "bank_address",

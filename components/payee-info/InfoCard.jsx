@@ -40,19 +40,19 @@ const getInfoWrapperClass = (info) => {
 };
 
 export default function InfoBox({
-                                    title = "",
-                                    className = "",
-                                    children,
-                                    mode = "edit",
-                                    Info = [],
-                                    formData,
-                                    setFormData,
-                                    errors = {},
-                                    setErrors,
-                                    isToggle = false,
-                                    isOpen = false,
-                                    onToggle,
-                                }) {
+    title = "",
+    className = "",
+    children,
+    mode = "edit",
+    Info = [],
+    formData,
+    setFormData,
+    errors = {},
+    setErrors,
+    isToggle = false,
+    isOpen = false,
+    onToggle,
+}) {
     return (
         <div>
             <Box className={cn("flex flex-col gap-4", className)}>
@@ -112,20 +112,22 @@ export default function InfoBox({
 }
 
 export const InfoView = ({
-                             label = "본명*",
-                             id = "real_name",
-                             value = "홍길동",
-                             type = "text",
-                             src = "",
-                             wrapperClassName,
-                         }) => {
+    label = "본명*",
+    id = "real_name",
+    value = "홍길동",
+    type = "text",
+    src = "",
+    wrapperClassName,
+}) => {
     // 1. 파일 데이터 파싱
     const hasFile = type === "file" && src && src.url;
     const fileExt = src?.ext?.toLowerCase() || "";
 
     // 2. URL 조합
     const fullUrl = hasFile
-        ? (src.url.startsWith("http") ? src.url : `${IMG_URL}${src.url}`)
+        ? src.url.startsWith("http")
+            ? src.url
+            : `${IMG_URL}${src.url}`
         : "";
 
     // 3. 파일 타입 판별
@@ -167,10 +169,11 @@ export const InfoView = ({
                                     {label} : {src.name}
                                 </DialogTitle>
                             </DialogHeader>
-                            <DialogDescription asChild
-                                               className={
-                                                   "w-full h-full flex items-center justify-center"
-                                               }
+                            <DialogDescription
+                                asChild
+                                className={
+                                    "w-full h-full flex items-center justify-center"
+                                }
                             >
                                 <div className="relative">
                                     {isImage ? (
@@ -214,29 +217,31 @@ export const InfoView = ({
                     </Dialog>
                 </div>
             ) : (
-                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">{value}</div>
+                <div className="text-[#717182] font-normal leading-[1.6] text-[0.8125rem] md:text-base">
+                    {value}
+                </div>
             )}
         </div>
     );
 };
 
 export const InfoEdit = ({
-                             id,
-                             label,
-                             value,
-                             type = "text",
-                             path,
-                             options,
-                             errorKey,
-                             formData,
-                             setFormData,
-                             errors,
-                             setErrors,
-                             readOnly,
-                             placeholder,
-                             maxLength,
-                             wrapperClassName,
-                         }) => {
+    id,
+    label,
+    value,
+    type = "text",
+    path,
+    options,
+    errorKey,
+    formData,
+    setFormData,
+    errors,
+    setErrors,
+    readOnly,
+    placeholder,
+    maxLength,
+    wrapperClassName,
+}) => {
     // 현재 값
     const currentValue = path ? getIn(formData, path, "") : "";
 
@@ -272,7 +277,7 @@ export const InfoEdit = ({
 
         updateValue(formatted);
     };
-
+    console.log(options);
     return (
         <div
             className={cn(
@@ -297,8 +302,8 @@ export const InfoEdit = ({
                             className={cn(
                                 "h-12 bg-white/50",
                                 errorKey &&
-                                errors?.[errorKey] &&
-                                "border-red-400"
+                                    errors?.[errorKey] &&
+                                    "border-red-400"
                             )}
                         >
                             <SelectValue
@@ -352,102 +357,118 @@ export const InfoEdit = ({
                     />
                 </div>
             ) : /* radio */ type === "radio" ? (
-                    <div className="w-full flex flex-col items-center justify-between gap-4 md:grid md:grid-cols-2 md:gap-5">
-                        {options?.map((option) => {
-                            const checked = currentValue === option.value;
-                            return (
-                                <motion.button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => updateValue(option.value)}
-                                    className={`
+                <div className="w-full flex flex-col items-center justify-between gap-4 md:grid md:grid-cols-2 md:gap-5">
+                    {options?.map((option) => {
+                        const checked = currentValue === option.value;
+                        return (
+                            <motion.button
+                                key={option.value}
+                                type="button"
+                                onClick={() => updateValue(option.value)}
+                                className={`
                   w-full border border-2 flex flex-col items-start justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
                   ${
-                                        checked
-                                            ? "border-sky-300 bg-sky-100 text-slate-700 shadow-sm font-medium"
-                                            : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800 font-normal"
-                                    }
+                      checked
+                          ? "border-sky-300 bg-sky-100 text-slate-700 shadow-sm font-medium"
+                          : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-800 font-normal"
+                  }
                 `}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <div className="flex items-center gap-2 mb-1 w-full">
-                                        {checked ? (
-                                            <div className="rounded-full bg-sky-400 w-4 h-4" />
-                                        ) : (
-                                            <div className="rounded-full border-2 border-slate-400 w-4 h-4" />
-                                        )}
-                                        <span className="font-medium text-xs md:text-sm">
-                                        {option.label}
-                                    </span>
-                                    </div>
-
-                                    {option.description && (
-                                        <p className="text-xs md:text-sm text-sky-600">
-                                            {option.description}
-                                        </p>
-                                    )}
-                                    {option.detail && (
-                                        <p className="text-start text-xs text-slate-500">
-                                            {option.detail}
-                                        </p>
-                                    )}
-                                </motion.button>
-                            );
-                        })}
-
-                        {errorKey && errors?.[errorKey] && (
-                            <p className="text-red-500 text-sm">
-                                {errors?.[errorKey]}
-                            </p>
-                        )}
-                    </div>
-                ) : /* CHECKBOX MULTI (옵션별 path 토글) */
-                type === "checkbox" ? (
-                    <div className="flex flex-wrap gap-3">
-                        {options?.map((opt, idx) => {
-                            const checked = !!getIn(formData, opt.path, false);
-
-                            return (
-                                <motion.button
-                                    key={opt.path ?? idx}
-                                    type="button"
-                                    onClick={() => togglePath(opt.path)}
-                                    className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
-                  ${
-                                        checked
-                                            ? "border-sky-300 bg-sky-100 font-medium"
-                                            : "border-slate-200 bg-white text-slate-600 hover:text-slate-800 font-normal"
-                                    }
-                `}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <div className="flex items-center gap-2 mb-1 w-full">
                                     {checked ? (
-                                        <CheckCircleActive />
+                                        <div className="rounded-full bg-sky-400 w-4 h-4" />
                                     ) : (
-                                        <CheckCircle />
+                                        <div className="rounded-full border-2 border-slate-400 w-4 h-4" />
                                     )}
                                     <span className="font-medium text-xs md:text-sm">
+                                        {option.label}
+                                        {option.taxBadge && (
+                                            <span
+                                                className={cn(
+                                                    "ml-2 px-2 py-[2px] md:py-1 text-bold text-xs text-white rounded-md",
+                                                    option.taxRatio > 0
+                                                        ? "bg-sky-400"
+                                                        : "bg-slate-500"
+                                                )}
+                                            >
+                                                {option.taxBadge}
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+
+                                {option.description && (
+                                    <p className="text-xs md:text-sm text-sky-600">
+                                        {option.description}
+                                    </p>
+                                )}
+                                {option.detail && (
+                                    <p className="text-start text-xs text-slate-500">
+                                        {option.detail}
+                                    </p>
+                                )}
+                            </motion.button>
+                        );
+                    })}
+
+                    {errorKey && errors?.[errorKey] && (
+                        <p className="text-red-500 text-sm">
+                            {errors?.[errorKey]}
+                        </p>
+                    )}
+                </div>
+            ) : /* CHECKBOX MULTI (옵션별 path 토글) */
+            type === "checkbox" ? (
+                <div className="flex flex-wrap gap-3">
+                    {options?.map((opt, idx) => {
+                        const checked = !!getIn(formData, opt.path, false);
+
+                        return (
+                            <motion.button
+                                key={opt.path ?? idx}
+                                type="button"
+                                onClick={() => togglePath(opt.path)}
+                                className={`
+                  flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200
+                  ${
+                      checked
+                          ? "border-sky-300 bg-sky-100 font-medium"
+                          : "border-slate-200 bg-white text-slate-600 hover:text-slate-800 font-normal"
+                  }
+                `}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {checked ? (
+                                    <CheckCircleActive />
+                                ) : (
+                                    <CheckCircle />
+                                )}
+                                <span className="font-medium text-xs md:text-sm">
                                     {opt.label}
                                 </span>
-                                </motion.button>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    /* TEXT */
-                    <Input
-                        type={type}
-                        className="h-12"
-                        value={currentValue ?? ""}
-                        onChange={isBizRegNo ? handleBizRegChange : (e) => updateValue(e.target.value)}
-                        readOnly={readOnly}
-                        placeholder={placeholder}
-                        maxLength={isBizRegNo ? 12 : maxLength}
-                    />
-                )}
+                            </motion.button>
+                        );
+                    })}
+                </div>
+            ) : (
+                /* TEXT */
+                <Input
+                    type={type}
+                    className="h-12"
+                    value={currentValue ?? ""}
+                    onChange={
+                        isBizRegNo
+                            ? handleBizRegChange
+                            : (e) => updateValue(e.target.value)
+                    }
+                    readOnly={readOnly}
+                    placeholder={placeholder}
+                    maxLength={isBizRegNo ? 12 : maxLength}
+                />
+            )}
         </div>
     );
 };
