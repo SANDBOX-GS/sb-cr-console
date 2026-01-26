@@ -360,7 +360,7 @@ export async function POST(req) {
         }
 
         // 6. DB 트랜잭션 시작
-        baseDbPayload.payout_ratio_id = mondayItemId; // 먼데이 ID 저장
+        baseDbPayload.monday_item_id = mondayItemId; // 먼데이 ID 저장
 
         await connection.beginTransaction();
 
@@ -541,7 +541,7 @@ export async function POST(req) {
         return NextResponse.json(
             {
                 message: "정보 수정 요청이 완료되었습니다.",
-                payout_ratio_id: mondayItemId,
+                monday_item_id: mondayItemId,
             },
             { status: 200 }
         );

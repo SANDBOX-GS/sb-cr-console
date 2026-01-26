@@ -52,7 +52,7 @@ export const MONDAY_LABEL = {
     },
     ISSUE_TYPES: {
       // DB값 : 먼데이 라벨명
-      INDIVIDUAL: "개인", // (DB에 'personal'로 저장된다고 가정)
+      INDIVIDUAL: "개인",
       TAX_INVOICE: "세금계산서",
       ELECTRONIC_INVOICE: "전자계산서",
       CASH_RECEIPT_0: "현금영수증",

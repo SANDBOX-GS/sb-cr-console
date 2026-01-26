@@ -332,7 +332,7 @@ export async function POST(req) {
             ...baseDbPayload,
             member_idx: member_idx,
             payee_idx: payee_idx, // 생성된 원본 ID 연결
-            payout_ratio_id: mondayItemId, // 먼데이 ID 추가
+            monday_item_id: mondayItemId, // 먼데이 ID 추가
             created_at: new Date(),
         };
         // updated_at이나 기타 불필요 필드 제거가 필요하다면 수행 (Insert시엔 보통 무관)
@@ -421,7 +421,7 @@ export async function POST(req) {
         return NextResponse.json(
             {
                 message: "수취인 정보 등록 및 검수 요청이 완료되었습니다.",
-                payout_ratio_id: mondayItemId,
+                monday_item_id: mondayItemId,
             },
             { status: 200 }
         );
