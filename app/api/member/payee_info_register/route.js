@@ -127,11 +127,7 @@ export async function POST(req) {
             baseDbPayload.user_name = nullIfEmpty(payload.user_name);
 
             // 외국인이면 외국인등록번호, 아니면 주민등록번호
-            baseDbPayload.ssn = nullIfEmpty(
-                is_foreigner === "Y"
-                    ? payload.foreigner_registration_number
-                    : payload.ssn
-            );
+            baseDbPayload.ssn = nullIfEmpty(payload.ssn);
 
             // 미성년자/외국인이 아니면 신분증 종류 업데이트
             if (is_minor === "N" && is_foreigner === "N") {
@@ -210,12 +206,15 @@ export async function POST(req) {
             bizTypeLabel = LABEL_MAP.BIZ_TYPE.TAX_FREE_BUSINESS;
 
         // 5-1-1. 특이사항 드롭다운 매핑
-        let specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.NONE;
-        if (is_minor === "Y") specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.MINOR;
-        if (is_foreigner === "Y")
-            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.FOREIGNER;
-        if (is_overseas === "Y")
-            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.OVERSEAS;
+        const specialNotesLabels = [];
+        if (is_minor === "Y") specialNotesLabels.push(LABEL_MAP.SPECIAL_NOTES.MINOR);
+        if (is_foreigner === "Y") specialNotesLabels.push(LABEL_MAP.SPECIAL_NOTES.FOREIGNER);
+        if (is_overseas === "Y") specialNotesLabels.push(LABEL_MAP.SPECIAL_NOTES.OVERSEAS);
+
+        // 아무것도 해당되지 않으면 '해당 없음' 추가
+        if (specialNotesLabels.length === 0) {
+            specialNotesLabels.push(LABEL_MAP.SPECIAL_NOTES.NONE);
+        }
 
         // 5-2. 발행 유형 드롭다운 매핑 (DB코드 -> 한글 라벨)
         // (예: payload.invoice_type = 'tax_invoice' -> '세금계산서')
@@ -236,8 +235,8 @@ export async function POST(req) {
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
-            [COL_ID.SPECIAL_NOTES]: specialNotesLabel
-                ? { labels: [specialNotesLabel] }
+            [COL_ID.SPECIAL_NOTES]: specialNotesLabels.length > 0
+                ? { labels: specialNotesLabels }
                 : null,
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
