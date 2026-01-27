@@ -254,6 +254,14 @@ export async function POST(req) {
         if (biz_type === "tax_free_business")
             bizTypeLabel = LABEL_MAP.BIZ_TYPE.TAX_FREE_BUSINESS;
 
+        // 5-1-1. 특이사항 드롭다운 매핑
+        let specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.NONE;
+        if (is_minor === "Y") specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.MINOR;
+        if (is_foreigner === "Y")
+            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.FOREIGNER;
+        if (is_overseas === "Y")
+            specialNotesLabel = LABEL_MAP.SPECIAL_NOTES.OVERSEAS;
+
         // 5-2. 발행 유형 드롭다운 매핑 (DB코드 -> 한글 라벨)
         // (예: payload.invoice_type = 'tax_invoice' -> '세금계산서')
         // 매칭되는 키가 없으면 값 그대로 사용
@@ -268,6 +276,9 @@ export async function POST(req) {
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.UPDATE },
             [COL_ID.BIZ_TYPE_STATUS]: { label: bizTypeLabel },
+            [COL_ID.SPECIAL_NOTES]: specialNotesLabel
+                ? { labels: [specialNotesLabel] }
+                : null,
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
             [COL_ID.USER_NAME]: baseDbPayload.user_name,
@@ -275,7 +286,8 @@ export async function POST(req) {
             // 내국인(N) -> 주민번호 컬럼(COL_ID.SSN)에 값, 외국인번호는 null
             // 외국인(Y) -> 주민번호 컬럼은 null, 외국인번호 컬럼(COL_ID.FOREIGN_REG_NO)에 값
             [COL_ID.SSN]: is_foreigner === "N" ? baseDbPayload.ssn : null,
-            [COL_ID.FOREIGN_REG_NO]: is_foreigner === "Y" ? baseDbPayload.ssn : null,
+            [COL_ID.FOREIGN_REG_NO]:
+                is_foreigner === "Y" ? baseDbPayload.ssn : null,
             [COL_ID.PHONE]: phoneToUse
                 ? { phone: phoneToUse, countryShortName: "KR" }
                 : null,
@@ -518,7 +530,8 @@ export async function POST(req) {
 
             // 3. 메시지 본문 구성
             const slackTitle = "📝 수취 정보 수정 요청 등록";
-            const slackMessage = "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
+            const slackMessage =
+                "신규 외부 CR의 수취 정보가 등록되었습니다. 아래 버튼을 눌러 등록된 정보를 확인해주세요.";
 
             // 4. 발송 실행
             // (slackCommon.js의 sendSlack 함수는 내부에서 에러를 catch하므로 여기서 await만 하면 됨)
@@ -527,12 +540,17 @@ export async function POST(req) {
                 title: slackTitle,
                 message: slackMessage,
                 fields: [
-                    { title: "요청자 (상호명)", value: baseDbPayload.user_name || baseDbPayload.biz_name || "-" }
+                    {
+                        title: "요청자 (상호명)",
+                        value:
+                            baseDbPayload.user_name ||
+                            baseDbPayload.biz_name ||
+                            "-",
+                    },
                 ],
                 buttonText: "수취 정보 바로가기", // 버튼 텍스트
-                buttonUrl: mondayItemUrl        // 버튼 클릭 시 이동할 링크
+                buttonUrl: mondayItemUrl, // 버튼 클릭 시 이동할 링크
             });
-
         } catch (slackError) {
             // 슬랙 발송 실패가 전체 로직(성공 응답)을 막지 않도록 로그만 찍고 넘어감
             console.error("⚠️ Slack Notification Failed:", slackError);
