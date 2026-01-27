@@ -102,7 +102,7 @@ export const IMG_URL =
     "https://sandboxnetwork-public-hosting.s3.ap-northeast-2.amazonaws.com/cr_console";
 
 export const NOTION_PAGE_ID = {
-    NOTICE: "1e529436cbac80c78345e0202cb267a9", // todo : 1e529436cbac8090b418c8e5d744df7e   아직 없어서 빌드가 안됨
+    NOTICE: "1e529436cbac80c78345e0202cb267a9",
     TERMS: "2d329436cbac808b9aa0cae47412bb64",
     PRIVACY: "2e929436cbac8005bb97dabf8e5f9259",
     PRIVACY_POLICY: "2d329436cbac80c48fd7f0dc3b286d70",
