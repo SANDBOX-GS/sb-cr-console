@@ -225,7 +225,13 @@ export async function POST(req) {
             payload.invoice_type;
 
         const emailToUse = payload.email || dbEmail;
-        const phoneToUse = payload.tel || dbTel;
+        // 본인 연락처 하이픈 제거(프론트 하이픈 정규식때문)
+        let rawPhoneToUse = payload.tel || dbTel;
+        if (rawPhoneToUse) rawPhoneToUse = rawPhoneToUse.replace(/[^0-9]/g, "");
+
+        // 보호자 연락처 하이픈 제거(프론트 하이픈 정규식때문)
+        let rawGuardianPhone = baseDbPayload.guardian_tel;
+        if (rawGuardianPhone) rawGuardianPhone = rawGuardianPhone.replace(/[^0-9]/g, "");
 
         const mondayColumnValues = {
             [COL_ID.CREATED_TYPE]: { label: LABEL_MAP.CREATED_TYPE.CREATE },
@@ -239,15 +245,15 @@ export async function POST(req) {
             [COL_ID.SSN]: baseDbPayload.ssn,
             [COL_ID.FOREIGN_REG_NO]:
                 is_foreigner === "Y" ? baseDbPayload.ssn : null,
-            [COL_ID.PHONE]: phoneToUse
-                ? { phone: phoneToUse, countryShortName: "KR" }
+            [COL_ID.PHONE]: rawPhoneToUse
+                ? { phone: rawPhoneToUse, countryShortName: "KR" }
                 : null,
             [COL_ID.EMAIL]: emailToUse
                 ? { email: emailToUse, text: emailToUse }
                 : null,
             [COL_ID.GUARDIAN_NAME]: baseDbPayload.guardian_name,
-            [COL_ID.GUARDIAN_PHONE]: baseDbPayload.guardian_tel
-                ? { phone: baseDbPayload.guardian_tel, countryShortName: "KR" }
+            [COL_ID.GUARDIAN_PHONE]: rawGuardianPhone
+                ? { phone: rawGuardianPhone, countryShortName: "KR" }
                 : null,
             [COL_ID.BANK_NAME]: baseDbPayload.bank_name,
             [COL_ID.ACCOUNT_HOLDER]: baseDbPayload.account_holder,
