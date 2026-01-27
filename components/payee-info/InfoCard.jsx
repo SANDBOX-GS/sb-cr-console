@@ -6,7 +6,7 @@ import { Input } from "../ui/input";
 import { motion } from "framer-motion";
 import { CheckCircleActive } from "../icon/CheckCircleActive";
 import { CheckCircle } from "../icon/CheckCircle";
-import { getIn, setIn, formatBizRegNo } from "@/lib/utils";
+import { getIn, setIn, formatBizRegNo, formatPhoneNumber } from "@/lib/utils";
 import { ChevronDown, ExternalLinkIcon } from "lucide-react";
 import FileUpload from "../ui/file-upload";
 import { Button } from "../common/Button";
@@ -269,14 +269,22 @@ export const InfoEdit = ({
     };
 
     const isBizRegNo = id === "biz_reg_no" || path?.includes("biz_reg_no");
+    const isPhone = id === "tel" || id === "guardian_tel" || path?.includes("tel") || path?.includes("phone");
 
-    // 3. 핸들러 (로그 추가 버전)
+    // 3. 핸들러 (사업자번호)
     const handleBizRegChange = (e) => {
         const rawValue = e.target.value;
         const formatted = formatBizRegNo(rawValue);
-
         updateValue(formatted);
     };
+
+    // 3-1. 핸들러 (전화번호)
+    const handlePhoneChange = (e) => {
+        const rawValue = e.target.value;
+        const formatted = formatPhoneNumber(rawValue);
+        updateValue(formatted);
+    };
+
     console.log(options);
     return (
         <div
@@ -462,7 +470,9 @@ export const InfoEdit = ({
                     onChange={
                         isBizRegNo
                             ? handleBizRegChange
-                            : (e) => updateValue(e.target.value)
+                            : isPhone
+                                ? handlePhoneChange
+                                : (e) => updateValue(e.target.value)
                     }
                     readOnly={readOnly}
                     placeholder={placeholder}
