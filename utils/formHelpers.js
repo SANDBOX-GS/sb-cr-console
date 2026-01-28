@@ -23,8 +23,6 @@ export const calculateExpirationDate = (consentType) => {
     const date = new Date();
     if (consentType === "30days") {
         date.setDate(date.getDate() + 30);
-    } else {
-        date.setDate(date.getDate() + 1);
     }
     return date.toISOString().split('T')[0];
 };
