@@ -241,9 +241,10 @@ export async function POST(req) {
             [COL_ID.CORP_NAME]: baseDbPayload.biz_name,
             [COL_ID.BIZ_REG_NO]: baseDbPayload.biz_reg_no,
             [COL_ID.USER_NAME]: baseDbPayload.user_name,
-            [COL_ID.SSN]: baseDbPayload.ssn,
-            [COL_ID.FOREIGN_REG_NO]:
-                is_foreigner === "Y" ? baseDbPayload.ssn : null,
+            // 내국인일 때만 주민등록번호 컬럼에 값 입력
+            [COL_ID.SSN]: is_foreigner === "N" ? baseDbPayload.ssn : null,
+            // 외국인일 때만 외국인등록번호 컬럼에 값 입력
+            [COL_ID.FOREIGN_REG_NO]: is_foreigner === "Y" ? baseDbPayload.ssn : null,
             [COL_ID.PHONE]: rawPhoneToUse
                 ? { phone: rawPhoneToUse, countryShortName: "KR" }
                 : null,
