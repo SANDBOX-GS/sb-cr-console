@@ -72,7 +72,7 @@ export async function POST(request) {
                 agreed_to_unique = ?,
                 unique_agreed_at = IF(? = 'Y', NOW(), unique_agreed_at),
                 agreed_to_marketing = ?,
-                marketing_agreed_at = IF(? = 'Y', NOW(), marketing_agreed_at),
+                marketing_agreed_at = IF(? = 'Y', NOW(), NULL),
                 active_status = 'active',
                 updated_at = NOW()
             WHERE email = ? AND user_id = ?`,
