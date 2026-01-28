@@ -185,10 +185,11 @@ export const InfoView = ({
                                             }}
                                         >
                                             <Image
-                                                src={IMG_URL + src?.url}
+                                                src={fullUrl}
                                                 alt={src?.name}
                                                 layout="fill"
                                                 sizes="100vw"
+                                                unoptimized={true}
                                                 style={{
                                                     maxWidth: "768px",
                                                     objectFit: "contain",
@@ -285,7 +286,6 @@ export const InfoEdit = ({
         updateValue(formatted);
     };
 
-    console.log(options);
     return (
         <div
             className={cn(
